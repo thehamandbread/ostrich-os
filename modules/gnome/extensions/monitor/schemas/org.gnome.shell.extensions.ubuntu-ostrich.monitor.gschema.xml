@@ -4,7 +4,7 @@
   <schema id="org.gnome.shell.extensions.ubuntu-ostrich.monitor"
           path="/org/gnome/shell/extensions/ubuntu-ostrich/monitor/">
     <key name="panel-items" type="as">
-      <default>['cpu.usage', 'mem.usage', 'temp.package', 'gpu.state']</default>
+      <default>['cpu.usage', 'mem.usage', 'temp.average', 'gpu.state']</default>
       <summary>Values pinned to the top bar, in order (row ids from the popup: cpu.usage, net.down, fan.dell-smm-processor-fan, ...)</summary>
     </key>
     <key name="hide-zeros" type="b"><default>false</default><summary>Leave out readings that are zero (idle fans, no traffic) in the popup and the top bar</summary></key>

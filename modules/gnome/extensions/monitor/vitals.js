@@ -59,7 +59,7 @@ export const slug = s => s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-
 // ---- the model ----------------------------------------------------------------------------------
 
 // The top bar by default: what the old fixed readouts showed.
-export const DEFAULT_PINS = ['cpu.usage', 'mem.usage', 'temp.package', 'gpu.state'];
+export const DEFAULT_PINS = ['cpu.usage', 'mem.usage', 'temp.average', 'gpu.state'];
 
 // Sections in popup order. `icon` names a file in icons/ (ours) or a theme icon (`theme:`).
 export const SECTIONS = [
@@ -121,6 +121,11 @@ export function buildSections(r, {hideZeros = false} = {}) {
         }
     }
 
+    // The average of every sensor leads, as Vitals did: one number anyone can read, where the
+    // processor package alone ran near 100 °C under load and meant little (owner, 2026-11-18).
+    const temps = (r.temps ?? []).filter(t => Number.isFinite(t.celsius));
+    if (temps.length > 1)
+        add('temp', row('temp.average', 'Average (all sensors)', temps.reduce((a, t) => a + t.celsius, 0) / temps.length, fmt.temp, 2));
     for (const t of r.temps ?? []) {
         const id = t.package ? 'temp.package' : `temp.${slug(`${t.chip}-${t.label}`)}`;
         const label = t.package ? 'Processor package' : `${chipName(t.chip)} ${t.label}`;
@@ -201,7 +206,7 @@ function summaryOf(id, rows) {
     const get = rid => rows.find(x => x.id === rid);
     switch (id) {
     case 'temp':
-        return (get('temp.package') ?? hottest(rows))?.value ?? '';
+        return (get('temp.average') ?? get('temp.package') ?? hottest(rows))?.value ?? '';
     case 'net': {
         const d = get('net.down'), u = get('net.up');
         return d && u ? `↓${d.value} ↑${u.value}` : '';

@@ -48,7 +48,10 @@ const mem = secs.find(s => s.id === 'mem');
 check('memory without swap has no swap rows', !mem.rows.some(r => r.id.startsWith('mem.swap')));
 check('memory in use', mem.rows.find(r => r.id === 'mem.used').value === '4.0 GB');
 const temp = secs.find(s => s.id === 'temp');
-check('package temp has its fixed id and leads the summary', temp.rows[0].id === 'temp.package' && temp.summary === '55°C');
+check('the average of all sensors comes first and leads the summary',
+    temp.rows[0].id === 'temp.average' && temp.rows[0].value === '48°C' && temp.summary === '48°C');
+check('package temp keeps its fixed id', temp.rows[1].id === 'temp.package' && temp.rows[1].value === '55°C');
+check('one sensor: no average row', !buildSections({temps: [{chip: 'acpitz', label: 'temp1', celsius: 40}]}, {}).find(s => s.id === 'temp').rows.some(r => r.id === 'temp.average'));
 check('other sensors get chip names', temp.rows.some(r => r.label === 'SSD Composite' && r.id === 'temp.nvme-composite'));
 check('net summary has both ways', secs.find(s => s.id === 'net').summary === '↓2.0 K/s ↑0 B/s');
 check('system summary reads Up and the time', secs.find(s => s.id === 'sys').summary === 'Up 2 h 0 min');
@@ -72,8 +75,9 @@ check('toggle pin removes', togglePin(['a', 'b'], 'a').join() === 'b');
 
 // what a closed popup reads
 const need = needed(DEFAULT_PINS);
-check('default pins read stat, memory, package sensor and nvidia only',
-    [...need].sort().join() === 'mem,nvidia,package,stat');
+// The average reads every sensor chip (owner, 2026-11-18: the average, not the package, by default).
+check('default pins read stat, memory, the sensor chips and nvidia only',
+    [...need].sort().join() === 'chips,mem,nvidia,stat');
 check('rates and disks map to their sources', [...needed(['net.up', 'disk.read', 'disk.free', 'sys.uptime', 'cpu.load1'])].sort().join() ===
     'diskstats,fs,load,net,uptime');
 check('no pins read nothing', needed([]).size === 0);
