@@ -51,7 +51,7 @@ Notes are the owner's VM critiques (`tests/vm/critique.sh show ID`), by their ti
 | MON-6 | Warns once before memory runs out (85 %, clears at 75 %) with a pop-out alert (ALERT) from the monitor, naming the app if it holds a tenth of memory, with End app and Open System Monitor. | js, new (VM with a memory hog) | pass (alert-test, 2026-11-01) |
 | MON-7 | Holds the power-mode switch; a mode change applies the helper's hardware knobs (no password). | power-test, polkit-test | untested |
 | MON-8 | Text on the popup reads 4.5:1 or better. | contrast | untested |
-| MON-9 | The popup opens with the values you pinned to the top bar at the top (in pin order, each with its star to unpin), then the sections. Processor, Memory, Network and Battery (Storage on a machine without a battery) start open, side by side; the rest stay folded; what you leave open or folded stays that way, also after a login (`sections-open`). System's header reads "Up 12 min". Every other section and value is still there (docs/PARITY.md). | tests/vm/monitor-look-test.sh | PASS |
+| MON-9 | The popup opens with the values you pinned to the top bar at the top (in pin order, each with its star to unpin), then the sections, every one closed each time it opens (owner, 2026-11-18); several can be open side by side. | tests/vm/monitor-look-test.sh | PASS |
 
 ### Pop-out alerts (all Ostrich system alerts)
 
@@ -65,7 +65,7 @@ Notes are the owner's VM critiques (`tests/vm/critique.sh show ID`), by their ti
 
 | ID | Should do | How checked | Status |
 |---|---|---|---|
-| DOCK-1 | Floating at the bottom, sized to its icons, 40 px icons, 8 px gap, rounded, frosted. | ui-test, compare | untested |
+| DOCK-1 | Floating at the bottom, sized to its icons, 40 px icons, 8 px gap, rounded, frosted. Stays in the overview, where GNOME's own dash is hidden (owner, 2026-11-18). | ui-test, compare | untested |
 | DOCK-2 | Hides only when a window is in the way (intellihide); touching the bottom edge brings it back; can be always shown. | ui-test | untested |
 | DOCK-3 | A dot per window (up to 4, accent on the focused app); click focuses, or minimizes the app in front (or next window); scroll cycles windows; middle-click new window. | ui-test | untested |
 | DOCK-4 | Hover shows live previews; click switches, middle-click closes. | ui-test | untested |
@@ -99,7 +99,7 @@ Notes are the owner's VM critiques (`tests/vm/critique.sh show ID`), by their ti
 
 | ID | Should do | How checked | Status |
 |---|---|---|---|
-| TW-1 | Super once: your windows; again: all apps. Starts on the desktop. | ui-test | untested |
+| TW-1 | Super opens and closes the overview, as stock GNOME (a quick double press goes to the app grid). Starts on the desktop. | ui-test | untested |
 | TW-2 | Animation speed setting works and carries over from Just Perfection. | motion-test | untested |
 | TW-3 | Accent picked from the wallpaper and re-picked when it changes, unless the user chose one. | new | untested |
 | TW-4 | Yaru folder icons match light/dark (and the scheme's folder colour). | new | untested |
@@ -107,8 +107,8 @@ Notes are the owner's VM critiques (`tests/vm/critique.sh show ID`), by their ti
 | TW-6 | Today panel (clock menu): fits at text scale 1 and 2; "show calendar events" off hides the events card at once (note 224757). | ui-test | pass (ui-test, 2026-11-01) |
 | TW-7 | Speaker tuning tile (Off / Correction / Custom); Touchscreen tile only when a touchscreen exists. | ui-test, hw | untested |
 | TW-8 | Logs no warnings (today: removes a `now-playing-play-pause` keybinding it never added). | new (journal gate) | FAIL |
-| TW-9 | Pushing the pointer into the top-right corner opens quick settings (GNOME's hot-corner pressure; not in fullscreen or the overview; with a monitor to the right of the top-bar one, the corner is on the outer right edge of the right-most monitor on the same top edge). VM-tested on one screen (topbar-test, relative push up into the corner); a second monitor is a unit test and a hand check. Setting, on by default (owner, 2026-11-09). | new | untested |
-| TW-10 | Resting the pointer (0.5 s by default; `hover-open-delay-ms`, 0.5 to 2 s, in Settings) on the clock or the now-playing orb opens its menu; one opened that way closes 0.5 s after the pointer leaves it, unless clicked inside. Setting, on by default (owner, 2026-11-09). | new | untested |
+| TW-9 | Pushing the pointer into the top-right corner toggles quick settings, exactly like GNOME's top-left hot corner (same pressure, ripple, works in the overview, not over a fullscreen window on that monitor; with a monitor to the right of the top-bar one, the corner is on the outer right edge of the right-most monitor). | new | untested |
+| TW-10 | The clock and the now-playing orb open on a click only (hover-to-open removed, owner 2026-11-18); with nothing playing the orb stays hidden, also after the overview. | new | untested |
 | TW-11 | On a machine with three power modes (power-profiles-daemon lists Power Saver, Balanced and Performance), quick settings shows one full-width Saver \| Balanced \| Performance row where GNOME's Power Mode tile sat; one click picks a mode, Tab and the arrow keys reach it. GNOME's tile is hidden only while the row shows and comes back with two modes, on any failure, on disable, or with `quick-settings-style` = `stock` (council 2026-11-09, M2/M3). | powerrow-test | tested |
 | TW-12 | Do Not Disturb and Focus switches under the date in the clock menu, each with On or Off in text, on the same state as their quick-settings tiles (show-banners inverted; the focus extension's `focus-on`); the tiles stay. `clock-menu-quiet` hides them; the Focus switch is left out when the focus extension is not running or is older (council 2026-11-09, M5). | quiet-test | tested |
 | TW-13 | Lit quick-settings tiles use the accent darkened to 94 % and medium-weight subtitles, so their text reaches 4.5:1 in light, dark and power saver; "No Notifications" gets the full text colour in saver (council 2026-11-09, M4). | qs-contrast-test | built; VM check pending |
@@ -135,7 +135,7 @@ Notes are the owner's VM critiques (`tests/vm/critique.sh show ID`), by their ti
 
 | ID | Should do | How checked | Status |
 |---|---|---|---|
-| TRAY-1 | StatusNotifier icons in the top bar; menus fetched only when opened; middle-click and scroll passed on. | ext-test (sni-test-item) | untested |
+| TRAY-1 | StatusNotifier icons in the top bar, always just left of quick settings (right of the drawer's icons); menus fetched only when opened; left click activates, middle-click and scroll passed on. | ext-test (sni-test-item) | untested |
 | FOC-1 | Super+Alt+F or the quick-settings tile: DND on, drawer muted, dock, tray, monitor, workspace bar, drawer icons hidden; optional allow-list of apps (others minimised and hidden from grid and search). | env-test | untested |
 | FOC-3 | The Focus tile says On or Off; the state is the `focus-on` setting, so the clock-menu switch and `ostrich config set focus focus-on true` set it too (council 2026-11-09). | quiet-test | tested |
 | FOC-2 | Turning it off puts back the exact previous state. | env-test | untested |

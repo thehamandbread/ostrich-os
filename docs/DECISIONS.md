@@ -319,3 +319,26 @@ Verdict: `docs/council/2026-11-09-quick-settings-and-the-clock-menu.md`.
 - **Monitor popup, default content** (look council 2026-11-05 Should, owner chose "pinned strip + 4 open" on 2026-11-12): the popup starts with a strip of the pinned values, then Processor, Memory, Network and Battery (or Storage) open side by side, the rest folded, System reading "Up 12 min". GNOME's menus are accordions (opening a section closes the one before: `PopupSubMenuMenuItem._subMenuOpenStateChanged` tells the top menu's `_setOpenedSubMenu`), so the monitor clears the top menu's private `_openedSubMenu` after each section opens (GNOME 50, `popupMenu.js`; check it on a new GNOME: if renamed, sections go back to one at a time). The strip's rows are made once and shown or hidden, never destroyed: destroying them while one had focus (an idle 0 % reading drops out with hide-zeros) made GNOME touch a disposed object (the journal gate caught it). Open: the popup is about 790 px tall with four sections open, untested on a 768 px screen. 2026-11-14: what you leave open or folded is remembered (`monitor/sections-open`, owner: things stay as they were after a login). 
 - **Audits #11 and #12 (2026-11-14).** #11, the monitor's rules while the screen is locked: nothing to change. The monitor declares no lock-screen session mode, so GNOME turns it off while locked (seen in the VM: ACTIVE, locked INACTIVE, unlocked ACTIVE; `power-test.sh` checks it) and its low-battery rule is evaluated at every start (`_checkBattery()` after the battery proxy is up), so at unlock. #12, audio-tune's target: `speaker_sink` falls back to the default output only when it is the machine's own sound card (`system::is_builtin`: an `alsa_output.` node that is not HDMI, USB or Bluetooth); otherwise the CLI asks for `--target`, so a preset can no longer be applied to a Bluetooth headset by accident.
 - **Standalone extensions: blur, workspaces, monitor (Track B prep, 2026-11-14).** Each has its own `prefs.js` (a small shared helper, `_lib/prefs.js`) and a README, and the internal tags (owner, council and note references, a demo-page link) are out of their code and of the `_lib` files they ship. The monitor's "Monitor settings" button opens its own preferences window when Ostrich Settings is not installed, and its low-battery alert says "the monitor switched to power saver". `tests/vm/standalone-test.sh` installs each alone on `stock` (ACTIVE, no JS error, 40 cycles, steady-state memory, journal gate, the preferences window opens). Found on the way: blur alone on stock fails `ext-test`'s second-round memory limit (42 then 16 MB in 0.3.0 as well), but over five rounds it grows +23, +0, +2, +2, +1 MB, so it is warm-up and not a leak; the standalone test widens the first rounds and judges the steady state. Not done: each zip still carries all of `_lib` (some of it unused by that extension), which should be trimmed before submitting to extensions.gnome.org; the extensions.gnome.org account and the uuid namespace are the owner's.
+
+## 2026-11-18 — First live install on the owner's Dell: fix round
+
+The owner installed 0.4.0 on their own machine and listed what felt wrong in the first minutes.
+Their calls, which replace earlier ones:
+
+- **Super** opens and closes the overview, as stock GNOME. The "second Super shows the app grid"
+  patch and its setting are gone; GNOME's own quick double press still reaches the grid.
+- **Top-right corner** behaves exactly like GNOME's top-left hot corner: a second push closes quick
+  settings, the ripple plays, it works in the overview, and a fullscreen window on that monitor
+  blocks it.
+- **Hover-to-open** is removed from the clock and the now-playing orb (both open on a click). The
+  drawer keeps its hover. Supersedes the 2026-11-09 "rest the pointer to open the clock and the orb".
+- **Every expandable section starts closed, always**: the monitor popup no longer opens four sections
+  or remembers what was left open. Supersedes 2026-11-12 "pinned strip + 4 open" and the 2026-11-14
+  memory.
+- **Top bar order:** drawer icons, then tray (app) icons, then quick settings. Both used to claim the
+  start of the right box, so they swapped as apps started.
+- **One dock:** ours stays in the overview; GNOME's dash there (64 px icons on solid grey) is hidden.
+  While in the overview the dock's blur shows the wallpaper only, as the windows aren't there.
+- **Glass everywhere:** the cards the theme paints solid grey on top of glass (clock-menu notifications
+  and buttons, quick settings' submenus, overview search results, the monitor's footer buttons and
+  open section headers) take the glass tint; still solid when blur is off.
