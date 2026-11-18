@@ -72,6 +72,32 @@ class TrayButton extends PanelMenu.Button {
         this.add_child(this._icon);
         this.visible = false;
 
+        // GNOME 50's panel buttons toggle their menu from a click gesture (and St.Widget has no event
+        // vfunc to chain to: overriding it threw on every pointer motion). Ours, as the drawer's:
+        // left Activates (or opens the menu of a menu-only item), middle SecondaryActivates, right
+        // opens the menu, the wheel Scrolls.
+        this._clickGesture.set_enabled(false);
+        const click = (button, action) => {
+            const g = new Clutter.ClickGesture({recognize_on_press: true, required_button: button});
+            g.connect('recognize', () => action(...global.get_pointer().slice(0, 2)));
+            this.add_action(g);
+        };
+        click(Clutter.BUTTON_PRIMARY, (x, y) => {
+            if (this._props.ItemIsMenu)
+                this._toggleMenu();
+            else
+                this._itemCall('Activate', new GLib.Variant('(ii)', [x, y]));
+        });
+        click(Clutter.BUTTON_MIDDLE, (x, y) => this._itemCall('SecondaryActivate', new GLib.Variant('(ii)', [x, y])));
+        click(Clutter.BUTTON_SECONDARY, () => this._toggleMenu());
+        this.connect('scroll-event', (_a, event) => {
+            const dir = event.get_scroll_direction();
+            const delta = dir === Clutter.ScrollDirection.UP ? -1 : dir === Clutter.ScrollDirection.DOWN ? 1 : 0;
+            if (delta)
+                this._itemCall('Scroll', new GLib.Variant('(is)', [delta, 'vertical']));
+            return Clutter.EVENT_STOP;
+        });
+
         // NewIcon, NewStatus, NewToolTip... carry no values: re-read the properties.
         this._signalId = Gio.DBus.session.signal_subscribe(busName, ITEM_IFACE, null, objectPath, null,
             Gio.DBusSignalFlags.NONE, () => this._refresh());
@@ -126,33 +152,11 @@ class TrayButton extends PanelMenu.Button {
             .catch(e => console.debug(`tray: ${method} failed: ${e.message}`));
     }
 
-    vfunc_event(event) {
-        const type = event.type();
-        if (type === Clutter.EventType.SCROLL) {
-            const dir = event.get_scroll_direction();
-            const delta = dir === Clutter.ScrollDirection.UP ? -1 : dir === Clutter.ScrollDirection.DOWN ? 1 : 0;
-            if (delta)
-                this._itemCall('Scroll', new GLib.Variant('(is)', [delta, 'vertical']));
-            return Clutter.EVENT_STOP;
-        }
-        if (type !== Clutter.EventType.BUTTON_PRESS)
-            return super.vfunc_event(event);
-        const [x, y] = event.get_coords().map(Math.round);
-        const button = event.get_button();
-        if (button === Clutter.BUTTON_MIDDLE) {
-            this._itemCall('SecondaryActivate', new GLib.Variant('(ii)', [x, y]));
-            return Clutter.EVENT_STOP;
-        }
-        if (button === Clutter.BUTTON_PRIMARY && !this._props.ItemIsMenu) {
-            this._itemCall('Activate', new GLib.Variant('(ii)', [x, y]));
-            return Clutter.EVENT_STOP;
-        }
-        // Right click (or a menu-only item): fetch the menu now, then open it.
+    _toggleMenu() {
         if (this.menu.isOpen)
             this.menu.close();
         else
             this._openMenu();
-        return Clutter.EVENT_STOP;
     }
 
     async _openMenu() {
@@ -279,7 +283,12 @@ class Tray {
         if (this._items.has(key))
             return;
         const button = new TrayButton(key, busName, objectPath);
+        // Always just left of quick settings, never at the start of the box: the drawer's icons start
+        // there, and both claiming index 0 made them swap as apps came and went (owner, 2026-11-18).
         Main.panel.addToStatusArea(`${this._uuid}-${key}`, button, 0, 'right');
+        const qs = Main.panel.statusArea.quickSettings?.container;
+        if (qs?.get_parent() === button.container.get_parent())
+            qs.get_parent().set_child_below_sibling(button.container, qs);
         // Vanishes with its app: no polling, D-Bus tells us.
         const watchId = Gio.bus_watch_name_on_connection(Gio.DBus.session, busName, Gio.BusNameWatcherFlags.NONE,
             null, () => this._removeItem(key));
