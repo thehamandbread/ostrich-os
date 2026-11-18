@@ -1,6 +1,6 @@
 // tests/js/monitor-vitals.test.js: unit tests for monitor/vitals.js. Run with tests/js-test.sh.
 import {
-    fmt, buildSections, panelItems, togglePin, needed, iconFor, chipName, rowName, DEFAULT_PINS, sectionsToOpen,
+    fmt, buildSections, panelItems, togglePin, needed, iconFor, chipName, rowName, DEFAULT_PINS,
 } from '../../modules/gnome/extensions/monitor/vitals.js';
 
 let failures = 0;
@@ -51,15 +51,6 @@ const temp = secs.find(s => s.id === 'temp');
 check('package temp has its fixed id and leads the summary', temp.rows[0].id === 'temp.package' && temp.summary === '55°C');
 check('other sensors get chip names', temp.rows.some(r => r.label === 'SSD Composite' && r.id === 'temp.nvme-composite'));
 check('net summary has both ways', secs.find(s => s.id === 'net').summary === '↓2.0 K/s ↑0 B/s');
-const idSet = names => new Set(names);
-check('first run: Processor, Memory, Network, Storage when there is no battery',
-    sectionsToOpen(['default'], idSet(['cpu', 'mem', 'sys', 'net', 'disk'])).join() === 'cpu,mem,net,disk');
-check('first run: Battery instead of Storage when there is one',
-    sectionsToOpen(['default'], idSet(['cpu', 'mem', 'net', 'disk', 'bat'])).join() === 'cpu,mem,net,bat');
-check('what you left open is what opens', sectionsToOpen(['mem', 'sys'], idSet(['cpu', 'mem', 'sys', 'net'])).join() === 'mem,sys');
-check('all folded stays all folded', sectionsToOpen([], idSet(['cpu', 'mem'])).length === 0);
-check('a section that is not on screen keeps its place', sectionsToOpen(['cpu', 'bat'], idSet(['cpu'])).join() === 'cpu,bat');
-check('first run leaves out sections that are not on screen', sectionsToOpen(['default'], idSet(['cpu', 'disk'])).join() === 'cpu,disk');
 check('system summary reads Up and the time', secs.find(s => s.id === 'sys').summary === 'Up 2 h 0 min');
 check('disk summary is free space', secs.find(s => s.id === 'disk').summary === '200 GB free');
 check('battery time left', secs.find(s => s.id === 'bat').rows.find(r => r.id === 'bat.time').value === '3 h 0 min');

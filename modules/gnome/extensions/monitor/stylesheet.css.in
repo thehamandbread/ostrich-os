@@ -37,7 +37,17 @@
    shortcut: only inside blur's glass (.ost-blur-menu); with blur off the shell's accent ring stays,
    upgrade with a style-independent ring token if that matters. */
 .ost-blur-menu .ost-vital-button:focus { box-shadow: inset 0 0 0 2px {{text}}; }
-.ost-blur-light .ost-blur-light .ost-blur-menu .ost-vital-button:focus { box-shadow: inset 0 0 0 2px {{light_text}}; }
+.ost-blur-light .ost-blur-menu .ost-vital-button:focus { box-shadow: inset 0 0 0 2px {{light_text}}; }
+/* On glass, the footer buttons and an open section's header take the glass tint, not the theme's solid
+   grey (owner, 2026-11-18); hover a step stronger. */
+.ost-blur-menu .ost-vital-button,
+.ost-blur-menu .ost-vital-section:checked { background-color: {{glass_banner}}; }
+.ost-blur-menu .ost-vital-button:hover,
+.ost-blur-menu .ost-vital-section:checked:hover { background-color: {{glass_folder}}; }
+.ost-blur-light .ost-blur-menu .ost-vital-button,
+.ost-blur-light .ost-blur-menu .ost-vital-section:checked { background-color: {{light_glass_banner}}; }
+.ost-blur-light .ost-blur-menu .ost-vital-button:hover,
+.ost-blur-light .ost-blur-menu .ost-vital-section:checked:hover { background-color: {{light_glass_folder}}; }
 
 /* The pop-out alert (_lib/alert.js): a dark card just under the top bar. Opaque enough to read over
    anything without a blur behind it; one accent button style, the confirming state in red. */

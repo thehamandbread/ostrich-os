@@ -8,7 +8,6 @@
       <summary>Values pinned to the top bar, in order (row ids from the popup: cpu.usage, net.down, fan.dell-smm-processor-fan, ...)</summary>
     </key>
     <key name="hide-zeros" type="b"><default>false</default><summary>Leave out readings that are zero (idle fans, no traffic) in the popup and the top bar</summary></key>
-    <key name="sections-open" type="as"><default>['default']</default><summary>The popup's sections you left open, so they stay as you left them: 'default' until you open or fold one (then Processor, Memory, Network and Battery or Storage start open)</summary></key>
     <key name="section-rows" type="u"><range min="3" max="40"/><default>6</default><summary>Rows an open section of the popup shows before it scrolls (6 is Compact, 12 is Tall in Settings)</summary></key>
     <key name="interval-ac" type="u"><range min="1" max="60"/><default>2</default><summary>Seconds between updates on AC power</summary></key>
     <key name="interval-battery" type="u"><range min="1" max="120"/><default>5</default><summary>Seconds between updates on battery</summary></key>

@@ -75,16 +75,6 @@ export const SECTIONS = [
     ['gpu', 'Graphics', 'theme:video-display-symbolic'],
 ];
 
-// The sections the popup keeps open: the ones you left open (a list, which may be empty; it also holds
-// sections that are not on screen right now, such as Battery on a desk), or until you have opened or
-// folded one, Processor, Memory, Network and Battery (Storage on a machine without a battery).
-// shown: the set of section ids that are on screen.
-export function sectionsToOpen(stored, shown) {
-    if (stored[0] !== 'default')
-        return stored;
-    return ['cpu', 'mem', 'net', shown.has('bat') ? 'bat' : 'disk'].filter(id => shown.has(id));
-}
-
 // The icon a pinned value has in the top bar, where a row's own beats its section's.
 const ROW_ICONS = {
     'net.down': 'theme:network-receive-symbolic',

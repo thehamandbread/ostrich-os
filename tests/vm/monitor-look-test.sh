@@ -18,7 +18,8 @@
 # checks an open Processor section adds no more than section-rows rows (6 and 12) to the popup, and
 # leaves shots of the keyboard reaching the last row (look at them: the scroll must follow the focus).
 # A fourth phase checks the icon-only controls get a visible name (council M4): the footer buttons on
-# keyboard focus and with the pointer resting, and a drawer icon with hover-to-open off.
+# keyboard focus and with the pointer resting, and a drawer icon with hover-to-open off. A fifth checks every
+# section starts closed: after one was left open, and after a restart (owner, 2026-11-18).
 #
 # Where things are on the 1920x1080 screen can be overridden: MONITOR_X (the top-bar pill, default 265),
 # ROWS (stops that are rows, default 7: 2 pinned, 5 sections), STOPS (Tab presses, default 10: 7 rows, 3 buttons), SHIFT (the pinned strip's height, 66), FOOT_SHIFT (strip plus the footer's separator, 86) and CONTROLS_BOX (x0,y0,x1,y1 of the part of the popup below the rows).
@@ -44,7 +45,6 @@ ROWS="${ROWS:-7}"
 STOPS="${STOPS:-10}"
 CONTROLS_BOX="${CONTROLS_BOX:-100,$((200 + FOOT_SHIFT)),360,$((300 + FOOT_SHIFT))}"
 PROCESSOR_XY="${PROCESSOR_XY:-200 $((59 + SHIFT))}"                                         # the Processor row, to open it
-FOLD_XY="${FOLD_XY:-$((59 + SHIFT)) $((87 + SHIFT)) $((145 + SHIFT)) $((176 + SHIFT))}"     # y of the headers of the sections that start open, top-down, once the ones above are folded
 ROW_PX="${ROW_PX:-28}"                                                                      # one row of an open section, with a little slack
 ROW_MIN_PX="${ROW_MIN_PX:-20}"                                                              # and the least a row can be, to tell a cap that is too small
 SECTION_ROWS_AVAILABLE="${SECTION_ROWS_AVAILABLE:-8}"                                       # rows of an open Processor (4 cores: usage, 3 loads, 4 cores)
@@ -53,7 +53,6 @@ FOOTER_LABEL_BOX="${FOOTER_LABEL_BOX:-100,$((228 + FOOT_SHIFT)),420,$((276 + FOO
 FOOTER_HOVER_BOX="${FOOTER_HOVER_BOX:-100,$((228 + FOOT_SHIFT)),260,$((276 + FOOT_SHIFT))}" # under the Refresh button only
 DRAWER_ICON_XY="${DRAWER_ICON_XY:-1545 15}"                                                 # the first drawer icon in the top bar
 DRAWER_LABEL_BOX="${DRAWER_LABEL_BOX:-1450,36,1750,72}"                                     # under it
-SECTIONS_KEY=/org/gnome/shell/extensions/ubuntu-ostrich/monitor/sections-open               # what the popup remembers as open
 DOWNLOAD=http://archive.ubuntu.com/ubuntu/ls-lR.gz
 PHOTO=/usr/share/backgrounds/mendhak-Red_Acer.jpg # the busy one the council's glass shots use
 while (($# > 0)); do
@@ -90,16 +89,7 @@ for style in prefer-dark default; do
 	"$VM" click "$MONITOR_X" 15
 	sleep 2
 	if [[ $style == prefer-dark ]]; then
-		for y in $FOLD_XY; do
-			"$VM" click 200 "$y"
-			sleep 1
-		done
-		"$VM" screenshot "$OUT/folded.png" >/dev/null
-		# The clicks left the keyboard focus on a header: reopen, so the Tab walk starts from the top.
-		"$VM" key esc
-		sleep 1
-		"$VM" click "$MONITOR_X" 15
-		sleep 2
+		"$VM" screenshot "$OUT/folded.png" >/dev/null # every section starts closed (owner, 2026-11-18)
 	fi
 	"$VM" move 960 700 # the pointer away, so only the keyboard moves the focus
 	sleep 1
@@ -295,7 +285,6 @@ PYEND
 }
 for rows in 6 12; do
 	run "dconf write /org/gnome/shell/extensions/ubuntu-ostrich/monitor/section-rows 'uint32 $rows'"
-	run "dconf write $SECTIONS_KEY \"@as []\"" # the popup remembers what was left open: start folded, as the click below expects
 	sleep 2
 	"$VM" move 960 700
 	"$VM" click "$MONITOR_X" 15
@@ -330,49 +319,32 @@ for rows in 6 12; do
 done
 echo "    look at cap-6-last-row.png: the last row (Core 3) must be highlighted and inside the popup"
 
-echo "== remembered (sections-open): what you leave open stays so after a login"
-# A login starts the extension again, so the test turns it off and on. Heights are of the popup against
-# the closed shot, as in the cap phase above.
-reopen_with() { # stored-list shot-name: the extension restarted with this list, the popup's height
-	run "dconf write $SECTIONS_KEY \"$1\""
-	run "gnome-extensions disable monitor@ubuntu-ostrich; sleep 1; gnome-extensions enable monitor@ubuntu-ostrich"
-	sleep 3
-	"$VM" move 960 700
-	"$VM" click "$MONITOR_X" 15
-	sleep 3
-	"$VM" screenshot "$OUT/$2.png" >/dev/null
-	cap_height "$OUT/$2.png"
-	"$VM" key esc
-	sleep 1
-}
-h_none=$(reopen_with "@as []" remembered-none)
-h_mem=$(reopen_with "['mem']" remembered-mem)
-h_default=$(reopen_with "['default']" remembered-default)
-if ((h_mem - h_none >= 100)); then ok "only Memory remembered: $h_mem px, $((h_mem - h_none)) px above all folded ($h_none px)"; else bad "only Memory remembered gives $h_mem px against $h_none px folded"; fi
-if ((h_default - h_none >= 300)); then ok "default: four sections open, $h_default px"; else bad "default gives only $h_default px against $h_none px folded (four sections should open)"; fi
-# Closing the popup folds the sections; that must not be taken for your choice, and they come back.
-"$VM" click "$MONITOR_X" 15
-sleep 3
-"$VM" screenshot "$OUT/remembered-reopened.png" >/dev/null
-h_again=$(cap_height "$OUT/remembered-reopened.png")
-"$VM" key esc
-sleep 1
-after_close=$(run "dconf read $SECTIONS_KEY")
-if ((h_again >= h_default - 30)); then ok "closed and reopened: still $h_again px (four sections open)"; else bad "closed and reopened: only $h_again px against $h_default px"; fi
-if [[ $after_close == "['default']" ]]; then ok "closing the popup left the stored choice alone"; else bad "closing the popup changed the stored choice to $after_close"; fi
-# Fold Processor by hand in the default popup: the list the extension keeps loses it.
-run "dconf write $SECTIONS_KEY \"['default']\""
-run "gnome-extensions disable monitor@ubuntu-ostrich; sleep 1; gnome-extensions enable monitor@ubuntu-ostrich"
-sleep 3
+echo "== every section starts closed, whatever was open last time (owner, 2026-11-18)"
 "$VM" move 960 700
 "$VM" click "$MONITOR_X" 15
 sleep 3
+"$VM" screenshot "$OUT/closed-first.png" >/dev/null
+h_first=$(cap_height "$OUT/closed-first.png")
 # shellcheck disable=SC2086 # two coordinates
 "$VM" click $PROCESSOR_XY
 sleep 2
-stored=$(run "dconf read $SECTIONS_KEY")
 "$VM" key esc
-if [[ $stored == *mem* && $stored != *cpu* && $stored != *default* ]]; then ok "folding Processor by hand is kept: $stored"; else bad "folding Processor by hand left $stored"; fi
+sleep 1
+"$VM" click "$MONITOR_X" 15
+sleep 3
+"$VM" screenshot "$OUT/closed-reopened.png" >/dev/null
+h_again=$(cap_height "$OUT/closed-reopened.png")
+"$VM" key esc
+sleep 1
+if ((h_again <= h_first + 10)); then ok "Processor left open, reopened: all closed again ($h_first -> $h_again px)"; else bad "Processor stayed open on reopening ($h_first -> $h_again px)"; fi
+run "gnome-extensions disable monitor@ubuntu-ostrich; sleep 1; gnome-extensions enable monitor@ubuntu-ostrich"
+sleep 3
+"$VM" click "$MONITOR_X" 15
+sleep 3
+"$VM" screenshot "$OUT/closed-restarted.png" >/dev/null
+h_restart=$(cap_height "$OUT/closed-restarted.png")
+"$VM" key esc
+if ((h_restart <= h_first + 10)); then ok "after a restart: all closed ($h_restart px)"; else bad "after a restart the popup is $h_restart px against $h_first px closed"; fi
 
 echo "== journal"
 journal_gate

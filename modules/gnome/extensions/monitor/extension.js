@@ -37,7 +37,7 @@ import {
     parseLoadavg, parseUptime, parseNetDev, parseDiskstats, rate, cpuFrequency,
     readText, readTextSync, listDir, findHwmon, readChip, readBattery, readIgpuFrequency, readFilesystem,
 } from './sources.js';
-import {SECTIONS, buildSections, panelItems, togglePin, needed, rowName, sectionsToOpen} from './vitals.js';
+import {SECTIONS, buildSections, panelItems, togglePin, needed, rowName} from './vitals.js';
 
 const HELPER = '/usr/libexec/ubuntu-ostrich/system-helper';
 // Opened by the popup's monitor button: the first that is installed.
@@ -177,7 +177,6 @@ class MonitorIndicator extends PanelMenu.Button {
         this._pinnedSection.addMenuItem(this._pinnedSeparator);
         this._vitals = new PopupMenu.PopupMenuSection();
         this.menu.addMenuItem(this._vitals);
-        this._noRoom = new Set(); // sections the screen has no room for this time (cleared at every open)
         this._sections = new Map(); // id → {item, summary, rows: Map, keys}
         for (const [id, title, icon] of SECTIONS) {
             const item = new PopupMenu.PopupSubMenuMenuItem(title, true);
@@ -196,16 +195,6 @@ class MonitorIndicator extends PanelMenu.Button {
                 if (open)
                     this.menu._openedSubMenu = null;
             });
-            // Opening or folding by hand (click, Enter, Left/Right) goes through _setOpenState; closing the
-            // popup folds the sections too, and that is not a choice. Only a hand toggle is remembered.
-            // shortcut: wraps the private _setOpenState (GNOME 50); if GNOME renames it nothing is remembered.
-            if (typeof item._setOpenState === 'function') {
-                const toggle = item._setOpenState.bind(item);
-                item._setOpenState = open => {
-                    toggle(open);
-                    this._saveOpen();
-                };
-            }
             const sec = {item, summary, rows: new Map(), keys: null};
             this._sections.set(id, sec);
             // GNOME shows a submenu's scrollbar only when the whole menu has a max-height, and resets it
@@ -235,7 +224,6 @@ class MonitorIndicator extends PanelMenu.Button {
         this._signals.connect(this.menu, 'open-state-changed', (_m, open) => {
             if (!open)
                 return;
-            this._noRoom.clear();
             // Fill the details straight away, and again a moment later: rates need two samples.
             this._tick();
             this._soon ??= GLib.timeout_add(GLib.PRIORITY_DEFAULT, 1000, () => {
@@ -723,42 +711,6 @@ class MonitorIndicator extends PanelMenu.Button {
             for (const x of model.rows)
                 sec.rows.get(x.id).update(model.title, x.label, x.value, pinned.has(x.id));
         }
-        // A submenu with no rows can't open, so this comes after the rows are in. The stored list is the
-        // truth: closing the popup folds the sections, so each time it is open they are put back to it,
-        // without animation (four sections sliding in while the popup does would jump). A section is
-        // restored only while the popup still fits the screen: squeezed into a short screen at large
-        // text the headers collapsed to slivers. One you opened by hand stays; the list is not touched.
-        const open = new Set(sectionsToOpen(this._settings.get_strv('sections-open'), shown));
-        for (const id of shown) {
-            const menu = this._sections.get(id).item.menu;
-            if (menu.isOpen && !open.has(id)) {
-                menu.close(false);
-            } else if (!menu.isOpen && open.has(id) && !this._noRoom.has(id)) {
-                menu.open(false);
-                if (this._tooTall()) {
-                    menu.close(false);
-                    this._noRoom.add(id);
-                }
-            }
-        }
-    }
-
-    // True when the popup, as it stands, is taller than the screen's work area (less a margin).
-    _tooTall() {
-        const work = Main.layoutManager.getWorkAreaForMonitor(Main.layoutManager.primaryIndex);
-        return this.menu.box.get_preferred_height(-1)[1] > work.height - 24;
-    }
-
-    // What you leave open is kept (and so survives a login); sections not on screen now keep their place.
-    _saveOpen() {
-        const stored = this._settings.get_strv('sections-open');
-        const next = [];
-        for (const [id, sec] of this._sections) {
-            if (sec.item.visible ? sec.item.menu.isOpen : stored.includes(id))
-                next.push(id);
-        }
-        if (next.join() !== stored.join())
-            this._settings.set_strv('sections-open', next);
     }
 
     // ---- NVIDIA (ported from nvidia-power) ----
