@@ -1,0 +1,20 @@
+[package]
+name = "welcome"
+description = "The setup wizard: walks through every feature after install; any step can be run on its own"
+edition.workspace = true
+license.workspace = true
+version.workspace = true
+repository.workspace = true
+
+[[bin]]
+name = "ostrich-setup"
+path = "src/main.rs"
+
+[dependencies]
+# Ubuntu 26.04 ships GTK 4.22 and libadwaita 1.9.
+gtk = { package = "gtk4", version = "0.11", features = ["v4_18"] }
+adw = { package = "libadwaita", version = "0.9", features = ["v1_8"] }
+audio-tune = { path = "../audio-tune" }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+toml = "0.9"

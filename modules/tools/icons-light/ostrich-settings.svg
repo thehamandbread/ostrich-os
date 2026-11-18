@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
+  <!-- The icon for the light style (owner 2026-11-06: F): a flat dark tile, the glyph in the app's bright hue
+       (currentColor, bright_settings in light.toml). The dock is dark in both styles, so the tile has a thin
+       light rim: without it the tile is the dock's own colour (1.2:1). -->
+  <rect x="8" y="8" width="112" height="112" rx="28" fill="#262a33" stroke="#9aa3b8" stroke-width="2"/>
+  <g color="#9db8e6">
+  <g stroke="currentColor" stroke-width="6" stroke-linecap="round">
+    <path d="M34 44h60M34 64h60M34 84h60"/>
+  </g>
+  <g fill="currentColor" stroke="#262a33" stroke-width="3">
+    <circle cx="52" cy="44" r="9"/>
+    <circle cx="78" cy="64" r="9"/>
+    <circle cx="60" cy="84" r="9"/>
+  </g>
+  </g>
+</svg>

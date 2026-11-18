@@ -1,0 +1,15 @@
+[package]
+name = "store-core"
+description = "App store core: local Flathub AppStream index, fuzzy search, installed apps"
+edition.workspace = true
+license.workspace = true
+version.workspace = true
+repository.workspace = true
+
+[dependencies]
+# 0.36: BytesText::unescape and entities kept inside text events (0.37+ splits them out).
+quick-xml = "0.36"
+flate2 = "1"
+nucleo-matcher = "0.3"
+serde_json = "1"
+sha2 = "0.10"

@@ -1,0 +1,11 @@
+[package]
+name = "ostrich"
+description = "The ostrich command: one entry point for Ubuntu Ostrich's tools"
+edition.workspace = true
+license.workspace = true
+version.workspace = true
+repository.workspace = true
+
+[[bin]]
+name = "ostrich"
+path = "src/main.rs"

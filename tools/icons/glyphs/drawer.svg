@@ -1,0 +1,5 @@
+<!-- Ostrich Drawer: the top bar with a site's panel dropped down from it (accent). -->
+<rect x="28" y="32" width="72" height="13" rx="6.5" fill="{{glyph}}"/>
+<circle cx="77" cy="38.5" r="3" fill="{{shell_bottom}}"/>
+<rect x="54" y="51" width="46" height="46" rx="9" fill="{{accent}}"/>
+<path d="M62 64h30M62 74h22M62 84h26" stroke="{{shell_bottom}}" stroke-width="4" stroke-linecap="round" opacity="0.55"/>

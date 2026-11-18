@@ -1,0 +1,33 @@
+# tools/icons/schemes/graphite.toml: Graphite. Neutral grey glass and a grey accent: no colour.
+# The same names as palette.toml; PALETTE=this file builds with it.
+
+name = "Graphite"
+
+# The app icons
+shell_top = "#4a4a4f"
+shell_bottom = "#1e1e21"
+edge = "#ffffff"
+highlight = "#ffffff"
+glyph = "#f2f2f3"
+accent = "#c4c4c8"
+
+# Glass (tints over the blur), dark shell style, then light
+glass_bar = "rgba(18, 18, 20, 0.14)"
+glass_menu = "rgba(24, 24, 26, 0.12)"
+glass_banner = "rgba(24, 24, 26, 0.16)"
+glass_folder = "rgba(28, 28, 30, 0.24)"
+glass_border = "rgba(255, 255, 255, 0.09)"
+light_glass_menu = "rgba(248, 248, 248, 0.62)"
+light_glass_banner = "rgba(248, 248, 248, 0.66)"
+light_glass_folder = "rgba(248, 248, 248, 0.4)"
+light_glass_border = "rgba(255, 255, 255, 0.55)"
+text = "#f2f2f3"
+light_text = "#1e1e21"
+popup_solid = "rgba(30, 30, 32, 0.92)"
+solid = "#1e1e21"
+ws_empty = "rgba(255, 255, 255, 0.80)"
+
+# The desktop (ostrich theme scheme apply)
+ui_accent = "#6e6e78"
+icon_theme = "Yaru"
+wallpaper = "/usr/share/backgrounds/ubuntu-default-greyscale-wallpaper.png"

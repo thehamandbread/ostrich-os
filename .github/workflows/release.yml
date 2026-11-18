@@ -1,0 +1,47 @@
+# .github/workflows/release.yml: on a version tag, build the Rust tools and the extension zips in
+# ubuntu:26.04 and publish them, with SHA256SUMS, as a GitHub release. The installer downloads
+# these (pinned to the version in VERSION) so users don't need a Rust toolchain.
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-26.04
+    container: ubuntu:26.04
+    permissions:
+      contents: write # create the release
+      actions: read # see whether CI passed on this commit
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Install build tools (Ubuntu archive)
+        # gnome-shell provides gnome-extensions (pack); gh publishes the release
+        run: apt-get update && apt-get install -y --no-install-recommends cargo rustc pkg-config ca-certificates libgtk-4-dev libwebkitgtk-6.0-dev libadwaita-1-dev gnome-shell gh
+      - name: Check the tag matches VERSION
+        run: test "v$(cat VERSION)" = "$GITHUB_REF_NAME"
+      - name: Check CI passed on this commit
+        # A tag on a red (or still running) commit doesn't ship: re-run this job once CI is green.
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          ok=$(gh run list --repo "$GITHUB_REPOSITORY" --workflow CI --commit "$GITHUB_SHA" --json conclusion -q '[.[] | select(.conclusion == "success")] | length')
+          test "$ok" -gt 0 || { echo "CI hasn't passed on $GITHUB_SHA"; exit 1; }
+      - name: Build tools
+        working-directory: tools
+        run: cargo build --release --workspace --locked
+      - name: Build extensions
+        run: DIST="$PWD/zips" modules/gnome/extensions/build.sh
+      - name: Package
+        run: tools/package.sh tools/target/release zips out && cat out/SHA256SUMS
+      - name: Publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # no git in the container: name the repo for gh
+          gh release create "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" out/*.tar.gz out/*.shell-extension.zip out/SHA256SUMS \
+            --title "$GITHUB_REF_NAME" --notes "Built from $GITHUB_SHA in ubuntu:26.04. Verify with: sha256sum -c SHA256SUMS"

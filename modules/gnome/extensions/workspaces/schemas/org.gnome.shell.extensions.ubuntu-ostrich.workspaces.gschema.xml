@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: GPL-2.0-or-later -->
+<schemalist>
+  <schema id="org.gnome.shell.extensions.ubuntu-ostrich.workspaces"
+          path="/org/gnome/shell/extensions/ubuntu-ostrich/workspaces/">
+    <key name="smart-names" type="b"><default>true</default><summary>Give a workspace the name last used for the apps on it</summary></key>
+    <key name="names-map" type="s"><default>'{}'</default><summary>Smart-name associations: JSON {wmClass: [names]} (same format as space-bar's workspace-names-map)</summary></key>
+    <key name="active-style" type="s">
+      <choices><choice value="contrast"/><choice value="accent"/></choices>
+      <default>'accent'</default><summary>Active workspace: the accent colour, or white on the dark top bar</summary>
+    </key>
+    <key name="scroll-wrap" type="b"><default>false</default><summary>Scrolling past the last workspace wraps to the first</summary></key>
+    <key name="show-empty" type="b"><default>true</default><summary>Show workspaces with no windows (the active one always shows)</summary></key>
+    <key name="indicator-style" type="s">
+      <choices><choice value="all"/><choice value="current"/></choices>
+      <default>'all'</default><summary>Show a pill for every workspace, or only the current one</summary>
+    </key>
+    <key name="show-icons" type="b"><default>false</default><summary>Small icons of the apps on each workspace, next to its name</summary></key>
+    <key name="new-workspace" type="as"><default><![CDATA[['<Super><Alt>n']]]></default><summary>Shortcut: a new workspace</summary></key>
+    <key name="rename-workspace" type="as"><default><![CDATA[['<Super><Alt>r']]]></default><summary>Shortcut: rename the current workspace</summary></key>
+    <key name="move-workspace-left" type="as"><default><![CDATA[['<Super><Alt>Page_Up']]]></default><summary>Shortcut: move the current workspace left</summary></key>
+    <key name="move-workspace-right" type="as"><default><![CDATA[['<Super><Alt>Page_Down']]]></default><summary>Shortcut: move the current workspace right</summary></key>
+  </schema>
+</schemalist>

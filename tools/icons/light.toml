@@ -1,0 +1,10 @@
+# The light style's icons (option F): colours: one flat dark tile, a bright hue per app for the glyph. Read by export.sh over palette.toml.
+glyph = "currentColor"
+accent = "currentColor"
+shell_bottom = "#262a33"    # the tile (and the outline some glyphs cut around their dots)
+rim = "#9aa3b8"        # the thin rim that keeps the tile visible on the dark dock
+bright_store = "#9ccf95"
+bright_settings = "#9db8e6"
+bright_drawer = "#7fb2f0"
+bright_apps = "#6fd0c6"
+bright_help = "#e6bf6e"

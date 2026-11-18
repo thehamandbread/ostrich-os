@@ -1,0 +1,16 @@
+[package]
+name = "store-tui"
+description = "Terminal app store: instant search over the local Flathub catalogue, install/remove/update"
+edition.workspace = true
+license.workspace = true
+version.workspace = true
+repository.workspace = true
+
+[[bin]]
+name = "ostrich-store"
+path = "src/main.rs"
+
+[dependencies]
+store-core = { path = "../store-core" }
+ratatui = "0.29"
+crossterm = "0.28"

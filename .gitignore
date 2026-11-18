@@ -1,0 +1,55 @@
+# OS / editor
+.DS_Store
+*~
+*.swp
+.vscode/
+.idea/
+
+# Logs, backups, local state
+*.log
+*.bak
+*.bak-*
+*.orig
+*.save
+*.save.*
+.local-state/
+
+# Secrets: never commit
+.env
+.env.*
+*.pem
+*.key
+id_rsa*
+id_ed25519*
+id_ecdsa*
+known_hosts*
+authorized_keys
+.netrc
+.credentials.json
+.claude.json
+hosts.yml
+nextcloud.cfg
+*.kdbx
+
+# Claude Code machine state (portable config only is allowed)
+.claude/settings.local.json
+.claude/history.jsonl
+.claude/projects/
+.claude/sessions/
+.claude/todos/
+.claude/cache/
+.claude/shell-snapshots/
+.claude/file-history/
+
+# Rust build output
+target/
+spikes/**/Cargo.lock
+
+# Built extension zips and tool binaries
+dist/
+node_modules/
+graphify-out/
+
+# private shared notebook (CONTEXT.md is never committed)
+/CONTEXT.md
+/docs/INVENTORY.md

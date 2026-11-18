@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: MIT -->
+<!DOCTYPE policyconfig PUBLIC "-//freedesktop//DTD PolicyKit Policy Configuration 1.0//EN"
+ "http://www.freedesktop.org/standards/PolicyKit/1/policyconfig.dtd">
+<!-- One action per thing the helper does, picked by its first argument (pkexec matches exec.argv1).
+     Power and the touchscreen run without a password for the person at the machine, so the switch to
+     power saver at low battery never stops at a prompt; changing the graphics mode asks. Anything
+     else falls to pkexec's own default, which asks for an administrator. To change a default, add a
+     rule in /etc/polkit-1/rules.d/ (docs/DEFAULTS.md). -->
+<policyconfig>
+  <vendor>Ubuntu Ostrich</vendor>
+  <action id="org.ubuntu-ostrich.system-helper.power">
+    <description>Apply a power mode's hardware settings</description>
+    <message>Authentication is required to change power settings</message>
+    <defaults>
+      <allow_any>auth_admin</allow_any>
+      <allow_inactive>auth_admin</allow_inactive>
+      <allow_active>yes</allow_active>
+    </defaults>
+    <annotate key="org.freedesktop.policykit.exec.path">/usr/libexec/ubuntu-ostrich/system-helper</annotate>
+    <annotate key="org.freedesktop.policykit.exec.argv1">power</annotate>
+  </action>
+  <action id="org.ubuntu-ostrich.system-helper.touchscreen">
+    <description>Turn the touchscreen on or off</description>
+    <message>Authentication is required to turn the touchscreen on or off</message>
+    <defaults>
+      <allow_any>auth_admin</allow_any>
+      <allow_inactive>auth_admin</allow_inactive>
+      <allow_active>yes</allow_active>
+    </defaults>
+    <annotate key="org.freedesktop.policykit.exec.path">/usr/libexec/ubuntu-ostrich/system-helper</annotate>
+    <annotate key="org.freedesktop.policykit.exec.argv1">touchscreen</annotate>
+  </action>
+  <action id="org.ubuntu-ostrich.system-helper.graphics">
+    <description>Change the graphics mode</description>
+    <message>Change the graphics mode. You'll need to log out afterwards.</message>
+    <defaults>
+      <allow_any>auth_admin</allow_any>
+      <allow_inactive>auth_admin</allow_inactive>
+      <allow_active>auth_admin_keep</allow_active>
+    </defaults>
+    <annotate key="org.freedesktop.policykit.exec.path">/usr/libexec/ubuntu-ostrich/system-helper</annotate>
+    <annotate key="org.freedesktop.policykit.exec.argv1">graphics</annotate>
+  </action>
+</policyconfig>

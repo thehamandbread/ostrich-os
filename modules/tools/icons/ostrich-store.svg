@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
+  <!-- The icon for the dark style (council follow-up, owner 2026-11-06: D): a flat tinted tile, the app's hue
+       at a few percent on a pale square, the glyph in the strong hue (currentColor, ink_store in dark.toml).
+       The light style has template-light.svg; modules/tools/ostrich-icon-style swaps them. -->
+  <rect x="8" y="8" width="112" height="112" rx="28" fill="#e4ece3"/>
+  <g color="#4b6f46">
+  <path d="M50 50v-7a14 14 0 0 1 28 0v7" fill="none" stroke="currentColor" stroke-width="6" stroke-linecap="round"/>
+  <path d="M35 50h58l-3.6 41.5a7 7 0 0 1-7 6.5H45.6a7 7 0 0 1-7-6.5z" fill="currentColor"/>
+  <circle cx="50" cy="62" r="3.5" fill="#f6f7f6"/>
+  <circle cx="78" cy="62" r="3.5" fill="#f6f7f6"/>
+  </g>
+</svg>

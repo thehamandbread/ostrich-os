@@ -1,0 +1,18 @@
+# ~/.gitconfig, managed by Ubuntu Ostrich (chezmoi). Edit with: chezmoi edit ~/.gitconfig
+{{- if and .name .email }}
+[user]
+	name = {{ .name }}
+	email = {{ .email }}
+{{- end }}
+[init]
+	defaultBranch = main
+[pull]
+	ff = only
+{{- if lookPath "gh" }}
+[credential "https://github.com"]
+	helper =
+	helper = !gh auth git-credential
+[credential "https://gist.github.com"]
+	helper =
+	helper = !gh auth git-credential
+{{- end }}

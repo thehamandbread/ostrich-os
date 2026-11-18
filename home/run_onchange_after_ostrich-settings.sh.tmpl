@@ -1,0 +1,15 @@
+#!/bin/bash
+# Applies ~/.config/ubuntu-ostrich/settings.dconf whenever it changes (chezmoi runs this script
+# again when the hash below changes). The same rules as `ostrich config import`: only our own
+# sections, and never a key that holds a command.
+# settings.dconf: {{ include "dot_config/ubuntu-ostrich/settings.dconf" | sha256sum }}
+set -euo pipefail
+f="$HOME/.config/ubuntu-ostrich/settings.dconf"
+[[ -f $f ]] && command -v dconf >/dev/null 2>&1 || exit 0
+grep -qvE '^[[:space:]]*(#|$)' "$f" || exit 0 # only comments: nothing to apply
+if grep -E '^\[' "$f" | grep -qvE '^\[[a-z0-9-]+\]$' || grep -qE '^[^#]*command[^=]*=' "$f"; then
+	echo "ubuntu-ostrich: $f sets something a settings file may not (a command, or another app's settings); not applied" >&2
+	exit 0
+fi
+grep -vE '^[[:space:]]*#' "$f" | dconf load /org/gnome/shell/extensions/ubuntu-ostrich/
+echo "ubuntu-ostrich: applied $f"

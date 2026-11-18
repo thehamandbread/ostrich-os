@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: GPL-2.0-or-later -->
+<schemalist>
+  <schema id="org.gnome.shell.extensions.ubuntu-ostrich.blur"
+          path="/org/gnome/shell/extensions/ubuntu-ostrich/blur/">
+    <key name="panel" type="b"><default>true</default><summary>Blur behind the top bar (off: solid)</summary></key>
+    <key name="dock" type="b"><default>true</default><summary>Blur behind the dock (off: solid)</summary></key>
+    <key name="menus" type="b"><default>true</default><summary>Blur behind drop-down menus and quick settings (off: solid)</summary></key>
+    <key name="notifications" type="b"><default>true</default><summary>Blur behind notification banners (off: solid)</summary></key>
+    <key name="notifications-radius" type="u"><range min="1" max="150"/><default>40</default><summary>Blur strength behind notification banners (radius in pixels)</summary></key>
+    <key name="notifications-brightness" type="d"><range min="0.3" max="1.0"/><default>1.0</default><summary>Brightness of the blur behind notification banners</summary></key>
+    <key name="app-folders" type="b"><default>true</default><summary>Blur behind app folders while one is open (off: solid)</summary></key>
+    <key name="lock-screen" type="b"><default>true</default><summary>Blurred wallpaper on the lock screen, GNOME's own (off: solid palette colour)</summary></key>
+    <key name="overview" type="b"><default>true</default><summary>Blurred wallpaper behind the overview (static, computed once)</summary></key>
+    <key name="panel-radius" type="u"><range min="1" max="150"/><default>30</default><summary>Blur strength behind the top bar (radius in pixels)</summary></key>
+    <key name="panel-brightness" type="d"><range min="0.3" max="1.0"/><default>0.75</default><summary>Brightness of the blur behind the top bar</summary></key>
+    <key name="dock-radius" type="u"><range min="1" max="150"/><default>30</default><summary>Blur strength behind the dock (radius in pixels)</summary></key>
+    <key name="dock-brightness" type="d"><range min="0.3" max="1.0"/><default>0.8</default><summary>Brightness of the blur behind the dock</summary></key>
+    <key name="menus-radius" type="u"><range min="1" max="150"/><default>40</default><summary>Blur strength behind menus and quick settings (radius in pixels)</summary></key>
+    <key name="menus-brightness" type="d"><range min="0.3" max="1.0"/><default>1.0</default><summary>Brightness of the blur behind menus and quick settings</summary></key>
+    <key name="folders-radius" type="u"><range min="1" max="150"/><default>60</default><summary>Blur strength behind app folders (radius in pixels)</summary></key>
+    <key name="folders-brightness" type="d"><range min="0.3" max="1.0"/><default>1.0</default><summary>Brightness of the blur behind app folders</summary></key>
+    <key name="overview-radius" type="u"><range min="1" max="150"/><default>60</default><summary>Blur strength behind the overview (radius in pixels)</summary></key>
+    <key name="overview-brightness" type="d"><range min="0.3" max="1.0"/><default>0.7</default><summary>Brightness of the blur behind the overview</summary></key>
+    <key name="static-on-battery-saver" type="b"><default>true</default><summary>In power-saver mode, the top bar and dock blur only the wallpaper and menus, banners, folders and the overview are solid black (no live re-blur)</summary></key>
+    <key name="high-contrast" type="b"><default>false</default><summary>High contrast: every surface solid, whatever the switches above say</summary></key>
+    <key name="migrated-bms" type="b"><default>false</default><summary>Blur my Shell's settings were copied once (internal)</summary></key>
+    <key name="static-blur-on-battery" type="b"><default>false</default><summary>Experiment: on battery in any power mode, blur only the wallpaper (kept only if it saves measurable power)</summary></key>
+  </schema>
+</schemalist>

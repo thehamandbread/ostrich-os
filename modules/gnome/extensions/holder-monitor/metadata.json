@@ -1,0 +1,8 @@
+{
+  "uuid": "holder-monitor@ubuntu-ostrich",
+  "name": "Holder Monitor",
+  "description": "Treats every non-primary display as a 'holder' screen: windows parked there (Spotify, Discord, chat) are left out of Alt+Tab and the window switcher, so the switcher only cycles what's on your main monitor. Does nothing while a single display is connected.",
+  "shell-version": ["50"],
+  "url": "https://github.com/thehamandbread/ubuntu-ostrich",
+  "version": 1
+}

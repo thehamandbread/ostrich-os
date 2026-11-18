@@ -1,0 +1,27 @@
+# tools/icons/tokens.toml: Ubuntu Ostrich's sizes, in one place (the colours are in palette.toml).
+# Extension stylesheets use them as [[name]] (colours are {{name}}): build.sh and the scheme tool
+# (tools/palette) fill both. Values follow GNOME Shell 50's own theme, so our surfaces sit beside
+# the shell's own (the ostrich-design skill, references/st-css.md: data/theme/gnome-shell-sass at
+# 50.6). Change one here and rebuild; no other file holds these numbers.
+
+# Corners
+radius_item = "12px"    # a row or button inside a menu (popup menu item)
+radius_card = "16px"    # a card on its own: notification banner, our pop-out alert
+radius_menu = "20px"    # a drop-down menu
+radius_panel = "36px"   # quick settings' panel
+radius_pill = "999px"   # pills: toggles, OSDs, our now-playing pill
+
+# Space (St has no var(): these are filled in at build time)
+space_xs = "4px"        # the shell's base margin
+space_s = "6px"         # the shell's base padding; gaps inside a row
+space_m = "12px"        # between rows and groups; inside cards
+space_l = "18px"        # quick settings' padding
+
+# Targets
+target_min = "24px"     # the smallest thing to click or tap (WCAG 2.2, 2.5.8)
+
+# Sizes that follow the text size (em: St resolves it against the node's font size, so they grow
+# when the user enlarges text; fixed px stayed small beside 200 % text, council 2026-11-05)
+icon_s = "1.091em"      # an icon in a bar or a row: the shell's own panel status icon
+target_comfort = "1.64em"  # target_min at the default text size (24 px), growing with it
+target_large = "2.18em"    # a round control such as the now-playing orb: 32 px at the default text size

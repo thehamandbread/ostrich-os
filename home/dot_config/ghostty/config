@@ -1,0 +1,175 @@
+# =============================================================================
+# Ghostty configuration
+#
+# Reload after editing with Ctrl+Shift+, (no restart needed).
+# Check for mistakes with:  ghostty +validate-config
+# See only what you've changed from stock:  ghostty +show-config --default=false
+# =============================================================================
+
+
+# -----------------------------------------------------------------------------
+# Font
+# -----------------------------------------------------------------------------
+# Carried over from Ptyxis. Ubuntu Sans Mono is the only well-hinted mono face
+# installed; `fc-list :spacing=100 family` lists the alternatives.
+#
+# No Nerd Font is installed, so glyphs like powerline arrows and dev icons fall
+# back to whatever fontconfig finds (usually a tofu box). If you ever install a
+# prompt like starship, add a patched font and list it as a fallback:
+#   font-family = Ubuntu Sans Mono
+#   font-family = Symbols Nerd Font Mono
+# Repeating font-family appends fallbacks rather than replacing.
+font-family = Ubuntu Sans Mono
+font-size = 11
+
+# Ghostty draws box/line-drawing characters itself rather than using the font's,
+# so TUI borders (htop, btop, vim splits) join up perfectly at any size. That's
+# automatic, no setting required. If you ever need to nudge line spacing:
+#   adjust-cell-height = 10%
+
+
+# -----------------------------------------------------------------------------
+# Theme
+# -----------------------------------------------------------------------------
+# `light:X,dark:Y` makes Ghostty watch the GNOME color-scheme setting and swap
+# palettes live. Yours is currently 'prefer-dark', so you'll see Everforest.
+# Flip it with:  gsettings set org.gnome.desktop.interface color-scheme prefer-light
+#
+# Browse all 463 bundled themes with:  ghostty +list-themes
+#
+# Everforest Dark Hard: sage/moss accents (#a7c080 green, #83c092 cyan) over a
+# warm cream foreground on a muted grey-green ground. Worst-case accent contrast
+# is 5.8:1, and all 8 bright colors differ from their normals.
+#
+# Its bright row is DARKER than its normal row (bright red 4.8:1 vs normal
+# 5.8:1) because Everforest reuses its light-theme colors there. So bold text
+# dims slightly instead of brightening. Nothing to fix, just don't be surprised.
+#
+# The light half is the weak one: Everforest Light Med measures 4.7:1 foreground
+# and 1.8:1 on its worst accent, which is genuinely hard to read. It only ever
+# shows if you switch GNOME to prefer-light. Two ways out if you hit that:
+#   theme = Everforest Dark Hard                      # dark only, ignore GNOME
+#   theme = light:Modus Operandi Tinted,dark:Everforest Dark Hard   # 6.6:1 light
+theme = light:Everforest Light Med,dark:Everforest Dark Hard
+
+# Window decorations follow the same system preference.
+window-theme = auto
+
+# Fully opaque. If you ever want to experiment again, opacity is 0..1 and blur
+# keeps the text underneath readable — but blur is per-frame GPU work, so it's
+# the expensive half:
+#   background-opacity = 0.95
+#   background-blur = true
+
+
+# -----------------------------------------------------------------------------
+# Cursor
+# -----------------------------------------------------------------------------
+# Ghostty defaults to a filled block; this is the thin vertical bar Ptyxis used.
+# Valid values: bar, block, block_hollow, underline
+cursor-style = bar
+
+# Blink it. Left unset, Ghostty defers to whatever the running program asks for
+# (via the DECSCUSR escape sequence), which is why the cursor can look
+# inconsistent between bash, vim and a TUI. Setting it true forces blinking
+# everywhere and ignores the program's request.
+cursor-style-blink = true
+
+# Related knobs, all at their defaults:
+#   cursor-color = #a7c080     # override the theme's cursor color
+#   cursor-opacity = 1         # 0..1
+#   cursor-click-to-move = true  # alt-click moves the shell cursor to the click
+
+
+# -----------------------------------------------------------------------------
+# Window & padding
+# -----------------------------------------------------------------------------
+# Stock padding is a cramped 2px. 8 gives the text room to breathe without
+# wasting much screen.
+window-padding-x = 8
+window-padding-y = 8
+
+# Distributes any leftover pixels (from the grid not dividing evenly into the
+# window) equally on both sides instead of dumping them all on the right.
+window-padding-balance = true
+
+
+# -----------------------------------------------------------------------------
+# Scrolling
+# -----------------------------------------------------------------------------
+# How far content moves per unit of finger travel.
+#   precision = your ELAN touchpad
+#   discrete  = a plugged-in mouse wheel
+#
+# Ghostty's defaults are precision:1,discrete:3. 0.4 slows the touchpad to
+# roughly Nautilus speed. Valid range is [0.01, 10000] — nudge until it feels
+# right, this is the one number you'll actually want to tune.
+mouse-scroll-multiplier = precision:0.4,discrete:3
+
+# Ptyxis capped scrollback at 1000 lines. Ghostty's default is 10 MB of text
+# (roughly 100k+ lines) and it's stored efficiently, so leaving it alone.
+# scrollback-limit = 10000000
+
+
+# -----------------------------------------------------------------------------
+# Splits & tabs
+# -----------------------------------------------------------------------------
+# `keybind` lines ADD to Ghostty's defaults rather than replacing them. To throw
+# everything out and start clean, put `keybind = clear` above them.
+#
+# Ghostty already ships most of what you'd want here, so this section only
+# contains genuine additions. The defaults you already have, for reference:
+#
+#   ctrl+shift+e / ctrl+shift+o    new split right / down
+#   ctrl+shift+t / ctrl+shift+w    new tab / close tab
+#   ctrl+tab / ctrl+shift+tab      next / previous tab
+#   alt+1 .. alt+8, alt+9          go to tab N / last tab
+#   ctrl+shift+enter               zoom the focused split
+#   ctrl+shift+f                   search scrollback
+#   ctrl+shift+p                   command palette (searchable list of everything)
+#   ctrl+shift+, / ctrl+,          reload config / open this file
+#
+# --- Conflict with GNOME, which is why the additions below exist -------------
+#
+# Ghostty's default split navigation is ctrl+alt+arrows, but on your machine
+# GNOME has already grabbed <Control><Alt>Left/Right for switch-to-workspace.
+# The compositor wins that race, so the default binding never reaches Ghostty.
+# Plain alt+arrows is free, so use that instead.
+keybind = alt+left=goto_split:left
+keybind = alt+right=goto_split:right
+keybind = alt+up=goto_split:up
+keybind = alt+down=goto_split:down
+
+# Same story for resizing: <Control><Shift><Alt>Left/Right is GNOME's
+# move-to-workspace. Ghostty's own default of super+ctrl+shift+arrows is NOT
+# grabbed by GNOME, so it works as-is — no override needed here. Listed so you
+# don't rediscover this the hard way:
+#   super+ctrl+shift+arrows        resize focused split by 10px
+#
+# Reset all splits to equal size after you've been dragging dividers around.
+# No default binding for this one.
+keybind = ctrl+shift+equal=equalize_splits
+
+# ctrl+shift+z as an alias for split zoom, next to the other ctrl+shift verbs.
+# The stock ctrl+shift+enter still works too.
+keybind = ctrl+shift+z=toggle_split_zoom
+
+# To free up GNOME's workspace shortcuts entirely and get the stock Ghostty
+# bindings back, you can run:
+#   gsettings set org.gnome.desktop.wm.keybindings switch-to-workspace-left "['<Super>Page_Up']"
+#   gsettings set org.gnome.desktop.wm.keybindings switch-to-workspace-right "['<Super>Page_Down']"
+
+
+# -----------------------------------------------------------------------------
+# Quality-of-life defaults worth knowing you have
+# -----------------------------------------------------------------------------
+# These are all already Ghostty's defaults; listed commented-out so you know
+# the knob exists when you eventually want it.
+#
+# copy-on-select = true        # selecting text copies it (X11 primary + clipboard)
+# confirm-close-surface = true # prompts before closing a pane with a running process
+# clipboard-paste-protection = true  # warns on pasting text containing newlines
+
+# Hide the mouse pointer while you type so it stops covering the text under it.
+# Off by default; this is the one non-default addition in this section.
+mouse-hide-while-typing = true

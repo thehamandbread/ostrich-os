@@ -1,0 +1,10 @@
+{
+  "uuid": "tiling@ubuntu-ostrich",
+  "name": "Tiling",
+  "description": "Half and quarter tiling by keyboard (Super+arrows, Super+keypad) or by dragging a window to a screen edge or corner. Offers windows to fill the rest of the screen, keeps tiled windows together and resizes neighbours with them. Optional focus outline.",
+  "shell-version": ["50"],
+  "session-modes": ["user", "unlock-dialog"],
+  "settings-schema": "org.gnome.shell.extensions.ubuntu-ostrich.tiling",
+  "url": "https://github.com/thehamandbread/ubuntu-ostrich",
+  "version": 1
+}

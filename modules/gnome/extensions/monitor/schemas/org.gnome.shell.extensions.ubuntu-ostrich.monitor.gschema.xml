@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: GPL-2.0-or-later -->
+<schemalist>
+  <schema id="org.gnome.shell.extensions.ubuntu-ostrich.monitor"
+          path="/org/gnome/shell/extensions/ubuntu-ostrich/monitor/">
+    <key name="panel-items" type="as">
+      <default>['cpu.usage', 'mem.usage', 'temp.package', 'gpu.state']</default>
+      <summary>Values pinned to the top bar, in order (row ids from the popup: cpu.usage, net.down, fan.dell-smm-processor-fan, ...)</summary>
+    </key>
+    <key name="hide-zeros" type="b"><default>false</default><summary>Leave out readings that are zero (idle fans, no traffic) in the popup and the top bar</summary></key>
+    <key name="sections-open" type="as"><default>['default']</default><summary>The popup's sections you left open, so they stay as you left them: 'default' until you open or fold one (then Processor, Memory, Network and Battery or Storage start open)</summary></key>
+    <key name="section-rows" type="u"><range min="3" max="40"/><default>6</default><summary>Rows an open section of the popup shows before it scrolls (6 is Compact, 12 is Tall in Settings)</summary></key>
+    <key name="interval-ac" type="u"><range min="1" max="60"/><default>2</default><summary>Seconds between updates on AC power</summary></key>
+    <key name="interval-battery" type="u"><range min="1" max="120"/><default>5</default><summary>Seconds between updates on battery</summary></key>
+    <key name="interval-saver" type="u"><range min="1" max="300"/><default>10</default><summary>In power saver nothing is shown; seconds between the memory checks that still run</summary></key>
+    <key name="auto-saver-percent" type="u"><range min="0" max="50"/><default>20</default><summary>On battery, switch to power saver at or below this charge (0 = never); back to the previous mode when plugged in</summary></key>
+    <key name="auto-saver-from" type="s"><default>''</default><summary>The mode the low-battery rule switched away from (internal)</summary></key>
+    <key name="memory-warning" type="b"><default>true</default><summary>Warn once when memory and swap are 85 % full, naming the app using the most</summary></key>
+    <key name="saver-desktop" type="b"><default>true</default><summary>In power saver, also dim the screen sooner</summary></key>
+    <key name="saved-desktop" type="s"><default>''</default><summary>Desktop settings from before power saver, put back when it ends (internal)</summary></key>
+    <key name="panel-box" type="s">
+      <choices><choice value="left"/><choice value="center"/><choice value="right"/></choices>
+      <default>'left'</default><summary>Top bar section for the readouts</summary>
+    </key>
+  </schema>
+</schemalist>

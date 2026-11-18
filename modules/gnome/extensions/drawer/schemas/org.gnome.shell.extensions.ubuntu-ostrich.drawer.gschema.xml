@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: GPL-2.0-or-later -->
+<schemalist>
+  <schema id="org.gnome.shell.extensions.ubuntu-ostrich.drawer"
+          path="/org/gnome/shell/extensions/ubuntu-ostrich/drawer/">
+    <key name="toggle-drawer" type="as"><default><![CDATA[['<Super><Alt>d']]]></default><summary>Keyboard shortcut to show or hide the drawer</summary></key>
+    <key name="position" type="s">
+      <choices><choice value="under-icon"/><choice value="top-center"/><choice value="top-left"/><choice value="top-right"/></choices>
+      <default>'under-icon'</default><summary>Where the drawer drops down: under the site's top-bar icon, top centre, or the top-left or top-right corner</summary>
+    </key>
+    <key name="width" type="u"><range min="20" max="100"/><default>50</default><summary>Width of wide sites (AI, mail, video), in percent of the screen, until resized</summary></key>
+    <key name="height" type="u"><range min="20" max="100"/><default>60</default><summary>Height of wide sites, in percent of the screen below the top bar, until resized</summary></key>
+    <key name="bar-max" type="u"><range min="0" max="12"/><default>4</default><summary>How many site icons the top bar shows; the rest are in its ⌄ menu</summary></key>
+    <key name="open-on-hover" type="b"><default>true</default><summary>Open a site by resting the pointer on its top-bar icon</summary></key>
+    <key name="hover-delay-ms" type="u"><range min="100" max="2000"/><default>500</default><summary>How long the pointer rests (without moving) on an icon before its site opens, in milliseconds</summary></key>
+    <key name="hover-switch-ms" type="u"><range min="0" max="2000"/><default>250</default><summary>With a site open, how long the pointer rests on another icon before that site takes its place, in milliseconds</summary></key>
+    <key name="hide-on-focus-loss" type="b"><default>true</default><summary>Hide the drawer when another window gets focus (a click outside it)</summary></key>
+    <key name="host-command" type="s">
+      <default>'ostrich-drawer'</default><summary>The drawer app, started on first use if it isn't running</summary>
+    </key>
+  </schema>
+</schemalist>

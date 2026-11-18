@@ -1,0 +1,12 @@
+[package]
+name = "drawer-host-spike"
+version = "0.0.0"
+edition = "2021"
+license = "MIT"
+publish = false
+description = "Throwaway spike: web apps in WebKitGTK with per-service sessions and per-app notifications"
+
+[dependencies]
+# Ubuntu 26.04 ships GTK 4.22 and WebKitGTK 2.52; older API gates hide types webkit6 needs.
+gtk = { package = "gtk4", version = "0.11", features = ["v4_18"] }
+webkit6 = { version = "0.6", features = ["v2_48"] }

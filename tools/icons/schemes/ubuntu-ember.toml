@@ -1,0 +1,35 @@
+# tools/icons/schemes/ubuntu-ember.toml: Ubuntu Ember, one of the council's three colour schemes (verdict
+# 2026-10-24, option B). The same names as palette.toml; PALETTE=this file builds with it.
+
+name = "Ubuntu Ember"
+
+# The app icons
+shell_top = "#4f4a46"
+shell_bottom = "#24211f"
+edge = "#ffffff"
+highlight = "#ffffff"
+glyph = "#f7f3ef"
+accent = "#ff9a4d" # the icons' accent part
+
+# Glass (tints over the blur), dark shell style, then light
+glass_bar = "rgba(24, 20, 18, 0.14)"
+glass_menu = "rgba(32, 26, 22, 0.12)"
+glass_banner = "rgba(32, 26, 22, 0.16)"
+glass_folder = "rgba(36, 30, 26, 0.24)"
+glass_border = "rgba(255, 255, 255, 0.09)"
+light_glass_menu = "rgba(252, 249, 246, 0.62)"
+light_glass_banner = "rgba(252, 249, 246, 0.66)"
+light_glass_folder = "rgba(252, 249, 246, 0.4)"
+light_glass_border = "rgba(255, 255, 255, 0.55)"
+text = "#f7f3ef"
+light_text = "#2a2420"
+popup_solid = "rgba(34, 30, 27, 0.92)"
+solid = "#221e1b"
+ws_empty = "rgba(255, 255, 255, 0.80)"
+
+# The desktop (ostrich theme scheme apply)
+ui_accent = "#ed5b00" # the apps' and GNOME's accent
+icon_theme = "Yaru" # -dark is added in dark mode
+
+# Wallpaper: Ubuntu's own, already installed (both modes)
+wallpaper = "/usr/share/backgrounds/mendhak-Red_Acer.jpg"

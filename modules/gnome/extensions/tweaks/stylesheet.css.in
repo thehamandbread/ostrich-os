@@ -1,0 +1,66 @@
+/* SPDX-License-Identifier: GPL-2.0-or-later */
+/* Today in the clock menu: one fixed size, split between the notification list and this column (GNOME's
+   list is 29em wide, so large text pushed the column out of the menu; the column's cards scroll inside
+   it instead). The size is the owner's (680 x 460 px, note 20261024-194146) written in em at the default
+   text size (14.67 px), so it is the same at 1x and grows with enlarged text; in px the date and the
+   "Add World Clocks" button were cut off at 200 % (council 2026-11-05, test T3). The computer card is
+   our own (not GNOME's events-button): a title, a large lead line, plain rows, and a link to the monitor.
+   shortcut: nothing caps it to the screen, so at large text on a small display it can be taller than
+   the screen; cap it from the monitor's size in today.js if that is reported. */
+.ost-today-menu { width: 46.36em; height: 31.36em; }
+.ost-today-menu .message-list { width: 24em; }
+.ost-today-column { width: 19.77em; }
+.ost-today-card { border-radius: 14px; background-color: rgba(127, 127, 127, 0.1); padding: [[space_s]]; spacing: 2px; }
+.ost-today-body { border-radius: 9px; padding: [[space_s]] 8px; text-align: left; }
+.ost-today-body:hover, .ost-today-body:focus { background-color: rgba(127, 127, 127, 0.15); }
+.ost-today-title { font-weight: bold; }
+.ost-today-lead { font-size: 1.3em; font-weight: bold; padding-top: [[space_xs]]; font-feature-settings: "tnum"; }
+.ost-today-lines { spacing: 2px; padding-top: [[space_xs]]; }
+.ost-today-line { font-feature-settings: "tnum"; }
+.ost-today-link { border-radius: 9px; padding: [[space_xs]] 8px; font-weight: bold; } /* the text colour: an accent like slate was too dim to read */
+.ost-today-link:hover, .ost-today-link:focus { background-color: rgba(127, 127, 127, 0.15); }
+/* The now-playing pill (nowplaying.js): its drop-down's track and controls, 24 px or more to hit. */
+.ost-now-playing-title { font-weight: bold; }
+/* The pill: a bubble like the clock's, beside it (it floats above the bar, so it's styled here). */
+.ost-now-playing {
+  background-color: rgba(255, 255, 255, 0.12);
+  color: {{text}};
+  border-radius: 99px;
+  padding: 2px [[space_m]];
+  font-size: 0.9em;
+  font-weight: bold;
+}
+.ost-now-playing:hover, .ost-now-playing:checked { background-color: rgba(255, 255, 255, 0.2); }
+.ost-now-playing .panel-status-menu-box { spacing: [[space_s]]; }
+.ost-now-playing-controls { spacing: [[space_m]]; }
+.ost-now-playing-button { /* token-lint: allow a theme `button`: the shell's focus ring applies */ min-width: [[target_large]]; min-height: [[target_large]]; padding: [[space_xs]]; border-radius: [[radius_card]]; }
+/* Lit quick-settings tiles: white text on Ubuntu's accents is 4.51-4.58:1, a bare pass that small
+   anti-aliased labels miss (council 2026-11-09, tests 4 and 9). The accent darkened to 94 % (98 % on
+   hover) gives every one of the nine 5:1 (4.65:1 on hover) and still reads as the accent. */
+.quick-settings .quick-toggle:checked,
+.quick-settings .quick-toggle-has-menu .quick-toggle-menu-button:checked { background-color: st-mix(-st-accent-color, #000000, 94%); } /* token-lint: allow a mix of the live accent, not a fixed colour */
+.quick-settings .quick-toggle:checked:hover,
+.quick-settings .quick-toggle:checked:focus,
+.quick-settings .quick-toggle-has-menu .quick-toggle-menu-button:checked:hover { background-color: st-mix(-st-accent-color, #000000, 98%); } /* token-lint: allow a mix of the live accent, not a fixed colour */
+.quick-settings .quick-toggle:checked:active,
+.quick-settings .quick-toggle-has-menu .quick-toggle-menu-button:checked:active { background-color: st-mix(-st-accent-color, #000000, 90%); } /* token-lint: allow a mix of the live accent, not a fixed colour */
+/* A lit tile's subtitle ("Power Saver") is white at regular weight, so thin at 0.818em that no pixel
+   reaches white over the fill: it read 4.1:1. Medium weight, as Yaru's titles, draws solid strokes. */
+.quick-settings .quick-toggle:checked .quick-toggle-subtitle { font-weight: 500; }
+/* The power row (powerrow.js): three equal segments as tall as a quick-settings tile; the lit one
+   takes the same darkened accent as lit tiles (above), so its text keeps 4.5:1. */
+.ost-power-row { spacing: [[space_s]]; }
+.ost-power-segment { min-height: 3em; border-radius: [[radius_item]]; padding: 0 [[space_s]]; background-color: rgba(127, 127, 127, 0.18); }
+.ost-power-segment:hover { background-color: rgba(127, 127, 127, 0.28); }
+.ost-power-segment:focus { box-shadow: inset 0 0 0 2px {{text}}; }
+.ost-power-segment:checked { background-color: st-mix(-st-accent-color, #000000, 94%); color: #ffffff; font-weight: bold; } /* token-lint: allow a mix of the live accent; white as on GNOME's lit tiles */
+.ost-power-segment-box { spacing: [[space_s]]; }
+.ost-power-segment-icon { icon-size: 16px; } /* token-lint: allow a symbolic icon's size */
+/* The clock menu's Do Not Disturb and Focus switches (quiet.js): full width, at least a comfortable
+   target, On or Off in text; the lit row takes the same darkened accent as lit quick-settings tiles. */
+.ost-quiet { spacing: [[space_s]]; padding-bottom: [[space_m]]; }
+.ost-quiet-row { min-height: [[target_comfort]]; padding: [[space_s]] [[space_m]]; border-radius: [[radius_item]]; background-color: rgba(127, 127, 127, 0.18); }
+.ost-quiet-row:hover { background-color: rgba(127, 127, 127, 0.28); }
+.ost-quiet-row:focus { box-shadow: inset 0 0 0 2px {{text}}; }
+.ost-quiet-row:checked { background-color: st-mix(-st-accent-color, #000000, 94%); color: #ffffff; } /* token-lint: allow a mix of the live accent; white as on GNOME's lit tiles */
+.ost-quiet-state { font-weight: bold; }

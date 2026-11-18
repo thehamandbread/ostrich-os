@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+# chezmoi modify script: keep the user's ~/.bashrc and add one line that sources our additions.
+set -euo pipefail
+line='[ -f "$HOME/.config/ubuntu-ostrich/bashrc.sh" ] && . "$HOME/.config/ubuntu-ostrich/bashrc.sh"'
+content=$(cat)
+printf '%s\n' "$content"
+grep -qxF "$line" <<<"$content" || printf '\n# Ubuntu Ostrich\n%s\n' "$line"

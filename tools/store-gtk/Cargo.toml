@@ -1,0 +1,19 @@
+[package]
+name = "store-gtk"
+description = "Ostrich Store: the app store window (Flathub search, app pages, installs and updates, GitHub links)"
+edition.workspace = true
+license.workspace = true
+version.workspace = true
+repository.workspace = true
+
+[[bin]]
+name = "ostrich-store-gtk"
+path = "src/main.rs"
+
+[dependencies]
+store-core = { path = "../store-core" }
+# The recommended apps, shared with Ostrich Settings.
+welcome = { path = "../welcome" }
+# Ubuntu 26.04 ships GTK 4.22 and libadwaita 1.9.
+gtk = { package = "gtk4", version = "0.11", features = ["v4_18"] }
+adw = { package = "libadwaita", version = "0.9", features = ["v1_8"] }

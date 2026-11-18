@@ -1,0 +1,11 @@
+{
+  "uuid": "drawer@ubuntu-ostrich",
+  "name": "Ostrich Drawer",
+  "description": "Web apps in the top bar: each site (messaging, AI chat, mail, video, any site) has an icon with an unread badge; click or hover to drop it down under the icon, at its own size. Super+Alt+D toggles it. Keeps the drawer above other windows and out of the dock and Alt+Tab.",
+  "shell-version": [
+    "50"
+  ],
+  "settings-schema": "org.gnome.shell.extensions.ubuntu-ostrich.drawer",
+  "url": "https://github.com/thehamandbread/ubuntu-ostrich",
+  "version": 1
+}

@@ -1,0 +1,7 @@
+[Desktop Entry]
+Type=Application
+Name=Finish Ubuntu Ostrich setup
+Comment=Runs once, at the first login after installing from the Ubuntu Ostrich image
+Exec=/opt/ubuntu-ostrich/firstboot/start.sh
+NoDisplay=true
+X-GNOME-Autostart-enabled=true

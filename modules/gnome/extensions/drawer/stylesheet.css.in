@@ -1,0 +1,37 @@
+/* SPDX-License-Identifier: GPL-2.0-or-later */
+/* Ostrich Drawer's top-bar icons: the stock panel button, plus an unread badge and a loaded dot. */
+.ost-drawer-badge {
+  background-color: -st-accent-color;
+  color: -st-accent-fg-color;
+  border-radius: 7px;
+  padding: 0 3px;
+  font-size: 7.5pt;
+  font-weight: bold;
+}
+
+/* Playing sound: a speaker in the icon's corner, on the accent with a dark ring, so it reads over
+   any favicon and any bar colour. */
+.ost-drawer-playing {
+  icon-size: 11px;
+  padding: 2px;
+  border-radius: 99px;
+  color: -st-accent-fg-color;
+  background-color: -st-accent-color;
+  border: 1px solid rgba(0, 0, 0, 0.55);
+  margin: 0 -4px -2px 0;
+}
+
+.ost-drawer-dot {
+  width: 3px;
+  height: 3px;
+  border-radius: 2px;
+  background-color: rgba(255, 255, 255, 0.75);
+}
+
+.ost-drawer-add-entry {
+  min-width: 280px;
+}
+
+/* The open site's icon: one steady highlight while its drawer is down. */
+.ost-drawer-site:checked { background-color: rgba(255, 255, 255, 0.16); }
+.ost-drawer-add-status { padding: 2px 16px [[space_s]] 16px; }

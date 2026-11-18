@@ -1,0 +1,8 @@
+{
+  "uuid": "tray@ubuntu-ostrich",
+  "name": "Tray",
+  "description": "Tray icons (StatusNotifierItem / AppIndicator) in the top bar. Menus are fetched only when opened; icons go away when their app quits. Nothing polls.",
+  "shell-version": ["50"],
+  "url": "https://github.com/thehamandbread/ubuntu-ostrich",
+  "version": 1
+}

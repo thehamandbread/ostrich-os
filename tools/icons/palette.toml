@@ -1,0 +1,34 @@
+# tools/icons/palette.toml: Ubuntu Ostrich's colours, in one place. export.sh fills the app icons
+# (template.svg and the glyphs) with the #rrggbb ones; modules/gnome/extensions/build.sh fills the
+# extensions' stylesheet.css.in with all of them. Change a colour here, run both, and everything
+# follows. It is also the "Classic" scheme (`ostrich theme scheme`): the colours without one. The
+# others are in schemes/; PALETTE=schemes/NAME.toml builds with one of them.
+
+name = "Classic"
+
+# The app icons
+shell_top = "#4a5468"     # the glass square, lit from the top...
+shell_bottom = "#1f2430"  # ...darkening to the bottom
+edge = "#ffffff"          # the thin rim (drawn at low opacity, so it shows on dark docks)
+highlight = "#ffffff"     # the top-edge highlight
+glyph = "#f4f6fa"         # the glyph's main colour
+accent = "#f2a541"        # the Ostrich accent: one part of each glyph
+
+# Glass (a tint over the blur; keep it light: the owner's setup kept 93 % of the brightness behind)
+glass_bar = "rgba(0, 0, 0, 0.12)"
+glass_menu = "rgba(30, 30, 30, 0.10)"
+glass_banner = "rgba(36, 36, 38, 0.14)"
+glass_folder = "rgba(40, 40, 44, 0.24)"
+glass_border = "rgba(255, 255, 255, 0.09)"
+light_glass_menu = "rgba(250, 250, 250, 0.62)"
+light_glass_banner = "rgba(250, 250, 250, 0.66)"
+light_glass_folder = "rgba(250, 250, 250, 0.4)"
+light_glass_border = "rgba(255, 255, 255, 0.55)"
+# Text on the glass, where the theme would dim it below 4.5:1 ("No Notifications")
+text = "#ffffff"
+light_text = "#1f2430"
+# Solid surfaces (window previews, the tiling list): no blur behind them
+popup_solid = "rgba(30, 30, 30, 0.92)"
+solid = "#1d1d20"
+# Empty workspaces in the top bar: dimmer than the others, still 4.5:1 or better
+ws_empty = "rgba(255, 255, 255, 0.80)"

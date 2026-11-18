@@ -1,0 +1,69 @@
+# Recommended apps offered in the welcome wizard (step "App store"): Flathub IDs, names and a
+# one-line description. `snap = true`: a snap name instead, opened in App Center (Spotify's only
+# official Linux app is its verified snap; Flathub's is unofficial). Nothing is pre-selected. "Start here" is what most people want on day one
+# (council verdict 2026-10-24, S6): a player first, since a fresh Ubuntu opens no video or music file
+# (readiness council 2026-10-31, S5; a Flathub VLC becomes the default for both by itself).
+
+[[category]]
+name = "Start here"
+apps = [
+  { id = "org.libreoffice.LibreOffice", name = "LibreOffice", about = "Documents, spreadsheets and slides; opens Word and Excel files" },
+  { id = "org.mozilla.thunderbird", name = "Thunderbird", about = "Email and calendars from any provider" },
+  { id = "org.videolan.VLC", name = "VLC", about = "Plays any video or music file" },
+  { id = "org.gnome.SimpleScan", name = "Document Scanner", about = "Scan letters and photos to PDF or images" },
+  { id = "com.valvesoftware.Steam", name = "Steam", about = "Games, including many Windows games" },
+  { id = "com.discordapp.Discord", name = "Discord", about = "Voice and text chat" },
+]
+
+[[category]]
+name = "Browsers"
+apps = [
+  { id = "app.zen_browser.zen", name = "Zen Browser", about = "A calm, Firefox-based browser with vertical tabs" },
+  { id = "org.mozilla.firefox", name = "Firefox", about = "The open web browser" },
+  { id = "com.google.Chrome", name = "Google Chrome", about = "Google's browser, for sites that need it" },
+]
+
+[[category]]
+name = "Media"
+apps = [
+  { id = "spotify", snap = true, name = "Spotify", about = "Music and podcasts; the official app, from App Center" },
+  { id = "io.bassi.Amberol", name = "Amberol", about = "Plays the music files on your computer" },
+  { id = "com.obsproject.Studio", name = "OBS Studio", about = "Record or stream your screen" },
+  { id = "fr.handbrake.ghb", name = "HandBrake", about = "Convert and shrink videos" },
+]
+
+[[category]]
+name = "Graphics and 3D"
+apps = [
+  { id = "org.gnome.Shotwell", name = "Shotwell", about = "Import and organise photos from your phone or camera" },
+  { id = "org.gimp.GIMP", name = "GIMP", about = "Edit photos and images" },
+  { id = "org.inkscape.Inkscape", name = "Inkscape", about = "Draw vector graphics and logos" },
+  { id = "org.blender.Blender", name = "Blender", about = "3D modelling, animation and video editing" },
+]
+
+[[category]]
+name = "Office and notes"
+apps = [
+  { id = "md.obsidian.Obsidian", name = "Obsidian", about = "Notes that link together" },
+]
+
+[[category]]
+name = "Development"
+apps = [
+  { id = "com.visualstudio.code", name = "Visual Studio Code", about = "A code editor" },
+  { id = "org.gnome.Boxes", name = "Boxes (virtual machines)", about = "Run other systems in a window" },
+]
+
+[[category]]
+name = "Utilities"
+apps = [
+  { id = "com.github.tchx84.Flatseal", name = "Flatseal (app permissions)", about = "See and change what each app may access" },
+  { id = "io.missioncenter.MissionCenter", name = "Mission Center (system monitor)", about = "What's using your CPU, memory and graphics" },
+  { id = "org.localsend.localsend_app", name = "LocalSend (share files nearby)", about = "Send files to phones and computers nearby" },
+]
+
+[[category]]
+name = "Chat"
+apps = [
+  { id = "org.signal.Signal", name = "Signal", about = "Private messaging" },
+]

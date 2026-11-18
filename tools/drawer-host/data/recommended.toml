@@ -1,0 +1,179 @@
+# Recommended sites for Ostrich Drawer, offered by its + button and in Ostrich Settings.
+# Each one is checked in the test VM (tests/vm/drawer-test.sh --sites). No icons here: favicons are
+# fetched from the site the first time it loads.
+#
+#   group       messaging | ai | mail | media
+#   shape       narrow (phone-like) | wide
+#   keep_alive  stays loaded so it can notify
+#   status      ok | drm (needs DRM video, which WebKitGTK can't play: listed, not added; opened in
+#               its app or the browser instead)
+#   app         a DRM site's own app, as a snap name (flatpak: its Flatpak id): opened instead
+#   user_agent  only where a site turns WebKit's own user agent away
+
+[[site]]
+id = "messages"
+name = "Google Messages"
+url = "https://messages.google.com/web"
+group = "messaging"
+shape = "narrow"
+keep_alive = true
+
+[[site]]
+id = "chat"
+name = "Google Chat"
+url = "https://chat.google.com"
+group = "messaging"
+shape = "narrow"
+keep_alive = true
+
+[[site]]
+id = "whatsapp"
+name = "WhatsApp"
+url = "https://web.whatsapp.com"
+group = "messaging"
+shape = "narrow"
+keep_alive = true
+
+[[site]]
+id = "messenger"
+name = "Messenger"
+url = "https://www.messenger.com"
+group = "messaging"
+shape = "narrow"
+keep_alive = true
+
+[[site]]
+id = "discord"
+name = "Discord"
+url = "https://discord.com/app"
+group = "messaging"
+shape = "narrow"
+keep_alive = true
+
+[[site]]
+id = "slack"
+name = "Slack"
+url = "https://app.slack.com/client"
+group = "messaging"
+shape = "narrow"
+keep_alive = true
+
+[[site]]
+id = "telegram"
+name = "Telegram"
+url = "https://web.telegram.org/a/"
+group = "messaging"
+shape = "narrow"
+keep_alive = true
+
+[[site]]
+id = "teams"
+name = "Microsoft Teams"
+url = "https://teams.microsoft.com"
+group = "messaging"
+shape = "narrow"
+keep_alive = true
+
+[[site]]
+id = "claude"
+name = "Claude"
+url = "https://claude.ai"
+group = "ai"
+
+[[site]]
+id = "chatgpt"
+name = "ChatGPT"
+url = "https://chatgpt.com"
+group = "ai"
+
+[[site]]
+id = "gemini"
+name = "Gemini"
+url = "https://gemini.google.com"
+group = "ai"
+
+[[site]]
+id = "gmail"
+name = "Gmail"
+url = "https://mail.google.com"
+group = "mail"
+keep_alive = true
+
+[[site]]
+id = "calendar"
+name = "Google Calendar"
+url = "https://calendar.google.com"
+group = "mail"
+
+[[site]]
+id = "outlook"
+name = "Outlook"
+url = "https://outlook.live.com/mail/"
+group = "mail"
+keep_alive = true
+
+[[site]]
+id = "youtube"
+name = "YouTube"
+url = "https://www.youtube.com"
+group = "media"
+
+[[site]]
+id = "youtube-music"
+name = "YouTube Music"
+url = "https://music.youtube.com"
+group = "media"
+
+[[site]]
+id = "keep"
+name = "Google Keep"
+url = "https://keep.google.com"
+group = "media"
+
+[[site]]
+id = "notion"
+name = "Notion"
+url = "https://www.notion.so"
+group = "media"
+
+[[site]]
+id = "todoist"
+name = "Todoist"
+url = "https://app.todoist.com"
+group = "media"
+
+[[site]]
+id = "translate"
+name = "Google Translate"
+url = "https://translate.google.com"
+group = "media"
+
+[[site]]
+id = "spotify"
+name = "Spotify"
+url = "https://open.spotify.com"
+group = "media"
+status = "drm"
+app = "spotify"            # Spotify's own snap; opened instead of the web player
+flatpak = "com.spotify.Client" # unofficial build on Flathub, if that is the one installed
+
+[[site]]
+id = "netflix"
+name = "Netflix"
+url = "https://www.netflix.com"
+group = "media"
+status = "drm"
+
+[[site]]
+id = "disney-plus"
+name = "Disney+"
+url = "https://www.disneyplus.com"
+group = "media"
+status = "drm"
+
+[[site]]
+id = "prime-video"
+name = "Prime Video"
+url = "https://www.primevideo.com"
+group = "media"
+status = "drm"

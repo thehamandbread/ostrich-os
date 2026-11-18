@@ -1,0 +1,17 @@
+[package]
+name = "palette"
+description = "Theme accents from the wallpaper: GTK 4/3 CSS, Ghostty theme, palette.json, nearest GNOME accent"
+edition.workspace = true
+license.workspace = true
+version.workspace = true
+repository.workspace = true
+
+[[bin]]
+name = "ostrich-theme"
+path = "src/main.rs"
+
+[dependencies]
+# Only the decoders GNOME wallpapers use; no default features.
+image = { version = "0.25", default-features = false, features = ["png", "jpeg", "webp"] }
+# GNOME 50 ships its wallpapers as JPEG XL, which `image` can't decode.
+jxl-oxide = { version = "0.12", default-features = false, features = ["image"] }

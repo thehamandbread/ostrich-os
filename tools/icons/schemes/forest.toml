@@ -1,0 +1,38 @@
+# tools/icons/schemes/forest.toml: Forest. Sage green with Yaru's sage folders, over a drawn deep-green wallpaper.
+# The same names as palette.toml; PALETTE=this file builds with it.
+
+name = "Forest"
+
+# The app icons
+shell_top = "#46594c"
+shell_bottom = "#1b241e"
+edge = "#ffffff"
+highlight = "#ffffff"
+glyph = "#f1f5f1"
+accent = "#a8c9a8"
+
+# Glass (tints over the blur), dark shell style, then light
+glass_bar = "rgba(14, 22, 16, 0.14)"
+glass_menu = "rgba(18, 28, 20, 0.12)"
+glass_banner = "rgba(18, 28, 20, 0.16)"
+glass_folder = "rgba(22, 32, 24, 0.24)"
+glass_border = "rgba(255, 255, 255, 0.09)"
+light_glass_menu = "rgba(245, 249, 245, 0.62)"
+light_glass_banner = "rgba(245, 249, 245, 0.66)"
+light_glass_folder = "rgba(245, 249, 245, 0.4)"
+light_glass_border = "rgba(255, 255, 255, 0.55)"
+text = "#f1f5f1"
+light_text = "#1b241e"
+popup_solid = "rgba(26, 34, 28, 0.92)"
+solid = "#1a221c"
+ws_empty = "rgba(255, 255, 255, 0.80)"
+
+# The desktop (ostrich theme scheme apply)
+ui_accent = "#4e7d5b"
+icon_theme = "Yaru-sage"
+wall_top = "#24382b"
+wall_bottom = "#0c140f"
+wall_bloom = "#5f8f6a"
+wall_bloom_warm = "#8a8a5c"
+wall_light_top = "#33503d"
+wall_light_bottom = "#dde8df"

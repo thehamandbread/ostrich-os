@@ -1,0 +1,4 @@
+<!-- Help: a question mark (accent) in a ring. -->
+<circle cx="64" cy="64" r="29" fill="none" stroke="{{glyph}}" stroke-width="6"/>
+<path d="M54 52a10 10 0 1 1 14 9.2c-2.6 1.1-4 3.3-4 6.1V71" fill="none" stroke="{{accent}}" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="64" cy="81" r="4" fill="{{accent}}"/>

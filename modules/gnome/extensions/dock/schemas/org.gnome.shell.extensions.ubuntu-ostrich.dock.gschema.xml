@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: GPL-2.0-or-later -->
+<schemalist>
+  <schema id="org.gnome.shell.extensions.ubuntu-ostrich.dock"
+          path="/org/gnome/shell/extensions/ubuntu-ostrich/dock/">
+    <key name="icon-size" type="u">
+      <range min="16" max="64"/>
+      <default>40</default><summary>Icon size in pixels</summary>
+    </key>
+    <key name="autohide" type="b"><default>true</default><summary>Hide the dock until the pointer pushes against the bottom edge</summary></key>
+    <key name="intellihide" type="b"><default>true</default><summary>While auto-hiding, stay visible as long as no window overlaps the dock</summary></key>
+    <key name="hide-delay" type="u"><range min="0" max="3000"/><default>400</default><summary>Milliseconds before hiding once the pointer leaves</summary></key>
+    <key name="pressure-threshold" type="u"><range min="0" max="1000"/><default>100</default><summary>How hard to push against the bottom edge to show the dock (pixels of pointer travel)</summary></key>
+    <key name="background" type="s">
+      <choices><choice value="theme"/><choice value="palette"/><choice value="custom"/></choices>
+      <default>'theme'</default><summary>Background colour: black or white from the colour scheme, the palette accent, or background-color</summary>
+    </key>
+    <key name="background-color" type="s"><default>'#3c3c3c'</default><summary>The dock's own colour (#rrggbb) when background is custom (carried over from Dash to Dock)</summary></key>
+    <key name="background-opacity" type="d"><range min="0.0" max="1.0"/><default>0.6</default><summary>Background opacity</summary></key>
+    <key name="click-action" type="s">
+      <choices><choice value="focus-or-minimize"/><choice value="focus-or-cycle"/><choice value="focus"/></choices>
+      <default>'focus-or-minimize'</default><summary>Clicking a running app's icon: switch to it, and when it's already in front, minimize it (one window) or go to its next window (several)</summary>
+    </key>
+    <key name="indicator" type="s">
+      <choices><choice value="dots"/><choice value="dot"/><choice value="none"/></choices>
+      <default>'dots'</default><summary>Running indicator: one dot per window (up to 4), a single dot, or none</summary>
+    </key>
+    <key name="previews" type="b"><default>true</default><summary>Show the app's windows above its icon after hovering over it</summary></key>
+    <key name="badges" type="b"><default>true</default><summary>Show apps' unread counts and progress on their icons (the Unity launcher API Firefox, Thunderbird and Telegram use)</summary></key>
+    <key name="show-apps-at-start" type="b"><default>false</default><summary>Put the Show Apps button at the start of the dock instead of the end</summary></key>
+    <key name="monitor" type="i"><range min="-1" max="8"/><default>-1</default><summary>Which monitor the dock is on (-1: the primary one)</summary></key>
+    <key name="edge-gap" type="u"><range min="0" max="40"/><default>8</default><summary>Gap between the dock and the bottom edge, in pixels (a floating dock)</summary></key>
+    <key name="hidden-app-prefixes" type="as">
+      <default>['ubuntu_ostrich.drawer']</default><summary>App IDs starting with these are never shown as running in the dock (the web-app drawer)</summary>
+    </key>
+  </schema>
+</schemalist>

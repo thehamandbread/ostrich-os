@@ -1,0 +1,14 @@
+# The dark style's icons (option D): colours: a pale tint of the hue for the tile, the strong hue for the glyph. Read by export.sh over palette.toml.
+glyph = "currentColor"
+accent = "currentColor"
+shell_bottom = "#f6f7f6"    # the outline some glyphs cut around their dots: the tile's own pale colour
+tint_store = "#e4ece3"
+ink_store = "#4b6f46"
+tint_settings = "#e3e9f2"
+ink_settings = "#3f5a82"
+tint_drawer = "#e1ebf7"
+ink_drawer = "#2a62ad"
+tint_apps = "#dff0ee"
+ink_apps = "#1f6f68"
+tint_help = "#f3ead9"
+ink_help = "#8a6320"

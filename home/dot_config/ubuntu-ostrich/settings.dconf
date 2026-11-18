@@ -1,0 +1,4 @@
+# ~/.config/ubuntu-ostrich/settings.dconf: Ubuntu Ostrich settings you keep in your dotfiles.
+# Empty: the defaults. To keep yours here, run
+#   ostrich config export "$(chezmoi source-path)/dot_config/ubuntu-ostrich/settings.dconf"
+# and `chezmoi apply` puts them back on any machine. A line that sets a command is ignored.

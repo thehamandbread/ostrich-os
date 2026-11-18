@@ -1,0 +1,13 @@
+[package]
+name = "audio-tune"
+description = "Speaker tuning: EQ presets, PipeWire filter-chain config, A/B listening test"
+edition.workspace = true
+license.workspace = true
+version.workspace = true
+repository.workspace = true
+
+[[bin]]
+name = "ostrich-speakers"
+path = "src/main.rs"
+
+[dependencies]

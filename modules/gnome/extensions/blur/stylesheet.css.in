@@ -1,0 +1,62 @@
+/* SPDX-License-Identifier: GPL-2.0-or-later */
+/* Glass over a blurred backdrop: a tint that keeps the theme's text readable and a thin light edge.
+   No box-shadow: St draws it under the whole surface, so through the glass it darkened what's
+   behind (measured: a fifth darker than the original's). Dark glass under the dark shell style;
+   light glass (for dark text) under the light one, keyed off .ost-blur-light on the UI group.
+   Shape and colours otherwise come from the theme. */
+.popup-menu-content.ost-blur-menu {
+  background-color: {{glass_menu}};
+  border: 1px solid {{glass_border}};
+}
+.notification-banner.ost-blur-banner {
+  background-color: {{glass_banner}};
+  border: 1px solid {{glass_border}};
+}
+.app-folder-dialog.ost-blur-folder { background-color: {{glass_folder}}; }
+/* The top bar: a light tint over the frost keeps the clock and icons readable over a bright window. */
+#panel.ost-blur-bar { background-color: {{glass_bar}}; }
+/* The theme dims these to 45 %: under 4.5:1 over the glass (measured: "No Notifications" 4.47:1,
+   the clock menu's weekday 3.9:1, its date 2.1:1 on light glass). */
+.ost-blur-menu .message-list-placeholder,
+.ost-blur-menu .datemenu-today-button .day-label,
+.ost-blur-menu .datemenu-today-button .date-label { color: {{text}}; }
+
+.ost-blur-light .popup-menu-content.ost-blur-menu {
+  background-color: {{light_glass_menu}};
+  border: 1px solid {{light_glass_border}};
+}
+.ost-blur-light .notification-banner.ost-blur-banner {
+  background-color: {{light_glass_banner}};
+  border: 1px solid {{light_glass_border}};
+}
+.ost-blur-light .app-folder-dialog.ost-blur-folder { background-color: {{light_glass_folder}}; }
+.ost-blur-light .ost-blur-menu .message-list-placeholder,
+.ost-blur-light .ost-blur-menu .datemenu-today-button .day-label,
+.ost-blur-light .ost-blur-menu .datemenu-today-button .date-label { color: {{light_text}}; }
+/* GNOME's media card in the clock menu, on the same glass as banners,
+   its controls in the scheme's text colour (the theme's white vanished on light glass) and 32 px to
+   hit. */
+.ost-blur-menu .message.media-message {
+  background-color: {{glass_banner}};
+  border: 1px solid {{glass_border}};
+  border-radius: [[radius_card]];
+}
+/* The theme's 18 px either side of each control left the title about six letters ("A test …"); 32 px
+   targets with a small gap keep the room for the track. */
+.ost-blur-menu .message-media-control { color: {{text}}; min-width: 32px; min-height: 32px; padding: 0 [[space_xs]]; border-radius: [[radius_item]]; }
+.ost-blur-light .ost-blur-menu .message.media-message {
+  background-color: {{light_glass_banner}};
+  border: 1px solid {{light_glass_border}};
+}
+.ost-blur-light .ost-blur-menu .message-media-control { color: {{light_text}}; }
+/* The lock screen without blur: the scheme's neutral solid colour. */
+.ost-solid { background-color: {{solid}}; }
+/* Power saver: what would need live re-blurring is solid black instead (the top bar and dock keep a
+   cached blur of the wallpaper). Text stays the theme's light text, which reads on black. */
+.ost-saver .popup-menu-content,
+.ost-saver .notification-banner,
+.ost-saver .app-folder-dialog,
+.ost-saver-black { background-color: #000000; } /* token-lint: allow power saver's black glass is pure black */
+/* ...and "No Notifications" gets the full text colour there too: the theme's 45 % grey is 4.3:1 on black
+. */
+.ost-saver .message-list-placeholder { color: {{text}}; }

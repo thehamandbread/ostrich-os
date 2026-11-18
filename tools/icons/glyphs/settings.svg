@@ -1,0 +1,9 @@
+<!-- Ostrich Settings: three sliders (not a gear, so it isn't mistaken for GNOME Settings). -->
+<g stroke="{{glyph}}" stroke-width="6" stroke-linecap="round">
+  <path d="M34 44h60M34 64h60M34 84h60"/>
+</g>
+<g fill="{{accent}}" stroke="{{shell_bottom}}" stroke-width="3">
+  <circle cx="52" cy="44" r="9"/>
+  <circle cx="78" cy="64" r="9"/>
+  <circle cx="60" cy="84" r="9"/>
+</g>

@@ -1,0 +1,21 @@
+[package]
+name = "drawer-host"
+description = "Ostrich Drawer: web apps in the top bar, per-site logins, notifications and sizes, load/unload tabs"
+edition.workspace = true
+license.workspace = true
+version.workspace = true
+repository.workspace = true
+
+[[bin]]
+name = "ostrich-drawer"
+path = "src/main.rs"
+
+[dependencies]
+# Ubuntu 26.04 ships GTK 4.22 and WebKitGTK 2.52; older API gates hide types webkit6 needs.
+gtk = { package = "gtk4", version = "0.11", features = ["v4_18"] }
+webkit6 = { version = "0.6", features = ["v2_48"] }
+# GLib 2.80+: ApplicationCommandLine::print_literal (for --list).
+gio = { version = "0.22", features = ["v2_80"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+toml = "0.9"

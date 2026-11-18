@@ -1,0 +1,83 @@
+/* SPDX-License-Identifier: GPL-2.0-or-later */
+/* The background colour is set in code from the colour scheme (black on dark, white on light). */
+#ost-dock #dash { padding: [[space_xs]] [[space_s]]; }
+
+/* Yaru (and GNOME's own theme) fill every dash icon with a grey square, even when nothing is
+   hovered: invisible on the overview's grey dash, a haze on our dock. Icons are bare here; a
+   soft fill shows on hover and press only. The #ost-dock id outranks the theme's #dash rules. */
+#ost-dock #dash .dash-item-container .show-apps .overview-icon,
+#ost-dock #dash .dash-item-container .overview-tile .overview-icon {
+  background-color: transparent;
+  box-shadow: none;
+}
+
+#ost-dock #dash .dash-item-container .show-apps:hover .overview-icon,
+#ost-dock #dash .dash-item-container .overview-tile:hover .overview-icon,
+#ost-dock #dash .dash-item-container .show-apps:checked .overview-icon {
+  background-color: rgba(128, 128, 128, 0.25); /* grey: visible on a dark or a light dock */
+}
+
+#ost-dock #dash .dash-item-container .show-apps:active .overview-icon,
+#ost-dock #dash .dash-item-container .overview-tile:active .overview-icon {
+  background-color: rgba(128, 128, 128, 0.38);
+}
+
+/* Keyboard focus: the accent ring, without the fill. */
+#ost-dock #dash .dash-item-container .show-apps:focus .overview-icon,
+#ost-dock #dash .dash-item-container .overview-tile:focus .overview-icon {
+  background-color: transparent;
+  box-shadow: inset 0 0 0 2px st-transparentize(-st-accent-color, 0.2);
+}
+
+/* The theme leaves room under each icon and the background for the overview's labels. */
+#ost-dock #dash .dash-item-container .show-apps,
+#ost-dock #dash .dash-item-container .overview-tile {
+  padding-bottom: [[space_xs]];
+}
+
+#ost-dock #dash .dash-background,
+#ost-dock #dash .dash-separator {
+  margin-bottom: 0;
+}
+
+#ost-dock #dash .dash-item-container .app-grid-running-dot {
+  offset-y: -3px;
+}
+
+/* Running indicators: one dot per window (up to 4). GNOME's single dot is hidden then. */
+.ost-dock-dots { spacing: 3px; margin-bottom: 1px; }
+.ost-dock-dot { width: 5px; height: 5px; border-radius: 3px; background-color: rgba(255, 255, 255, 0.85); }
+.ost-dock-dot.ost-focused { background-color: -st-accent-color; }
+
+/* Launcher badges (unread counts) and progress. */
+.ost-dock-badge {
+  background-color: -st-accent-color;
+  color: -st-accent-fg-color;
+  border-radius: [[radius_pill]];
+  padding: 0 5px;
+  font-size: 8pt;
+  font-weight: bold;
+}
+/* Playing sound: a speaker on the accent in the icon's top-left corner (its click pauses). */
+.ost-dock-playing {
+  padding: 2px;
+  border-radius: 99px;
+  color: -st-accent-fg-color;
+  background-color: -st-accent-color;
+  border: 1px solid rgba(0, 0, 0, 0.55);
+}
+.ost-dock-playing StIcon { icon-size: 11px; }
+.ost-dock-progress { height: 4px; border-radius: 2px; background-color: rgba(0, 0, 0, 0.5); margin: 0 [[space_s]] [[space_s]] [[space_s]]; }
+.ost-dock-progress-bar { height: 4px; border-radius: 2px; background-color: -st-accent-color; }
+
+/* Window previews above an icon. */
+.ost-dock-previews {
+  spacing: [[space_s]];
+  padding: [[space_s]];
+  border-radius: [[radius_card]];
+  background-color: {{popup_solid}};
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+}
+.ost-dock-preview { padding: [[space_s]]; border-radius: [[radius_item]]; }
+.ost-dock-preview:hover { background-color: rgba(128, 128, 128, 0.25); }
+.ost-dock-preview-title { color: #f2f2f2; /* token-lint: allow near-white on the always-dark preview card */ font-size: 9pt; max-width: 220px; margin-bottom: [[space_xs]]; }

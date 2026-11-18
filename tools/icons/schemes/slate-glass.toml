@@ -1,0 +1,40 @@
+# tools/icons/schemes/slate-glass.toml: Slate Glass, one of the council's three colour schemes (verdict
+# 2026-10-24, option A). The same names as palette.toml; PALETTE=this file builds with it.
+
+name = "Slate Glass"
+
+# The app icons
+shell_top = "#4a5468"
+shell_bottom = "#1f2430"
+edge = "#ffffff"
+highlight = "#ffffff"
+glyph = "#f4f6fa"
+accent = "#a9bccc" # the icons' accent part
+
+# Glass (tints over the blur), dark shell style, then light
+glass_bar = "rgba(20, 24, 32, 0.14)"
+glass_menu = "rgba(24, 28, 36, 0.12)"
+glass_banner = "rgba(24, 28, 36, 0.16)"
+glass_folder = "rgba(28, 32, 40, 0.24)"
+glass_border = "rgba(255, 255, 255, 0.09)"
+light_glass_menu = "rgba(246, 248, 250, 0.62)"
+light_glass_banner = "rgba(246, 248, 250, 0.66)"
+light_glass_folder = "rgba(246, 248, 250, 0.4)"
+light_glass_border = "rgba(255, 255, 255, 0.55)"
+text = "#f4f6fa"
+light_text = "#1f2430"
+popup_solid = "rgba(28, 32, 40, 0.92)"
+solid = "#1c2028"
+ws_empty = "rgba(255, 255, 255, 0.80)"
+
+# The desktop (ostrich theme scheme apply)
+ui_accent = "#6f8396" # the apps' and GNOME's accent
+icon_theme = "Yaru-sage" # -dark is added in dark mode
+
+# Wallpaper: drawn by tools/wallpaper/make.sh from these (no download)
+wall_top = "#2b3442"
+wall_bottom = "#10141b"
+wall_bloom = "#6f8396"
+wall_bloom_warm = "#8a7a6a"
+wall_light_top = "#3f4c5a" # deep enough at the top for the dark bar's white text
+wall_light_bottom = "#dfe6ec"

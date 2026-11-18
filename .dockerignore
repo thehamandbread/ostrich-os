@@ -1,0 +1,6 @@
+# The smoke test needs the scripts, not build output: dist/ holds the USB image (gigabytes) and
+# tools/target the Rust builds.
+.git
+dist
+tools/target
+target

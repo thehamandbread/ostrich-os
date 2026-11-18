@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
+  <!-- The icon for the dark style (council follow-up, owner 2026-11-06: D): a flat tinted tile, the app's hue
+       at a few percent on a pale square, the glyph in the strong hue (currentColor, ink_@NAME@ in dark.toml).
+       The light style has template-light.svg; modules/tools/ostrich-icon-style swaps them. -->
+  <rect x="8" y="8" width="112" height="112" rx="28" fill="{{tint_@NAME@}}"/>
+  <g color="{{ink_@NAME@}}">
+  {{glyph_svg}}
+  </g>
+</svg>

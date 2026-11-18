@@ -1,0 +1,8 @@
+{
+  "uuid": "search-new-window@ubuntu-ostrich",
+  "name": "New Window on Search",
+  "description": "Pressing Enter on an app in the overview search opens a new window instead of switching to the app's existing window. Apps that are not running still just launch normally.",
+  "shell-version": ["50"],
+  "url": "https://github.com/thehamandbread/ubuntu-ostrich",
+  "version": 1
+}

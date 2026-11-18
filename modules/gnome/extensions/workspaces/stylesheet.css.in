@@ -1,0 +1,25 @@
+/* SPDX-License-Identifier: GPL-2.0-or-later */
+/* Bold pills: the active one filled, the others white text, empty ones faded. */
+.ost-ws-panel-button { -natural-hpadding: [[space_m]]; } /* token-lint: allow a PanelMenu.Button: the theme's panel-button focus ring applies */
+.ost-ws-bar { spacing: 3px; }
+.ost-ws-button {
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-weight: bold;
+  font-feature-settings: "tnum";
+  color: {{text}};
+  background-color: rgba(255, 255, 255, 0.01); /* not none: St draws the focus ring's inset shadow only on a filled background */
+  transition-duration: 120ms;
+}
+.ost-ws-button:hover { background-color: rgba(255, 255, 255, 0.16); }
+.ost-ws-empty { color: {{ws_empty}}; font-weight: normal; } /* fainter and thinner, still 4.5:1 */
+/* "accent": the system accent colour (GNOME 47+ St variables) */
+.ost-ws-active.ost-ws-accent { background-color: -st-accent-color; color: -st-accent-fg-color; }
+/* "contrast": white on the dark top bar */
+.ost-ws-active { background-color: #ffffff; color: #000000; } /* token-lint: allow the active pill: pure white on black, the most contrast */
+.ost-ws-dragging { background-color: rgba(255, 255, 255, 0.3); }
+.ost-ws-content { spacing: 5px; }
+.ost-ws-icons { spacing: 2px; }
+.ost-ws-entry { min-width: 200px; }
+/* Key focus on a pill (it is a plain St.Button, so the theme draws no ring): an inset ring in the text colour. */
+.ost-ws-button:focus { box-shadow: inset 0 0 0 2px {{text}}; }

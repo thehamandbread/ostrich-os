@@ -1,0 +1,14 @@
+[package]
+name = "system-helper"
+description = "Privileged one-shot helper (via polkit/pkexec): touchscreen on/off; power and graphics modes later"
+edition.workspace = true
+license.workspace = true
+version.workspace = true
+repository.workspace = true
+
+[[bin]]
+name = "ostrich-system-helper"
+path = "src/main.rs"
+
+# No dependencies on purpose: this runs as root, so it stays small and auditable.
+[dependencies]

@@ -1,0 +1,9 @@
+{
+  "uuid": "dock@ubuntu-ostrich",
+  "name": "Dock",
+  "description": "An auto-hiding bottom dock that is only as wide as its icons, coloured to match the theme. Shows when you push the pointer against the bottom edge; no polling, no timers while hidden.",
+  "shell-version": ["50"],
+  "settings-schema": "org.gnome.shell.extensions.ubuntu-ostrich.dock",
+  "url": "https://github.com/thehamandbread/ubuntu-ostrich",
+  "version": 1
+}

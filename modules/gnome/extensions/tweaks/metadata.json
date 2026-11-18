@@ -1,0 +1,9 @@
+{
+  "uuid": "tweaks@ubuntu-ostrich",
+  "name": "Tweaks",
+  "description": "Small shell adjustments: animation speed and hiding top-bar items. (Start in overview or desktop is GNOME's own start-in-overview setting.)",
+  "shell-version": ["50"],
+  "settings-schema": "org.gnome.shell.extensions.ubuntu-ostrich.tweaks",
+  "url": "https://github.com/thehamandbread/ubuntu-ostrich",
+  "version": 1
+}

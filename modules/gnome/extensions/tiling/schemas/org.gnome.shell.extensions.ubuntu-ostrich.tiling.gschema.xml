@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: GPL-2.0-or-later -->
+<schemalist>
+  <schema id="org.gnome.shell.extensions.ubuntu-ostrich.tiling"
+          path="/org/gnome/shell/extensions/ubuntu-ostrich/tiling/">
+    <key name="tile-left" type="as"><default><![CDATA[['<Super>Left']]]></default><summary>Tile left (from a right quarter: the matching left quarter)</summary></key>
+    <key name="tile-right" type="as"><default><![CDATA[['<Super>Right']]]></default><summary>Tile right (from a left quarter: the matching right quarter)</summary></key>
+    <key name="tile-up" type="as"><default><![CDATA[['<Super>Up']]]></default><summary>Maximize, or from a half: its top quarter</summary></key>
+    <key name="tile-down" type="as"><default><![CDATA[['<Super>Down']]]></default><summary>Restore, or from a half: its bottom quarter</summary></key>
+    <key name="tile-top-left" type="as"><default><![CDATA[['<Super>KP_7']]]></default><summary>Tile to the top-left quarter</summary></key>
+    <key name="tile-top-right" type="as"><default><![CDATA[['<Super>KP_9']]]></default><summary>Tile to the top-right quarter</summary></key>
+    <key name="tile-bottom-left" type="as"><default><![CDATA[['<Super>KP_1']]]></default><summary>Tile to the bottom-left quarter</summary></key>
+    <key name="tile-bottom-right" type="as"><default><![CDATA[['<Super>KP_3']]]></default><summary>Tile to the bottom-right quarter</summary></key>
+    <key name="drag-tiling" type="b"><default>true</default><summary>Tile by dragging a window to a screen edge or corner</summary></key>
+    <key name="window-gap" type="u"><range min="0" max="64"/><default>0</default><summary>Gap around tiled windows, in pixels</summary></key>
+    <key name="fill-popup" type="b"><default>true</default><summary>After tiling, offer other windows to fill the rest of the screen</summary></key>
+    <key name="fill-popup-all-workspaces" type="b"><default>true</default><summary>The fill popup also lists windows from other workspaces</summary></key>
+    <key name="raise-together" type="b"><default>true</default><summary>Focusing a tiled window raises the windows tiled with it</summary></key>
+    <key name="focus-hint" type="b"><default>false</default><summary>Draw an outline around the focused window</summary></key>
+    <key name="focus-hint-color" type="s"><default>'rgb(53,132,228)'</default><summary>Outline colour (CSS colour)</summary></key>
+    <key name="migrated" type="b"><default>false</default><summary>Tiling Assistant settings were copied (set once by the installer)</summary></key>
+    <key name="overridden-settings" type="s">
+      <default>''</default>
+      <summary>GNOME shortcuts and edge tiling as they were before this extension took them over (JSON; restored when it's disabled)</summary>
+    </key>
+  </schema>
+</schemalist>

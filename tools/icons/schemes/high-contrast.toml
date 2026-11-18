@@ -1,0 +1,32 @@
+# tools/icons/schemes/high-contrast.toml: High contrast. Near-opaque surfaces and pure white or black text, for low vision.
+# The same names as palette.toml; PALETTE=this file builds with it.
+
+name = "High contrast"
+
+# The app icons
+shell_top = "#2a2a2a"
+shell_bottom = "#000000"
+edge = "#ffffff"
+highlight = "#ffffff"
+glyph = "#ffffff"
+accent = "#ffd23f"
+
+# Glass (tints over the blur), dark shell style, then light
+glass_bar = "rgba(0, 0, 0, 0.85)"
+glass_menu = "rgba(0, 0, 0, 0.9)"
+glass_banner = "rgba(0, 0, 0, 0.9)"
+glass_folder = "rgba(0, 0, 0, 0.9)"
+glass_border = "rgba(255, 255, 255, 0.6)"
+light_glass_menu = "rgba(255, 255, 255, 0.96)"
+light_glass_banner = "rgba(255, 255, 255, 0.96)"
+light_glass_folder = "rgba(255, 255, 255, 0.92)"
+light_glass_border = "rgba(0, 0, 0, 0.6)"
+text = "#ffffff"
+light_text = "#000000"
+popup_solid = "rgba(0, 0, 0, 0.96)"
+solid = "#000000"
+ws_empty = "rgba(255, 255, 255, 0.9)"
+
+# The desktop (ostrich theme scheme apply)
+ui_accent = "#1c62b9"
+icon_theme = "Yaru"

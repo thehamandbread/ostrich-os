@@ -1,0 +1,12 @@
+{
+  "name": "ubuntu-ostrich-lint",
+  "private": true,
+  "description": "Lint tooling only (run through tests/lint-js.sh in Docker).",
+  "license": "MIT",
+  "type": "module",
+  "devDependencies": {
+    "@eslint/js": "10.0.1",
+    "eslint": "10.13.0",
+    "globals": "17.13.0"
+  }
+}

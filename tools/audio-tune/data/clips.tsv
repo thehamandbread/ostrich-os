@@ -1,0 +1,10 @@
+# Music and speech for tuning the speakers by ear (ostrich speakers clips). Public domain, from
+# Wikimedia Commons; downloaded at install time, checked against the SHA-256 here, decoded with
+# GStreamer, and cut to a 20-second excerpt in ~/.local/share/ubuntu-ostrich/audio/<id>.wav.
+# Nothing here is committed audio: only where to get it.
+#
+# id	name	kind	url	sha256	start_s	seconds	licence	credit
+piano	Bach: Goldberg Variations, Aria	Solo piano	https://upload.wikimedia.org/wikipedia/commons/a/af/Bach%2C_Goldberg_Variations%2C_Aria_%28Musopen_version%29.ogg	b5f9cd0939b66b133b29e03a6d149dd23770bd53b8ccb0e306495024538422e2	15	20	CC0	Kimiko Ishizaka, Open Goldberg Variations (Musopen)
+voice	Bizet: Carmen, Toreador Song	A voice with orchestra	https://upload.wikimedia.org/wikipedia/commons/b/bd/Bizet_-_Carmen_-_Toreador_Song_%28French%2C_Musopen%29.ogg	d9302aef1d86fc8f4f6a0a0790c35b711b7b42e5594a009c195cc5e628269b73	100	20	CC0	Musopen
+orchestra	Grieg: In the Hall of the Mountain King	Full orchestra, deep bass	https://upload.wikimedia.org/wikipedia/commons/b/bb/Musopen_-_In_the_Hall_Of_The_Mountain_King.ogg	3bfa7424d3a148f1482a44688b77eb9138a7cea6cff7474799f1329181ab3342	100	20	Public domain	Musopen Symphony Orchestra
+speech	Winnie-the-Pooh, chapter 1	Speech	https://upload.wikimedia.org/wikipedia/commons/1/1c/LibriVox_-_Winnie-the-Pooh_%281926%29_01.mp3	856b4e1bd07a62394ac2c057091a9f749eaead8d29fec04f6eb87a05789e2599	2	20	Public domain	LibriVox

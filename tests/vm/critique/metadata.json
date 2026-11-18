@@ -1,0 +1,8 @@
+{
+  "uuid": "critique@ubuntu-ostrich-dev",
+  "name": "Critique (test VM only)",
+  "description": "Super+Alt+C: freeze the screen, box what's wrong, type a note. Notes go to ~/critiques for tests/vm/critique.sh. Never shipped with Ubuntu Ostrich.",
+  "shell-version": ["50"],
+  "settings-schema": "org.gnome.shell.extensions.ubuntu-ostrich-dev.critique",
+  "version": 1
+}

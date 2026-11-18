@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: GPL-2.0-or-later -->
+<schemalist>
+  <schema id="org.gnome.shell.extensions.ubuntu-ostrich.tweaks"
+          path="/org/gnome/shell/extensions/ubuntu-ostrich/tweaks/">
+    <key name="today-panel" type="b">
+      <default>true</default>
+      <summary>Clock menu: Today (a card for this computer, world clocks, weather) in place of the month grid</summary>
+    </key>
+    <key name="show-events" type="b">
+      <default>false</default>
+      <summary>Clock menu: show GNOME's calendar events card (with or without Today)</summary>
+    </key>
+    <key name="animation-speed" type="d">
+      <range min="0.01" max="4.0"/><default>1.0</default>
+      <summary>Animation duration multiplier (below 1 is faster, e.g. 0.8)</summary>
+    </key>
+    <key name="double-super-to-appgrid" type="b">
+      <default>true</default>
+      <summary>Pressing Super again while the overview is open shows the app grid (instead of closing it)</summary>
+    </key>
+    <key name="migrated-jp" type="b"><default>false</default><summary>Just Perfection's start-in-overview was copied once (internal)</summary></key>
+    <key name="folder-colour" type="s">
+      <choices><choice value="accent"/><choice value="default"/><choice value="bark"/><choice value="sage"/><choice value="olive"/><choice value="viridian"/><choice value="prussiangreen"/><choice value="blue"/><choice value="purple"/><choice value="magenta"/><choice value="red"/></choices>
+      <default>'accent'</default>
+      <summary>Folder icons (Yaru): follow the accent colour, or one Yaru colour ('default' is Yaru's orange)</summary>
+    </key>
+    <key name="accent-follows-wallpaper" type="b">
+      <default>true</default>
+      <summary>When the wallpaper changes, pick the accent from the new one (only if the accent came from the old wallpaper)</summary>
+    </key>
+    <key name="now-playing-pill" type="b">
+      <default>true</default>
+      <summary>Beside the clock: what's playing (title and play state; click for previous, play/pause, next); it pops out when something starts playing and goes back a few seconds after it stops</summary>
+    </key>
+    <key name="quick-settings-corner" type="b">
+      <default>true</default>
+      <summary>Push the pointer into the top-right corner to open quick settings, like the top-left corner opens the overview</summary>
+    </key>
+    <key name="clock-menu-quiet" type="b">
+      <default>true</default>
+      <summary>Clock menu: Do Not Disturb and Focus switches under the date (the quick-settings tiles stay either way)</summary>
+    </key>
+    <key name="quick-settings-style" type="s">
+      <choices><choice value="ostrich"/><choice value="stock"/></choices>
+      <default>'ostrich'</default>
+      <summary>Quick settings: 'ostrich' adds the power-mode row on three-mode machines and tiles for your recent Bluetooth devices; 'stock' leaves GNOME's own tiles as they are (the clearer lit-tile text stays either way)</summary>
+    </key>
+    <key name="hover-open-menus" type="b">
+      <default>true</default>
+      <summary>Rest the pointer on the clock or the now-playing orb to open its menu, as on drawer icons; it closes when the pointer leaves</summary>
+    </key>
+    <key name="bluetooth-recent" type="as">
+      <default>[]</default>
+      <summary>Addresses of the Bluetooth devices last seen connected, newest first: the quick-settings device tiles show these first</summary>
+    </key>
+    <key name="hover-open-delay-ms" type="u">
+      <range min="500" max="2000"/>
+      <default>500</default>
+      <summary>How long the pointer rests on the clock or the now-playing orb before its menu opens, in milliseconds</summary>
+    </key>
+    <key name="now-playing-play-pause" type="as">
+      <default>[]</default>
+      <summary>Shortcut: play or pause what the now-playing pill shows (unset by default)</summary>
+    </key>
+    <key name="hidden-panel-items" type="as">
+      <default>[]</default>
+      <summary>Top-bar items to hide, by their status-area name (e.g. 'a11y', 'keyboard', 'screenRecording')</summary>
+    </key>
+  </schema>
+</schemalist>

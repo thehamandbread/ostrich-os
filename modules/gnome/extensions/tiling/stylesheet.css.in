@@ -1,0 +1,25 @@
+/* SPDX-License-Identifier: GPL-2.0-or-later */
+.ost-tiling-popup {
+  background-color: rgba(0, 0, 0, 0.35);
+  border-radius: [[radius_card]];
+}
+.ost-tiling-list {
+  background-color: {{popup_solid}};
+  color: {{text}};
+  border-radius: [[radius_card]];
+  padding: [[space_s]];
+  spacing: [[space_xs]];
+  min-width: 280px;
+  max-width: 480px;
+}
+.ost-tiling-item {
+  border-radius: 8px;
+  padding: [[space_s]] 10px;
+}
+.ost-tiling-item:hover,
+.ost-tiling-item:focus {
+  background-color: st-transparentize(-st-accent-color, 0.6);
+}
+.ost-tiling-row {
+  spacing: 10px;
+}

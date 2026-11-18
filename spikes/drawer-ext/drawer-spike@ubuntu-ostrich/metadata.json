@@ -1,0 +1,7 @@
+{
+  "uuid": "drawer-spike@ubuntu-ostrich",
+  "name": "Drawer spike",
+  "description": "Throwaway spike: positions, animates and hides the drawer-host window on Wayland.",
+  "shell-version": ["50"],
+  "version": 1
+}

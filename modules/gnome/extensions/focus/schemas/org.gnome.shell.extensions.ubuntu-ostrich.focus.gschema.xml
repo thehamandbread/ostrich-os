@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: GPL-2.0-or-later -->
+<schemalist>
+  <schema id="org.gnome.shell.extensions.ubuntu-ostrich.focus"
+          path="/org/gnome/shell/extensions/ubuntu-ostrich/focus/">
+    <key name="toggle-focus" type="as"><default><![CDATA[['<Super><Alt>f']]]></default><summary>Keyboard shortcut for focus mode</summary></key>
+    <key name="allowed-apps" type="as"><default>[]</default><summary>Focus with an allow-list: only these apps (desktop ids) stay visible; empty keeps every app</summary></key>
+    <key name="focus-on" type="b">
+      <default>false</default>
+      <summary>Focus mode is on. The quick-settings tile and the clock menu's switch both follow it, and so can a script (ostrich config set focus focus-on true); it is false after a restart of the shell</summary>
+    </key>
+    <key name="saved-show-banners" type="s">
+      <default>''</default>
+      <summary>Notification banner setting from before focus mode ('' when focus is off); restored if the shell restarts mid-focus</summary>
+    </key>
+  </schema>
+</schemalist>

@@ -1,0 +1,36 @@
+#!/usr/bin/env bash
+# ostrich-icon-style: keeps our app icons in step with the colour scheme (owner, 2026-11-06: the dark
+# style uses the pale tinted tile, the light style the dark tile). The installer puts both sets in
+# $DATA/ubuntu-ostrich/icons/{dark,light}; this copies the one for the current style into the icon
+# theme, once with `apply` and then each time the style changes (`watch`, run from autostart).
+set -u
+DATA="${XDG_DATA_HOME:-$HOME/.local/share}"
+SETS="$DATA/ubuntu-ostrich/icons"
+DEST="$DATA/icons/hicolor/scalable/apps"
+
+apply() {
+	local scheme set=dark f changed=0
+	scheme=$(gsettings get org.gnome.desktop.interface color-scheme 2>/dev/null) || scheme=
+	# GNOME's "default" is the light style.
+	case $scheme in *prefer-dark*) set=dark ;; *) set=light ;; esac
+	for f in "$SETS/$set"/ostrich-*.svg; do
+		[[ -f $f ]] || continue
+		cmp -s "$f" "$DEST/$(basename "$f")" && continue
+		install -m 0644 "$f" "$DEST/$(basename "$f")" && changed=1
+	done
+	# GTK and the shell rescan an icon folder when its mtime moves.
+	((changed)) && touch "$DATA/icons/hicolor" "$DEST"
+	return 0
+}
+
+case ${1:-apply} in
+apply) apply ;;
+watch)
+	apply
+	gsettings monitor org.gnome.desktop.interface color-scheme | while read -r _; do apply; done
+	;;
+*)
+	echo "usage: ostrich-icon-style [apply|watch]" >&2
+	exit 2
+	;;
+esac
