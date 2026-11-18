@@ -20,7 +20,9 @@ const TIMEOUT = 1000; // ms, GNOME's HOT_CORNER_PRESSURE_TIMEOUT
 
 export class QuickSettingsCorner {
     constructor() {
-        this._pressure = new PressureBarrier(PRESSURE, TIMEOUT, Shell.ActionMode.NORMAL | Shell.ActionMode.OVERVIEW);
+        // POPUP too: while quick settings is open the shell is in that mode, and a second push must close it.
+        this._pressure = new PressureBarrier(PRESSURE, TIMEOUT,
+            Shell.ActionMode.NORMAL | Shell.ActionMode.OVERVIEW | Shell.ActionMode.POPUP);
         this._pressure.connect('trigger', () => this._toggle());
         this._ripples = new Ripples.Ripples(1.0, 0.0, 'ripple-box'); // pivot at the top-right, as GNOME's RTL corner
         this._ripples.addTo(Main.layoutManager.uiGroup);
