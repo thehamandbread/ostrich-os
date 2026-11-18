@@ -70,6 +70,7 @@ reset_extension_settings() {
 		[[ -f $xml ]] || continue
 		while IFS= read -r path; do
 			[[ $path == /org/gnome/shell/extensions/* ]] || continue # never anything wider
+			[[ -n $(dconf dump "$path" 2>/dev/null) ]] || continue   # already at defaults: nothing to log
 			changed "reset settings $path ($(basename "$1"))"
 			run_cmd dconf reset -f "$path"
 		done < <(grep -o 'path="[^"]*"' "$xml" | sed 's/^path="//; s/"$//')

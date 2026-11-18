@@ -97,6 +97,7 @@ esac'
 read) grep -m1 "^$2 " "$DCONF" | cut -d" " -f2- ;;
 write) echo "dconf write $2 $3" >>"$CALLS"; grep -v "^$2 " "$DCONF" >"$DCONF.n"; echo "$2 $3" >>"$DCONF.n"; mv "$DCONF.n" "$DCONF" ;;
 reset) echo "dconf reset $2 $3" >>"$CALLS" ;;
+dump) grep "^$2" "$DCONF" || true ;;
 esac'
 	# the user's systemd manager is the real one too: record, never run
 	stub systemctl 'echo "systemctl $*" >>"$CALLS"'
@@ -493,11 +494,13 @@ pci() { # pci <slot> <class> <vendor>
 	gnome_setup
 	sed -i "s|enabled-extensions @as \[\]|enabled-extensions ['dash-to-dock@micxgx.gmail.com']|" "$GS"
 	mkdir -p "$EXT_HOME/dash-to-dock@micxgx.gmail.com/schemas"
-	echo '<schemalist><schema id="x" path="/org/gnome/shell/extensions/dash-to-dock/"/></schemalist>' >"$EXT_HOME/dash-to-dock@micxgx.gmail.com/schemas/x.gschema.xml"
+	echo '<schemalist><schema id="x" path="/org/gnome/shell/extensions/dash-to-dock/"/><schema id="y" path="/org/gnome/shell/extensions/dash-to-dock-unset/"/></schemalist>' >"$EXT_HOME/dash-to-dock@micxgx.gmail.com/schemas/x.gschema.xml"
+	echo "/org/gnome/shell/extensions/dash-to-dock/dock-fixed true" >>"$DCONF"
 	INSTALL_MODE=clean run "$ROOT/modules/gnome/install.sh"
 	[ "$status" -eq 0 ]
 	grep -q "disabled-extensions .*'dash-to-dock@micxgx.gmail.com'" "$GS"
 	grep -q 'dconf reset -f /org/gnome/shell/extensions/dash-to-dock/' "$CALLS"
+	! grep -q 'dash-to-dock-unset' "$CALLS"          # nothing set there: nothing to reset or log
 	[ -d "$EXT_HOME/dash-to-dock@micxgx.gmail.com" ] # never deleted
 }
 
