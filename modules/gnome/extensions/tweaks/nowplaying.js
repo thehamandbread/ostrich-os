@@ -176,6 +176,13 @@ export class NowPlayingPill {
         };
         this._button.connectObject('place', place, this);
         clockActor().connectObject('notify::allocation', place, this);
+        place();
+        // trackFullscreen re-shows every top-chrome actor on overview and fullscreen changes; with
+        // nothing playing the pill sat at the screen's corner (owner, 2026-11-18). Keep it hidden.
+        this._button.container.connectObject('notify::visible', c => {
+            if (c.visible && !this._button._shown)
+                c.visible = false;
+        }, this);
         // Not on the lock screen.
         Main.sessionMode.connectObject('updated', () => {
             this._button.container.opacity = Main.sessionMode.isLocked ? 0 : 255;

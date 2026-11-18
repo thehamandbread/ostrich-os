@@ -15,10 +15,6 @@
       <range min="0.01" max="4.0"/><default>1.0</default>
       <summary>Animation duration multiplier (below 1 is faster, e.g. 0.8)</summary>
     </key>
-    <key name="double-super-to-appgrid" type="b">
-      <default>true</default>
-      <summary>Pressing Super again while the overview is open shows the app grid (instead of closing it)</summary>
-    </key>
     <key name="migrated-jp" type="b"><default>false</default><summary>Just Perfection's start-in-overview was copied once (internal)</summary></key>
     <key name="folder-colour" type="s">
       <choices><choice value="accent"/><choice value="default"/><choice value="bark"/><choice value="sage"/><choice value="olive"/><choice value="viridian"/><choice value="prussiangreen"/><choice value="blue"/><choice value="purple"/><choice value="magenta"/><choice value="red"/></choices>
@@ -46,18 +42,9 @@
       <default>'ostrich'</default>
       <summary>Quick settings: 'ostrich' adds the power-mode row on three-mode machines and tiles for your recent Bluetooth devices; 'stock' leaves GNOME's own tiles as they are (the clearer lit-tile text stays either way)</summary>
     </key>
-    <key name="hover-open-menus" type="b">
-      <default>true</default>
-      <summary>Rest the pointer on the clock or the now-playing orb to open its menu, as on drawer icons; it closes when the pointer leaves</summary>
-    </key>
     <key name="bluetooth-recent" type="as">
       <default>[]</default>
       <summary>Addresses of the Bluetooth devices last seen connected, newest first: the quick-settings device tiles show these first</summary>
-    </key>
-    <key name="hover-open-delay-ms" type="u">
-      <range min="500" max="2000"/>
-      <default>500</default>
-      <summary>How long the pointer rests on the clock or the now-playing orb before its menu opens, in milliseconds</summary>
     </key>
     <key name="now-playing-play-pause" type="as">
       <default>[]</default>

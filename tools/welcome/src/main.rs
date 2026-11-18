@@ -675,12 +675,6 @@ fn top_bar_step() -> Vec<adw::PreferencesGroup> {
                 "Animation speed (1 is normal, lower is faster)",
                 (0.1, 3.0, 0.1),
             ));
-            t.add(&switch_row(
-                &s,
-                "double-super-to-appgrid",
-                "Press Super twice for the app grid",
-                "Once shows your windows, again shows all your apps",
-            ));
             t.add(&combo_row(
                 &s,
                 "folder-colour",
@@ -722,18 +716,6 @@ fn top_bar_step() -> Vec<adw::PreferencesGroup> {
                 "now-playing-pill",
                 "What's playing, in the top bar",
                 "Only while music or a video plays; click it to skip or pause. GNOME's media card stays in the clock menu",
-            ));
-            t.add(&switch_row(
-                &s,
-                "hover-open-menus",
-                "Open the clock and what's playing by resting the pointer",
-                "Like the drawer's icons; the menu closes when the pointer leaves",
-            ));
-            t.add(&spin_row(
-                &s,
-                "hover-open-delay-ms",
-                "Rest time before the clock or orb opens (milliseconds)",
-                (500.0, 2000.0, 50.0),
             ));
             t.add(&switch_row(
                 &s,

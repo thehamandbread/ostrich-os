@@ -88,6 +88,20 @@ run "$TS reset $SCHEMA now-playing-pill; $TS set $SCHEMA now-playing-play-pause 
 sleep 2
 shot 0-none
 
+step "with nothing playing, the overview doesn't bring the pill out (it sat at the top-left, 2026-11-18)"
+"$VM" key meta_l
+sleep 2
+"$VM" key meta_l
+sleep 2
+shot 0-after-overview
+if python3 -I - "$OUT/0-none.png" "$OUT/0-after-overview.png" <<'EOF'; then ok "still nothing at the top-left or by the clock"; else bad "the pill showed after the overview with nothing playing"; fi
+import sys
+from PIL import Image, ImageChops, ImageStat
+a, b = (Image.open(f).convert("L") for f in sys.argv[1:3])
+d = max(ImageStat.Stat(ImageChops.difference(a.crop(r), b.crop(r))).mean[0] for r in ((0, 0, 200, 32), (1010, 0, 1500, 32)))
+sys.exit(0 if d <= 2 else 1)
+EOF
+
 step "a paused track shows nothing; it comes out of the clock once it plays"
 player Paused 'A test song'
 sleep 2

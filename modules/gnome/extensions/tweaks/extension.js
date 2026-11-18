@@ -1,11 +1,9 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-// Tweaks: animation speed, hiding top-bar items, Super twice for the app grid, the accent following
-// the wallpaper, the Touchscreen quick-settings tile, Today in the clock menu (today.js), and the
-// top-right hot corner that opens quick settings (corner.js), and hover-to-open for the clock and the
-// now-playing orb (_lib/hoveropen.js).
+// Tweaks: animation speed, hiding top-bar items, the accent following the wallpaper, the Touchscreen
+// quick-settings tile, Today in the clock menu (today.js), and the top-right hot corner that opens
+// quick settings (corner.js).
 // Everything is restored on disable.
 
-import Clutter from 'gi://Clutter';
 import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
 import GObject from 'gi://GObject';
@@ -18,7 +16,7 @@ import * as QuickSettings from 'resource:///org/gnome/shell/ui/quickSettings.js'
 import {Extension} from 'resource:///org/gnome/shell/extensions/extension.js';
 
 import {readPalette} from './_lib/palette.js';
-import {Patches, shellField} from './_lib/patches.js';
+import {shellField} from './_lib/patches.js';
 import {Signals} from './_lib/signals.js';
 import {NowPlayingPill} from './nowplaying.js';
 import {EventsCard, Today} from './today.js';
@@ -26,7 +24,6 @@ import {folderTheme} from './folders.js';
 import {QuickSettingsCorner} from './corner.js';
 import {PowerRow} from './powerrow.js';
 import {Quiet} from './quiet.js';
-import {HoverOpen} from './_lib/hoveropen.js';
 import {BluetoothDevices} from './btdevices.js';
 
 const HELPER = '/usr/libexec/ubuntu-ostrich/system-helper';
@@ -100,15 +97,12 @@ export default class TweaksExtension extends Extension {
     enable() {
         this._settings = this.getSettings();
         this._signals = new Signals();
-        this._patches = new Patches();
         this._wallpaperId = 0;
-        this._patchSuper();
         this._background = new Gio.Settings({schema_id: 'org.gnome.desktop.background'});
         for (const key of ['picture-uri', 'picture-uri-dark'])
             this._signals.connect(this._background, `changed::${key}`, () => this._onWallpaperChanged());
         this._originalFactor = St.Settings.get().slow_down_factor;
         this._hidden = new Map(); // status-area name → container we hid
-        this._hover = []; // HoverOpen per button; filled by _applyNowPlaying → _applyHover
 
         this._signals.connect(this._settings, 'changed::animation-speed', () => this._applyAnimation());
         this._signals.connect(this._settings, 'changed::hidden-panel-items', () => this._applyHidden());
@@ -134,8 +128,6 @@ export default class TweaksExtension extends Extension {
         this._applyCorner();
         this._signals.connect(this._settings, 'changed::quick-settings-style', () => this._applyStyle());
         this._applyStyle();
-        this._signals.connect(this._settings, 'changed::hover-open-menus', () => this._applyHover());
-        this._signals.connect(this._settings, 'changed::hover-open-delay-ms', () => this._applyHover());
 
         if (GLib.file_test(HELPER, GLib.FileTest.IS_EXECUTABLE)) {
             this._touch = new TouchscreenIndicator();
@@ -148,15 +140,12 @@ export default class TweaksExtension extends Extension {
             GLib.source_remove(this._wallpaperId);
             this._wallpaperId = 0;
         }
-        this._patches.restoreAll();
         this._quiet?.destroy();
         this._quiet = null;
         this._today?.disable();
         this._today = null;
         this._events?.disable();
         this._events = null;
-        this._hover.forEach(h => h.destroy()); // before the pill's button goes
-        this._hover = [];
         if (this._nowPlaying) { // the shortcut is bound only while the pill exists
             Main.wm.removeKeybinding('now-playing-play-pause');
             this._nowPlaying.destroy();
@@ -209,23 +198,10 @@ export default class TweaksExtension extends Extension {
             Main.wm.addKeybinding('now-playing-play-pause', this._settings, Meta.KeyBindingFlags.NONE,
                 Shell.ActionMode.NORMAL | Shell.ActionMode.OVERVIEW, () => this._nowPlaying?.playPause());
         } else if (!on && this._nowPlaying) {
-            this._hover.forEach(h => h.destroy()); // before the pill's button goes
-            this._hover = [];
             Main.wm.removeKeybinding('now-playing-play-pause');
             this._nowPlaying.destroy();
             this._nowPlaying = null;
         }
-        this._applyHover();
-    }
-
-    // Rest the pointer on the clock or the now-playing orb to open its menu (_lib/hoveropen.js).
-    _applyHover() {
-        this._hover.forEach(h => h.destroy());
-        this._hover = [];
-        if (!this._settings.get_boolean('hover-open-menus'))
-            return;
-        for (const button of [Main.panel.statusArea.dateMenu, this._nowPlaying?.button].filter(Boolean))
-            this._hover.push(new HoverOpen(button, this._settings.get_uint('hover-open-delay-ms')));
     }
 
     // 'stock' puts GNOME's quick settings back as they were (the row goes, its tile returns).
@@ -287,23 +263,6 @@ export default class TweaksExtension extends Extension {
             this._today.disable();
             this._today = null;
         }
-    }
-
-    // Super while the overview shows the windows: the app grid, like Just Perfection's option.
-    // (GNOME already does it for a quick double press; this covers a second press any time.)
-    _patchSuper() {
-        const settings = this._settings;
-        this._patches.replace(Main.overview, 'toggle', orig => function (...args) {
-            const event = Clutter.get_current_event();
-            const key = event?.get_key_symbol?.();
-            const superKey = key === Clutter.KEY_Super_L || key === Clutter.KEY_Super_R;
-            if (superKey && settings?.get_boolean('double-super-to-appgrid') && this.visible &&
-                !this.dash.showAppsButton.checked) {
-                this.showApps();
-                return;
-            }
-            orig.apply(this, args);
-        });
     }
 
     // A new wallpaper: if the accent was picked from the old one, pick again from the new one.

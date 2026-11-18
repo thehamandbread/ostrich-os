@@ -66,7 +66,7 @@ the originals).
 |---|---|---|
 | Animation speed | ✓ (user: set) | ✅ (carried over) |
 | Hide top-bar items | ✓ | ✅ |
-| Super twice for the app grid | ✓ (user: on) | ✅ default on |
+| Super twice for the app grid | ✓ (user: on) | ➖ GNOME's own quick double press (owner, 2026-11-18: a second Super must close) |
 | Start in overview or desktop | ✓ | ✅ (GNOME's own setting) |
 | Accent from the wallpaper, following it | — | ✅ (beats it) |
 | The many other visibility toggles | ✓ | ➖ only on request (each is a setting to maintain) |

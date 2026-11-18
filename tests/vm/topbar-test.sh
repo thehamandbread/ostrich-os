@@ -6,15 +6,16 @@
 # Installs this checkout's monitor, workspaces and tweaks (ext-test.sh, 3 cycles), then checks:
 #   - scroll: a fast flick of 5 wheel clicks over the top bar moves one workspace; two flicks a
 #     second apart move two; back up the same way (the active pill is the brightest of the five);
-#   - hover: resting on the clock opens its menu, and moving away closes it;
-#   - no activation: a menu opened by resting, by key or by a click changes nothing while the pointer
+#   - no hover: resting on the clock does not open its menu (owner, 2026-11-18: click only);
+#   - no activation: a menu opened by a click or by key changes nothing while the pointer
 #     sweeps over its rows, and the click that closes it only closes it (Do Not Disturb, Focus, the
 #     style and the power mode are read before and after; council 2026-11-09);
 #   - power saver: the monitor's readings fold away to one icon, and come back on Balanced;
 #   - the journal gate.
 #   - hot corner: pushing up into the top-right corner (relative motion, vm.sh nudge, since GNOME's
-#     pressure barriers ignore the VM's absolute tablet) opens quick settings, twice in a row, and does
-#     not with quick-settings-corner off. A second monitor's placement is a unit test only
+#     pressure barriers ignore the VM's absolute tablet) opens quick settings, twice in a row; a second
+#     push while it is open closes it, as the top-left corner toggles the overview; and it does not
+#     open with quick-settings-corner off. A second monitor's placement is a unit test only
 #     (tests/js/corner-place.test.js): the VM has one screen.
 # Screenshots go to $VM_DIR/topbar-test.
 set -euo pipefail
@@ -111,20 +112,17 @@ sleep 1.5
 c=$(active scroll-3)
 if ((c == start)); then ok "another flick up: back to $start"; else bad "another flick up: $c (want $start)"; fi
 
-echo "== hover: rest on the clock"
+echo "== no hover: resting on the clock opens nothing"
 shot hover-0
 read -r _ m0 < <(stats "$OUT/hover-0.png" "$CLOCK_MENU_BOX")
 # shellcheck disable=SC2086
 "$VM" move $CLOCK_XY
-sleep 1.5
+sleep 2
 shot hover-1
-read -r s1 m1 < <(stats "$OUT/hover-1.png" "$CLOCK_MENU_BOX")
-if ((m1 - m0 > 8 || m0 - m1 > 8 || s1 > 25)); then ok "the clock menu opened (mean $m0 -> $m1, contrast $s1)"; else bad "the clock menu didn't open (mean $m0 -> $m1, contrast $s1)"; fi
+read -r _ m1 < <(stats "$OUT/hover-1.png" "$CLOCK_MENU_BOX")
+if ((m1 - m0 <= 4 && m0 - m1 <= 4)); then ok "the clock menu stayed closed (mean $m0 -> $m1)"; else bad "resting opened the clock menu (mean $m0 -> $m1)"; fi
 "$VM" move 960 900
-sleep 1.5
-shot hover-2
-read -r _ m2 < <(stats "$OUT/hover-2.png" "$CLOCK_MENU_BOX")
-if ((m2 - m0 <= 4 && m0 - m2 <= 4)); then ok "it closed when the pointer left (mean $m2)"; else bad "it didn't close (mean $m0 -> $m2)"; fi
+sleep 1
 
 echo "== no activation: open without touching a row"
 # Everything a row in either menu could change.
@@ -137,7 +135,7 @@ s0=$(state)
 "$VM" move 960 900
 sleep 1
 # shellcheck disable=SC2086
-"$VM" move $CLOCK_XY # rest: the clock menu opens
+"$VM" click $CLOCK_XY # the clock menu, by a click
 sleep 1.5
 sweep 800,150 1100,150 1100,300 800,350 1000,420
 "$VM" click 300 800 # outside: closes it
@@ -188,6 +186,13 @@ for try in 1 2; do
 	if qs_open; then ok "push $try: quick settings opened"; else bad "push $try: quick settings did not open"; fi
 	shot "corner-$try"
 done
+"$VM" move 1700 300 # a second push while it is open closes it
+sleep 1
+"$VM" move 1915 25
+sleep 1
+"$VM" nudge 0 -40 30
+sleep 2
+if qs_open; then bad "a second push left quick settings open"; else ok "a second push closed quick settings"; fi
 run "dconf write $CORNER_KEY false"
 sleep 1
 push_corner
