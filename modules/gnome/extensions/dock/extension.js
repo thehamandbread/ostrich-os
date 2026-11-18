@@ -129,7 +129,12 @@ export default class DockExtension extends Extension {
             if (!this._dash.showAppsButton.checked)
                 return;
             this._dash.showAppsButton.checked = false;
-            Main.overview.showApps();
+            // In the overview's app grid it goes back to the windows, as the overview's own dash did.
+            const grid = Main.overview.dash?.showAppsButton;
+            if (Main.overview.visible && grid?.checked)
+                grid.checked = false;
+            else
+                Main.overview.showApps();
         });
 
         this._signals.connect(this._box, 'notify::hover', () => this._onHover());
@@ -137,8 +142,11 @@ export default class DockExtension extends Extension {
         this._placeLater = new BeforeRedraw(() => this._place());
         this._signals.connect(this._box, 'notify::allocation', () => this._placeLater.queue());
         this._signals.connect(Main.layoutManager, 'monitors-changed', () => this._rebuildBarrier());
-        // The overview has its own dash; don't stack ours on top of it.
-        this._signals.connect(Main.overview, 'showing', () => this._hide(true));
+        // One dock everywhere (owner, 2026-11-18): ours stays in the overview, and GNOME's own dash
+        // there (up to 64 px icons on solid grey) is hidden, keeping our dock's height free for it.
+        this._overviewDash = Main.overview.dash;
+        this._overviewDash?.hide();
+        this._signals.connect(Main.overview, 'showing', () => this._show());
         this._signals.connect(Main.overview, 'hidden', () => this._sync());
 
         const style = Gio.Settings.new('org.gnome.desktop.interface');
@@ -196,6 +204,9 @@ export default class DockExtension extends Extension {
         this._destroyBarrier();
         // Dash registers itself with Ctrl+Alt+Tab and doesn't unregister on destroy.
         Main.ctrlAltTabManager.removeGroup(this._dash);
+        this._overviewDash?.set_height(-1);
+        this._overviewDash?.show();
+        this._overviewDash = null;
         Main.layoutManager.removeChrome(this._box);
         this._box.destroy();
         this._box = this._dash = this._settings = this._interfaceSettings = null;
@@ -443,6 +454,8 @@ export default class DockExtension extends Extension {
         if (this._box.x !== x || this._box.y !== y)
             this._box.set_position(x, y);
         this._dash.setMaxSize(Math.round(m.width * 0.9), h);
+        if (this._overviewDash && this._overviewDash.height !== h)
+            this._overviewDash.set_height(h); // the overview lays its windows out above our dock
     }
 
     // ---- show / hide ----
@@ -454,7 +467,7 @@ export default class DockExtension extends Extension {
     _show() {
         this._clearHideTimer();
         // Check the actor too: something else (focus mode) may have hidden it while we thought it shown.
-        if ((this._shown && this._box.visible) || Main.overview.visible)
+        if (this._shown && this._box.visible)
             return;
         this._shown = true;
         this._box.visible = true;
@@ -510,11 +523,7 @@ export default class DockExtension extends Extension {
     _sync() {
         if (!this._box)
             return;
-        if (Main.overview.visible) {
-            this._hide(true);
-            return;
-        }
-        if (!this._settings.get_boolean('autohide')) {
+        if (Main.overview.visible || !this._settings.get_boolean('autohide')) {
             this._show();
             return;
         }
