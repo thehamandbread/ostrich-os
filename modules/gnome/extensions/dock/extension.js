@@ -146,6 +146,10 @@ export default class DockExtension extends Extension {
         // there (up to 64 px icons on solid grey) is hidden, keeping our dock's height free for it.
         this._overviewDash = Main.overview.dash;
         this._overviewDash?.hide();
+        // Hidden, its icons never get styled, and the overview's setMaxSize then threw in
+        // _adjustIconSize (firstIcon.icon is null): it only needs its fixed height, set in _place.
+        if (this._overviewDash)
+            this._overviewDash.setMaxSize = () => {};
         this._signals.connect(Main.overview, 'showing', () => this._show());
         this._signals.connect(Main.overview, 'hidden', () => this._sync());
 
@@ -204,6 +208,8 @@ export default class DockExtension extends Extension {
         this._destroyBarrier();
         // Dash registers itself with Ctrl+Alt+Tab and doesn't unregister on destroy.
         Main.ctrlAltTabManager.removeGroup(this._dash);
+        if (this._overviewDash)
+            delete this._overviewDash.setMaxSize; // back to the class's own
         this._overviewDash?.set_height(-1);
         this._overviewDash?.show();
         this._overviewDash = null;

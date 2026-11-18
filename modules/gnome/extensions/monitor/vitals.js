@@ -124,7 +124,7 @@ export function buildSections(r, {hideZeros = false} = {}) {
     // The average of every sensor leads, as Vitals did: one number anyone can read, where the
     // processor package alone ran near 100 °C under load and meant little (owner, 2026-11-18).
     const temps = (r.temps ?? []).filter(t => Number.isFinite(t.celsius));
-    if (temps.length > 1)
+    if (temps.length > 0) // one sensor too: the default pin must not vanish on such a machine
         add('temp', row('temp.average', 'Average (all sensors)', temps.reduce((a, t) => a + t.celsius, 0) / temps.length, fmt.temp, 2));
     for (const t of r.temps ?? []) {
         const id = t.package ? 'temp.package' : `temp.${slug(`${t.chip}-${t.label}`)}`;
