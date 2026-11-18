@@ -647,7 +647,11 @@ fn top_bar_step() -> Vec<adw::PreferencesGroup> {
         Some(s) => {
             g.add(&pin_row(&s, "cpu.usage", "Processor usage"));
             g.add(&pin_row(&s, "mem.usage", "Memory usage"));
-            g.add(&pin_row(&s, "temp.average", "Temperature (average of all sensors)"));
+            g.add(&pin_row(
+                &s,
+                "temp.average",
+                "Temperature (average of all sensors)",
+            ));
             g.add(&pin_row(&s, "temp.package", "Processor temperature"));
             g.add(&pin_row(&s, "gpu.state", "NVIDIA GPU on or asleep"));
             g.add(&pin_row(&s, "net.down", "Download speed"));
