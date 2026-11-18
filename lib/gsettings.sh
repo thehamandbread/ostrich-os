@@ -24,7 +24,7 @@ gs_list_add() {
 	mapfile -t items < <(gs_list "$schema" "$key")
 	local i
 	for i in "$@"; do
-		printf '%s\n' "${items[@]}" | grep -qxF "$i" || missing+=("$i")
+		printf '%s\n' "${items[@]}" "${missing[@]}" | grep -qxF "$i" || missing+=("$i") # a uuid passed twice goes in once
 	done
 	((${#missing[@]} > 0)) || return 0
 	local all=("${items[@]}" "${missing[@]}") out="" x

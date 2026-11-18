@@ -229,3 +229,21 @@ PY
 	[ "$status" -eq 0 ]
 	[ "${lines[*]}" = "none partial unknown ok stale" ]
 }
+
+@test "gs_list_add writes an item passed twice only once" {
+	mkdir -p "$BATS_TEST_TMPDIR/bin"
+	cat >"$BATS_TEST_TMPDIR/bin/gsettings" <<'STUB'
+#!/bin/sh
+f="$BATS_TEST_TMPDIR/list"
+case $1 in
+get) cat "$f" 2>/dev/null || echo "['a@x']" ;;
+set) echo "$4" >"$f" ;;
+esac
+STUB
+	chmod +x "$BATS_TEST_TMPDIR/bin/gsettings"
+	export BATS_TEST_TMPDIR
+	PATH="$BATS_TEST_TMPDIR/bin:$PATH"
+	source "$LIB/gsettings.sh"
+	gs_list_add org.gnome.shell disabled-extensions a@x b@x c@x b@x c@x
+	[ "$(cat "$BATS_TEST_TMPDIR/list")" = "['a@x', 'b@x', 'c@x']" ]
+}
