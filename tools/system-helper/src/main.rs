@@ -135,6 +135,13 @@ fn main() -> ExitCode {
                     .args(["control", "--reload"])
                     .status();
             }
+            if a.get(1) == Some(&"on") {
+                // Wait for the rebound touchscreen's input node: the tile asks `status` straight after,
+                // and before udev had listed it again the answer was "none", which hid the tile.
+                let _ = std::process::Command::new("udevadm")
+                    .args(["settle", "--timeout=5"])
+                    .status();
+            }
             ExitCode::SUCCESS
         }
         Err(e) => {
