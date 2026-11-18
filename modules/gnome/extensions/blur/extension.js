@@ -234,6 +234,9 @@ export default class BlurExtension extends Extension {
         this._signals.connect(Main.sessionMode, 'updated', () => this._rebuild());
         // Scenes and the overview copy hold monitor indexes and rects.
         this._signals.connect(Main.layoutManager, 'monitors-changed', () => this._rebuild());
+        // At login GNOME zooms the whole UI group in from 75 %: backdrops placed during that sat
+        // shrunk toward the middle of the screen, a stray bar, until rebuilt (owner, 2026-11-18).
+        this._signals.connect(Main.layoutManager, 'startup-complete', () => this._rebuild());
         // The dock can be enabled after us.
         this._signals.connect(Main.layoutManager.uiGroup, 'child-added', (_g, child) => {
             if (child.name === DOCK_ACTOR && this._on('dock'))
@@ -380,6 +383,7 @@ export default class BlurExtension extends Extension {
             return;
         }
         const scene = new Scene(bg, Main.layoutManager.primaryIndex, false);
+        Main.layoutManager.uiGroup.add_style_class_name('ost-blur-overview-on'); // search results go glass
         bg.add_effect(new Shell.BlurEffect({
             mode: Shell.BlurMode.ACTOR,
             radius: this.settings.get_uint('overview-radius'),
@@ -388,6 +392,7 @@ export default class BlurExtension extends Extension {
         group.insert_child_at_index(bg, 0);
         this._overview = bg;
         bg.connect('destroy', () => {
+            Main.layoutManager.uiGroup.remove_style_class_name('ost-blur-overview-on');
             scene.destroy();
             if (this._overview === bg)
                 this._overview = null;
@@ -421,10 +426,15 @@ export default class BlurExtension extends Extension {
             return;
         const radius = menu.box.get_theme_node().get_border_radius(St.Corner.TOPLEFT);
         menu.box.add_style_class_name('ost-blur-menu');
+        // Quick settings' submenus sit beside the box, in menu.actor (an overlay): they key off this.
+        menu.actor.add_style_class_name?.('ost-blur-menu-root');
         const b = new Backdrop(this, menu.box, 'menus', {radius, watch: [menu.actor]});
         // The glass tint goes with the backdrop: left on a menu whose blur was switched off, it made
         // the menu see-through instead of solid.
-        b.onDestroy = () => menu.box.remove_style_class_name('ost-blur-menu');
+        b.onDestroy = () => {
+            menu.box.remove_style_class_name('ost-blur-menu');
+            menu.actor.remove_style_class_name?.('ost-blur-menu-root');
+        };
         this._backdrops.add(b);
         this._menuBackdrops.set(menu, b);
     }

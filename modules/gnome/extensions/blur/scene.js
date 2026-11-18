@@ -47,6 +47,9 @@ export class Scene {
             this._signals.connect(global.display, 'restacked', rebuild);
             this._signals.connect(global.display, 'window-created', rebuild);
             this._signals.connect(global.workspace_manager, 'active-workspace-changed', rebuild);
+            // The overview hides the windows: the dock, which stays there, blurs only the wallpaper.
+            this._signals.connect(Main.overview, 'showing', rebuild);
+            this._signals.connect(Main.overview, 'hidden', rebuild);
             this.rebuild();
         }
         this._place();
@@ -67,6 +70,8 @@ export class Scene {
     }
 
     _onWorkspace() {
+        if (Main.overview.visible)
+            return [];
         const ws = global.workspace_manager.get_active_workspace();
         return global.get_window_actors().filter(a => {
             const w = a.meta_window;

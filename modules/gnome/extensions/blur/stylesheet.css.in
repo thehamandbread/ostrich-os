@@ -49,6 +49,36 @@
   border: 1px solid {{light_glass_border}};
 }
 .ost-blur-light .ost-blur-menu .message-media-control { color: {{light_text}}; }
+/* Cards the theme paints solid grey on top of the glass (owner, 2026-11-18: "stock Ubuntu grey"):
+   notifications and buttons in the clock menu, quick settings' submenus, overview search results.
+   Each already has blur behind it (the menu's backdrop or the overview's), so a tint is enough. */
+.ost-blur-menu .message,
+.ost-blur-menu .events-button,
+.ost-blur-menu .world-clocks-button,
+.ost-blur-menu .weather-button,
+.ost-blur-menu-root .quick-toggle-menu,
+.ost-blur-overview-on .search-section-content {
+  background-color: {{glass_banner}};
+  border: 1px solid {{glass_border}};
+}
+.ost-blur-light .ost-blur-menu .message,
+.ost-blur-light .ost-blur-menu .events-button,
+.ost-blur-light .ost-blur-menu .world-clocks-button,
+.ost-blur-light .ost-blur-menu .weather-button,
+.ost-blur-light .ost-blur-menu-root .quick-toggle-menu,
+.ost-blur-light.ost-blur-overview-on .search-section-content {
+  background-color: {{light_glass_banner}};
+  border: 1px solid {{light_glass_border}};
+}
+/* Hover and focus still show, a step stronger (the rules above would otherwise flatten the theme's). */
+.ost-blur-menu .message:hover, .ost-blur-menu .message:focus,
+.ost-blur-menu .events-button:hover, .ost-blur-menu .events-button:focus,
+.ost-blur-menu .world-clocks-button:hover, .ost-blur-menu .world-clocks-button:focus,
+.ost-blur-menu .weather-button:hover, .ost-blur-menu .weather-button:focus { background-color: {{glass_folder}}; }
+.ost-blur-light .ost-blur-menu .message:hover, .ost-blur-light .ost-blur-menu .message:focus,
+.ost-blur-light .ost-blur-menu .events-button:hover, .ost-blur-light .ost-blur-menu .events-button:focus,
+.ost-blur-light .ost-blur-menu .world-clocks-button:hover, .ost-blur-light .ost-blur-menu .world-clocks-button:focus,
+.ost-blur-light .ost-blur-menu .weather-button:hover, .ost-blur-light .ost-blur-menu .weather-button:focus { background-color: {{light_glass_folder}}; }
 /* The lock screen without blur: the scheme's neutral solid colour. */
 .ost-solid { background-color: {{solid}}; }
 /* Power saver: what would need live re-blurring is solid black instead (the top bar and dock keep a
