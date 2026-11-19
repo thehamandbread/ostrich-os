@@ -7,10 +7,12 @@
 //!   power apply saver|balanced|performance    root: turbo, PCIe ASPM, audio power save
 //!   graphics status                  integrated | hybrid | discrete | none (no root needed)
 //!   graphics set integrated|hybrid|discrete   root: prime-select (takes effect after log-out)
+//!   apparmor allow|remove NAME       root: the sandbox profile for a GitHub app (apparmor.rs)
 //!
 //! It accepts only these exact commands: no paths, no free-form arguments, since it runs as root
 //! through polkit.
 
+mod apparmor;
 mod power;
 mod touchscreen;
 
@@ -69,7 +71,7 @@ fn graphics_set(mode: &str) -> Result<String, String> {
 }
 
 fn usage() -> ExitCode {
-    eprintln!("usage: ostrich-system-helper touchscreen status|on|off [--persist] | power status|apply MODE | graphics status|set MODE");
+    eprintln!("usage: ostrich-system-helper touchscreen status|on|off [--persist] | power status|apply MODE | graphics status|set MODE | apparmor allow|remove NAME");
     ExitCode::from(2)
 }
 
@@ -123,6 +125,17 @@ fn main() -> ExitCode {
                 return ExitCode::from(1);
             }
             graphics_set(mode)
+        }
+        ["apparmor", cmd @ ("allow" | "remove"), name] if apparmor::valid_name(name) => {
+            if !is_root() {
+                eprintln!("apparmor {cmd}: needs root (run through pkexec)");
+                return ExitCode::from(1);
+            }
+            if *cmd == "allow" {
+                apparmor::allow(name)
+            } else {
+                apparmor::remove(name)
+            }
         }
         _ => return usage(),
     };

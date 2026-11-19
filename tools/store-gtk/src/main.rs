@@ -11,7 +11,7 @@
 
 use adw::prelude::*;
 use gtk::{gio, glib};
-use std::cell::{Cell, RefCell};
+use std::cell::RefCell;
 use std::collections::{HashMap, VecDeque};
 use std::io::{BufRead, BufReader};
 use std::path::PathBuf;
@@ -697,7 +697,9 @@ fn github_install(store: &Rc<Store>, link: &str) {
             Err(_) => return,
         };
         let had = ghinstall::Dirs::from_env().and_then(|d| ghinstall::installed_tag(&d, &repo));
-        if had.as_deref() == Some(release.tag.as_str()) {
+        let repair =
+            ghinstall::Dirs::from_env().is_some_and(|d| ghinstall::needs_repair(&d, &repo));
+        if had.as_deref() == Some(release.tag.as_str()) && !repair {
             return s.toast(&format!("{} is up to date ({})", repo.slug(), release.tag));
         }
         let Some((kind, asset)) =
@@ -713,6 +715,7 @@ fn github_install(store: &Rc<Store>, link: &str) {
         };
         let d = adw::AlertDialog::new(
             Some(&match &had {
+                Some(t) if *t == release.tag => format!("Install {} again?", repo.slug()),
                 Some(t) => format!("Update {} from {t}?", repo.slug()),
                 None => format!("Install {}?", repo.slug()),
             }),
@@ -742,6 +745,7 @@ fn github_install(store: &Rc<Store>, link: &str) {
             }
             let (repo, release, kind, asset) =
                 (repo.clone(), release.clone(), kind.clone(), asset.clone());
+            let repo_slug = repo.slug();
             s2.job_label
                 .set_text(&format!("Installing {}…", repo.slug()));
             s2.job_progress.pulse();
@@ -804,7 +808,14 @@ fn github_install(store: &Rc<Store>, link: &str) {
                     })
                 })
                 .await;
-                s3.finish_job(got.unwrap_or_else(|_| Err("the install stopped".into())));
+                let got = got.unwrap_or_else(|_| Err("the install stopped".into()));
+                if got.is_ok() {
+                    let id = format!("{}{}", ghinstall::UPDATE_PREFIX, repo_slug);
+                    if let Some(u) = s3.updates.borrow_mut().as_mut() {
+                        u.retain(|(i, _)| *i != id);
+                    }
+                }
+                s3.finish_job(got);
             });
         });
         let window = s.window.borrow().clone();
@@ -1104,7 +1115,11 @@ fn updates_page(store: &Rc<Store>) -> gtk::ScrolledWindow {
             .map(|(i, _)| i.clone())
             .collect();
         for id in ids {
-            enqueue(&s, Action::Update, &id);
+            match id.strip_prefix(ghinstall::UPDATE_PREFIX) {
+                // Each asks first, as an install from GitHub always does.
+                Some(slug) => github_install(&s, &format!("https://github.com/{slug}")),
+                None => enqueue(&s, Action::Update, &id),
+            }
         }
     });
     let fill = {
@@ -1145,8 +1160,29 @@ fn updates_page(store: &Rc<Store>) -> gtk::ScrolledWindow {
                 Some(u) => {
                     status.set_visible(false);
                     group.set_visible(true);
-                    group.set_title(&format!("{} updates", u.len()));
+                    group.set_title(&match u.len() {
+                        1 => "1 update".to_string(),
+                        n => format!("{n} updates"),
+                    });
                     for (id, version) in u {
+                        if let Some(slug) = id.strip_prefix(ghinstall::UPDATE_PREFIX) {
+                            let repair = github::parse_repo(slug)
+                                .zip(ghinstall::Dirs::from_env())
+                                .is_some_and(|(r, d)| ghinstall::needs_repair(&d, &r));
+                            let what = if repair {
+                                "Needs installing again to start".to_string()
+                            } else {
+                                format!("New release {version}, from GitHub")
+                            };
+                            let row = plain_row(slug, &what);
+                            let update = gtk::Button::with_label("Update");
+                            update.set_valign(gtk::Align::Center);
+                            let (s2, link) = (s.clone(), format!("https://github.com/{slug}"));
+                            update.connect_clicked(move |_| github_install(&s2, &link));
+                            row.add_suffix(&update);
+                            list.append(&row);
+                            continue;
+                        }
                         let row = app_row(&s, &id);
                         if !version.is_empty() {
                             row.set_subtitle(&format!("New version {version}"));
@@ -1165,18 +1201,76 @@ fn updates_page(store: &Rc<Store>) -> gtk::ScrolledWindow {
     scrolled(&b)
 }
 
+/// Flatpak updates, then apps from GitHub with a newer release (ids `github:owner/name`), and
+/// Flatpak's error if it had one: GitHub's are still listed when Flatpak can't be asked.
+fn all_updates() -> (Vec<(String, String)>, Option<String>) {
+    let (mut u, err) = match flatpak::updates() {
+        Ok(u) => (u, None),
+        Err(e) => (Vec::new(), Some(e)),
+    };
+    if let Some(d) = ghinstall::Dirs::from_env() {
+        u.extend(ghinstall::updates(&d));
+    }
+    (u, err)
+}
+
+/// `--check-updates` (the daily ostrich-store-updates timer): no window; a notification when
+/// something can be updated, and its button opens the Updates tab.
+fn notify_updates() -> glib::ExitCode {
+    let (u, _) = all_updates();
+    if u.is_empty() {
+        return glib::ExitCode::SUCCESS;
+    }
+    let names: Vec<&str> = u
+        .iter()
+        .map(|(id, _)| id.strip_prefix(ghinstall::UPDATE_PREFIX).unwrap_or(id))
+        .map(|id| id.rsplit(['/', '.']).next().unwrap_or(id))
+        .take(3)
+        .collect();
+    let more = if u.len() > 3 { ", …" } else { "" };
+    let title = if u.len() == 1 {
+        "1 app can be updated".to_string()
+    } else {
+        format!("{} apps can be updated", u.len())
+    };
+    // --wait: notify-send prints the chosen action once the notification is answered.
+    let answer = std::process::Command::new("notify-send")
+        .args([
+            "--app-name=Ostrich Store",
+            "--icon=ostrich-store",
+            "--action=default=Open Updates", // a click on the notification itself
+            "--action=open=Open Updates",
+            "--wait",
+            &title,
+            &format!("{}{more}", names.join(", ")),
+        ])
+        .output();
+    let chosen = |o: &std::process::Output| {
+        matches!(
+            String::from_utf8_lossy(&o.stdout).trim(),
+            "open" | "default"
+        )
+    };
+    if answer.is_ok_and(|o| chosen(&o)) {
+        if let Ok(me) = std::env::current_exe() {
+            let _ = std::process::Command::new(me).arg("--updates").spawn();
+        }
+    }
+    glib::ExitCode::SUCCESS
+}
+
 /// Asks the remotes for updates (network, off the UI thread).
 fn check_updates(store: &Rc<Store>) {
     *store.updates.borrow_mut() = None;
     store.changed();
     let s = store.clone();
     glib::spawn_future_local(async move {
-        let got = gio::spawn_blocking(flatpak::updates).await;
+        let got = gio::spawn_blocking(all_updates).await;
         *s.updates.borrow_mut() = Some(match got {
-            Ok(Ok(u)) => u,
-            Ok(Err(e)) => {
+            Ok((u, None)) => u,
+            Ok((u, Some(e))) => {
                 s.toast(&format!("Couldn't check for updates: {e}"));
-                Vec::new()
+                u
             }
             Err(_) => Vec::new(),
         });
@@ -1276,6 +1370,9 @@ fn no_catalogue(app: &adw::Application, query: &str) {
 }
 
 fn build(app: &adw::Application, query: &str) {
+    // `--updates` (the update notification's button) opens on the Updates tab.
+    let open_updates = query == "--updates";
+    let query = if open_updates { "" } else { query };
     let Some(catalogue) = store_core::catalogue_path(REMOTE) else {
         return no_catalogue(app, query);
     };
@@ -1384,14 +1481,11 @@ fn build(app: &adw::Application, query: &str) {
             true
         });
     }
-    // Updates are checked (network) the first time their tab is opened.
-    let checked = Cell::new(false);
-    let s = store.clone();
-    stack.connect_visible_child_name_notify(move |st| {
-        if st.visible_child_name().as_deref() == Some("updates") && !checked.replace(true) {
-            check_updates(&s);
-        }
-    });
+    // Updates are checked (network) as the store opens, so the tab's count is there to see.
+    check_updates(&store);
+    if open_updates {
+        stack.set_visible_child_name("updates");
+    }
 
     let header = adw::HeaderBar::new();
     header.set_title_widget(Some(
@@ -1590,6 +1684,9 @@ fn open_target(store: &Rc<Store>, target: Target) {
 }
 
 fn main() -> glib::ExitCode {
+    if std::env::args().nth(1).as_deref() == Some("--check-updates") {
+        return notify_updates();
+    }
     let app = adw::Application::builder()
         .application_id(APP_ID)
         .flags(gio::ApplicationFlags::HANDLES_COMMAND_LINE)

@@ -4,8 +4,9 @@
 #
 # From a checkout with a build in tools/target/release, those binaries are used. Otherwise the
 # release for VERSION is downloaded and checked against its SHA256SUMS. `ostrich` goes to
-# ~/.local/bin and the tools it runs to ~/.local/libexec/ubuntu-ostrich; the system helper is staged in dist/ for the hardware modules, which install it
-# as root only on machines that need it. The drawer starts hidden at login, so messaging services
+# ~/.local/bin and the tools it runs to ~/.local/libexec/ubuntu-ostrich. The system helper is staged
+# in dist/ and installed as root here: the Store needs it on every machine (sandbox profiles for apps
+# from GitHub); the hardware modules reinstall it only if it changed. The drawer starts hidden at login, so messaging services
 # can notify. The wizard is in the app grid and opens at the next login until it's finished.
 set -euo pipefail
 # shellcheck source=lib/module.sh
@@ -82,6 +83,8 @@ mkdir -p "$DIST"
 if ! cmp -s "$SRC/$HELPER" "$DIST/$HELPER" 2>/dev/null; then
 	((DRY_RUN)) || install -m 0755 "$SRC/$HELPER" "$DIST/$HELPER"
 fi
+HELPER_SRC="$DIST/$HELPER"
+have_helper_build && install_system_helper
 
 # Our app icons (made by tools/icons/export.sh): two sets, icons/ for the dark style and icons-light/
 # for the light one. Both go to $SETS_DIR; the one for the current style goes into the icon theme as
@@ -177,6 +180,40 @@ Keywords=apps;install;flatpak;flathub;github;
 MimeType=application/vnd.flatpak.ref;application/vnd.flatpak.repo;x-scheme-handler/appstream;
 DESKTOP
 install_file "$autostart" "$APPS_DIR/$STORE_ID"
+
+# A daily look for updates (Flatpak and apps from GitHub): a notification when there are some, whose
+# button opens the Store's Updates tab (owner, 2026-11-18). Persistent: a day missed while the
+# laptop was off is caught up at the next login.
+UNIT_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/systemd/user"
+cat >"$autostart" <<UNIT
+[Unit]
+Description=Ostrich Store: look for app updates
+
+[Service]
+Type=simple
+ExecStart=$LIBEXEC_DIR/ostrich-store-gtk --check-updates
+# The Store window the notification opens outlives this check (else it closes when the check ends).
+KillMode=process
+UNIT
+install_file "$autostart" "$UNIT_DIR/ostrich-store-updates.service"
+cat >"$autostart" <<UNIT
+[Unit]
+Description=Ostrich Store: look for app updates daily
+
+[Timer]
+OnCalendar=daily
+Persistent=true
+RandomizedDelaySec=1h
+
+[Install]
+WantedBy=timers.target
+UNIT
+install_file "$autostart" "$UNIT_DIR/ostrich-store-updates.timer"
+if command -v systemctl >/dev/null 2>&1 && systemctl --user show-environment >/dev/null 2>&1; then
+	run_cmd systemctl --user daemon-reload
+	systemctl --user is-enabled --quiet ostrich-store-updates.timer 2>/dev/null ||
+		run_cmd systemctl --user enable --now ostrich-store-updates.timer
+fi
 
 # Ostrich Store is the store: in the dock, in App Center's place (App Center stays in the app grid:
 # it's Ubuntu's store for snaps and Ubuntu packages, and snaps update through it), and the app that

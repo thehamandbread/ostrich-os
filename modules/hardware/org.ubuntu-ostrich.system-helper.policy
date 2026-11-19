@@ -42,4 +42,15 @@
     <annotate key="org.freedesktop.policykit.exec.path">/usr/libexec/ubuntu-ostrich/system-helper</annotate>
     <annotate key="org.freedesktop.policykit.exec.argv1">graphics</annotate>
   </action>
+  <action id="org.ubuntu-ostrich.system-helper.apparmor">
+    <description>Let an app from GitHub use its sandbox</description>
+    <message>Let an app you installed from GitHub use its security sandbox (an AppArmor rule).</message>
+    <defaults>
+      <allow_any>auth_admin</allow_any>
+      <allow_inactive>auth_admin</allow_inactive>
+      <allow_active>auth_admin_keep</allow_active>
+    </defaults>
+    <annotate key="org.freedesktop.policykit.exec.path">/usr/libexec/ubuntu-ostrich/system-helper</annotate>
+    <annotate key="org.freedesktop.policykit.exec.argv1">apparmor</annotate>
+  </action>
 </policyconfig>

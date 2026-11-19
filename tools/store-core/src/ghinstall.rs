@@ -3,7 +3,7 @@
 //! | kind      | how                                                     | where                      |
 //! |-----------|---------------------------------------------------------|----------------------------|
 //! | .flatpak  | `flatpak install --user --bundle` (.flatpakref: --from) | the user's flatpak         |
-//! | AppImage  | copied, made executable, launcher written               | ~/.local/share/…/github/   |
+//! | AppImage  | unpacked (--appimage-extract), launcher on its AppRun   | ~/.local/share/…/github/   |
 //! | .deb      | `pkexec apt-get install ./file.deb` (runs as root)      | the system                 |
 //! | tarball   | extracted, the program found, launcher written          | ~/.local/share/…/github/   |
 //!
@@ -38,9 +38,7 @@ impl Dirs {
     /// `owner_name`: GitHub owners can't contain `_`, so `a-b/c` and `a/b-c` never share a folder
     /// (they did with `-`, and installing one replaced the other).
     pub fn app_dir(&self, repo: &Repo) -> PathBuf {
-        self.data
-            .join("github")
-            .join(format!("{}_{}", repo.owner, repo.name))
+        self.data.join("github").join(dir_name(repo))
     }
 
     /// Where an install before the `_` names put it; removed on update and on remove.
@@ -68,6 +66,20 @@ impl Dirs {
     }
 }
 
+fn dir_name(repo: &Repo) -> String {
+    format!("{}_{}", repo.owner, repo.name)
+}
+
+const HELPER: &str = "/usr/libexec/ubuntu-ostrich/system-helper";
+
+/// The system helper's AppArmor profile for an app (tools/system-helper/src/apparmor.rs).
+fn sandbox_profile(repo: &Repo) -> PathBuf {
+    PathBuf::from(format!(
+        "/etc/apparmor.d/ubuntu-ostrich-github-{}",
+        dir_name(repo)
+    ))
+}
+
 /// The folder and launcher an older version of the store used for this repo (`owner-name`).
 fn remove_legacy(dirs: &Dirs, repo: &Repo) {
     for p in dirs.legacy_paths(repo) {
@@ -81,18 +93,44 @@ fn remove_legacy(dirs: &Dirs, repo: &Repo) {
 
 /// The launcher for a program installed from a repo. Names come from `parse_repo`, which only
 /// allows [A-Za-z0-9._-], so they're safe in a .desktop file.
-pub fn desktop_entry(repo: &Repo, tag: &str, exec: &Path) -> String {
+/// `name` and `icon` come from the app itself when it has them (an AppImage's own .desktop and
+/// .DirIcon); else the repo's name and a generic icon.
+pub fn desktop_entry(
+    repo: &Repo,
+    tag: &str,
+    exec: &Path,
+    name: Option<&str>,
+    icon: Option<&Path>,
+) -> String {
     let exec = exec
         .to_string_lossy()
         .replace('\\', "\\\\")
         .replace('"', "\\\"");
+    let icon = icon.map_or("application-x-executable".into(), |p| p.to_string_lossy());
     format!(
-        "[Desktop Entry]\nType=Application\nName={}\nComment=Installed from github.com/{} ({})\nExec=\"{}\"\nIcon=application-x-executable\nCategories=Utility;\nTerminal=false\n",
-        repo.name,
+        "[Desktop Entry]\nType=Application\nName={}\nComment=Installed from github.com/{} ({})\nExec=\"{}\"\nIcon={}\nCategories=Utility;\nTerminal=false\n",
+        name.unwrap_or(&repo.name),
         repo.slug(),
         tag,
-        exec
+        exec,
+        icon
     )
+}
+
+/// The Name= of the .desktop file an AppImage carries at its top, if it has one.
+fn appimage_name(app: &Path) -> Option<String> {
+    let desktop = fs::read_dir(app)
+        .ok()?
+        .flatten()
+        .map(|e| e.path())
+        .find(|p| p.extension().is_some_and(|x| x == "desktop"))?;
+    fs::read_to_string(desktop)
+        .ok()?
+        .lines()
+        .find_map(|l| l.strip_prefix("Name="))
+        .map(str::trim)
+        .filter(|n| !n.is_empty())
+        .map(str::to_string)
 }
 
 /// The program in an extracted tarball: named like the repo, else in bin/ named like it, else the
@@ -213,28 +251,24 @@ pub fn install(
             }
         }
         Kind::AppImage => {
-            use std::os::unix::fs::PermissionsExt;
-            let dir = dirs.app_dir(repo);
-            fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
-            let dest = dir.join(asset);
-            // Beside it, then renamed over it: copying onto an AppImage that is running fails
-            // ("text file busy") when a release keeps the same file name.
-            let new = dir.join(format!(".{asset}.new"));
-            fs::copy(file, &new).map_err(|e| e.to_string())?;
-            fs::set_permissions(&new, fs::Permissions::from_mode(0o755))
-                .map_err(|e| e.to_string())?;
-            fs::rename(&new, &dest).map_err(|e| e.to_string())?;
+            let (app, note) = unpack_appimage(dirs, repo, file)?;
             remove_legacy(dirs, repo);
-            // Only once the new one is in place: earlier versions go, rather than piling up.
-            for old in fs::read_dir(&dir).map_err(|e| e.to_string())?.flatten() {
-                if old.path() != dest {
-                    let _ = fs::remove_file(old.path());
-                }
-            }
-            let desktop = write_launcher(dirs, repo, tag, &dest)?;
+            let icon = app.join(".DirIcon");
+            let name = appimage_name(&app);
+            let desktop = write_launcher(
+                dirs,
+                repo,
+                tag,
+                &app.join("AppRun"),
+                name.as_deref(),
+                icon.exists().then_some(icon.as_path()),
+            )?;
             Installed {
-                summary: format!("installed {asset}; it's in the app grid as {}", repo.name),
-                files: vec![dir, desktop],
+                summary: format!(
+                    "installed {asset}; it's in the app grid as {}{note}",
+                    name.as_deref().unwrap_or(&repo.name)
+                ),
+                files: vec![dirs.app_dir(repo), desktop],
                 package: None,
             }
         }
@@ -256,7 +290,7 @@ pub fn install(
             walk(&dir, &dir, &mut files);
             match find_program(&files, repo) {
                 Some(rel) => {
-                    let desktop = write_launcher(dirs, repo, tag, &dir.join(&rel))?;
+                    let desktop = write_launcher(dirs, repo, tag, &dir.join(&rel), None, None)?;
                     Installed {
                         summary: format!(
                             "installed {}; it's in the app grid as {}",
@@ -282,11 +316,80 @@ pub fn install(
     Ok(result)
 }
 
-fn write_launcher(dirs: &Dirs, repo: &Repo, tag: &str, exec: &Path) -> Result<PathBuf, String> {
+fn write_launcher(
+    dirs: &Dirs,
+    repo: &Repo,
+    tag: &str,
+    exec: &Path,
+    name: Option<&str>,
+    icon: Option<&Path>,
+) -> Result<PathBuf, String> {
     fs::create_dir_all(&dirs.applications).map_err(|e| e.to_string())?;
     let f = dirs.desktop_file(repo);
-    fs::write(&f, desktop_entry(repo, tag, exec)).map_err(|e| e.to_string())?;
+    fs::write(&f, desktop_entry(repo, tag, exec, name, icon)).map_err(|e| e.to_string())?;
     Ok(f)
+}
+
+/// Unpacks an AppImage into `<app dir>/app` and returns that folder, plus a note for the summary.
+/// Unpacked rather than run as an AppImage: stock Ubuntu has no libfuse2 to mount one, and the
+/// sandbox profile needs a fixed path (an AppImage runs from /tmp/.mount_<random>).
+fn unpack_appimage(dirs: &Dirs, repo: &Repo, file: &Path) -> Result<(PathBuf, String), String> {
+    use std::os::unix::fs::PermissionsExt;
+    let dir = dirs.app_dir(repo);
+    // Unpacked beside the old version, swapped in only once it worked: a failed update keeps it.
+    let work = dir.join(".new");
+    let _ = fs::remove_dir_all(&work);
+    fs::create_dir_all(&work).map_err(|e| e.to_string())?;
+    let image = work.join("image.AppImage");
+    fs::copy(file, &image).map_err(|e| e.to_string())?;
+    fs::set_permissions(&image, fs::Permissions::from_mode(0o755)).map_err(|e| e.to_string())?;
+    // A thread forking elsewhere while the copy was still open for writing leaves it "busy" for a
+    // moment (ETXTBSY): try again shortly.
+    let mut tries = 0;
+    let unpacked = loop {
+        let status = Command::new(&image)
+            .arg("--appimage-extract")
+            .current_dir(&work)
+            .stdout(std::process::Stdio::null())
+            .stderr(std::process::Stdio::null())
+            .status();
+        match status {
+            Err(e) if e.raw_os_error() == Some(26) && tries < 20 => {
+                tries += 1;
+                std::thread::sleep(std::time::Duration::from_millis(50));
+            }
+            other => break other.is_ok_and(|s| s.success()),
+        }
+    };
+    let root = work.join("squashfs-root");
+    if !unpacked || !root.join("AppRun").exists() {
+        let _ = fs::remove_dir_all(&work);
+        return Err("couldn't unpack the AppImage (it may be an old type-1 AppImage)".into());
+    }
+    let app = dir.join("app");
+    let _ = fs::remove_dir_all(&app);
+    fs::rename(&root, &app).map_err(|e| e.to_string())?;
+    // Everything else goes: the work folder, and the AppImage file earlier versions kept here.
+    for old in fs::read_dir(&dir).map_err(|e| e.to_string())?.flatten() {
+        let p = old.path();
+        if p != app {
+            let _ = if p.is_dir() {
+                fs::remove_dir_all(&p)
+            } else {
+                fs::remove_file(&p)
+            };
+        }
+    }
+    // Electron apps ship chrome-sandbox: they need the profile, or they abort at start.
+    let note = if !app.join("chrome-sandbox").exists() || sandbox_profile(repo).exists() {
+        String::new()
+    } else {
+        match run(&["pkexec", HELPER, "apparmor", "allow", &dir_name(repo)]) {
+            Ok(()) => String::new(),
+            Err(_) => ". It won't start until it may use its sandbox: install it again and enter your password when asked".to_string(),
+        }
+    };
+    Ok((app, note))
 }
 
 fn kind_name(k: &Kind) -> &'static str {
@@ -359,6 +462,39 @@ fn write_manifest(dirs: &Dirs, m: &Value) -> Result<(), String> {
     fs::write(dirs.manifest(), text).map_err(|e| e.to_string())
 }
 
+/// How an app from GitHub is named in the store's list of updates, beside Flatpak app ids.
+pub const UPDATE_PREFIX: &str = "github:";
+
+/// Apps from GitHub whose latest release isn't the one installed: ("github:owner/name", new tag).
+/// Asks GitHub (network); a repo it can't reach this time is left out.
+pub fn updates(dirs: &Dirs) -> Vec<(String, String)> {
+    let m = read_manifest(dirs);
+    let Some(apps) = m.as_object() else {
+        return Vec::new();
+    };
+    apps.iter()
+        .filter_map(|(slug, v)| {
+            let repo = crate::github::parse_repo(slug)?;
+            let latest = crate::github::latest_release(&repo).ok()??;
+            let newer = !latest.tag.is_empty() && v["tag"].as_str() != Some(latest.tag.as_str());
+            (newer || needs_repair(dirs, &repo))
+                .then(|| (format!("{UPDATE_PREFIX}{slug}"), latest.tag))
+        })
+        .collect()
+}
+
+/// An AppImage installed the way the store did before 0.4.1 (the file itself, which needs libfuse2
+/// and can't get a sandbox profile), or an Electron one still without its profile (the password was
+/// cancelled): installing it again, even the same release, fixes it.
+pub fn needs_repair(dirs: &Dirs, repo: &Repo) -> bool {
+    if read_manifest(dirs)[repo.slug()]["kind"].as_str() != Some("appimage") {
+        return false;
+    }
+    let app = dirs.app_dir(repo).join("app");
+    !app.join("AppRun").exists()
+        || (app.join("chrome-sandbox").exists() && !sandbox_profile(repo).exists())
+}
+
 /// The release tag installed from a repo, if it was installed by the store.
 pub fn installed_tag(dirs: &Dirs, repo: &Repo) -> Option<String> {
     read_manifest(dirs)[repo.slug()]["tag"]
@@ -416,6 +552,10 @@ pub fn remove(dirs: &Dirs, repo: &Repo) -> Result<String, String> {
                         return Err(format!("{}: {e}", p.display()));
                     }
                 }
+            }
+            if sandbox_profile(repo).exists() {
+                // Asks for a password; if it's cancelled the profile only covers an empty folder.
+                let _ = run(&["pkexec", HELPER, "apparmor", "remove", &dir_name(repo)]);
             }
             format!("removed {} and its launcher", repo.name)
         }
@@ -508,9 +648,64 @@ mod tests {
 
     #[test]
     fn launcher_quotes_the_path() {
-        let d = desktop_entry(&repo("tool"), "v1.0", Path::new("/home/u/My Apps/tool"));
+        let d = desktop_entry(
+            &repo("tool"),
+            "v1.0",
+            Path::new("/home/u/My Apps/tool"),
+            None,
+            None,
+        );
         assert!(d.contains("Exec=\"/home/u/My Apps/tool\"\n"));
         assert!(d.contains("Name=tool\n") && d.contains("github.com/someone/tool (v1.0)"));
+        assert!(d.contains("Icon=application-x-executable\n"));
+        let own = desktop_entry(
+            &repo("tool"),
+            "v1.0",
+            Path::new("/x/AppRun"),
+            Some("Tool Pro"),
+            Some(Path::new("/x/.DirIcon")),
+        );
+        assert!(own.contains("Name=Tool Pro\n") && own.contains("Icon=/x/.DirIcon\n"));
+    }
+
+    /// A stand-in AppImage: a script that unpacks like one (`--appimage-extract` → squashfs-root/).
+    fn fake_appimage(root: &Path) -> PathBuf {
+        fs::create_dir_all(root).unwrap();
+        let dl = root.join("Tool-x86_64.AppImage");
+        fs::write(
+            &dl,
+            "#!/bin/sh\n[ \"$1\" = --appimage-extract ] || exit 1\nmkdir -p squashfs-root\nprintf '#!/bin/sh\\n' > squashfs-root/AppRun\nprintf '[Desktop Entry]\\nName=Tool Pro\\n' > squashfs-root/tool.desktop\ntouch squashfs-root/.DirIcon\n",
+        )
+        .unwrap();
+        dl
+    }
+
+    #[test]
+    fn a_file_that_does_not_unpack_is_refused_and_the_old_app_kept() {
+        let root = std::env::temp_dir().join(format!("ost-ghbad-{}", std::process::id()));
+        let _ = fs::remove_dir_all(&root);
+        let dirs = Dirs {
+            data: root.join("data"),
+            applications: root.join("apps"),
+        };
+        let r = repo("tool");
+        let good = fake_appimage(&root);
+        install(
+            &dirs,
+            &r,
+            "v1",
+            &Kind::AppImage,
+            "Tool-x86_64.AppImage",
+            &good,
+        )
+        .unwrap();
+        let bad = root.join("bad.AppImage");
+        fs::write(&bad, "#!/bin/sh\nexit 1\n").unwrap();
+        assert!(install(&dirs, &r, "v2", &Kind::AppImage, "bad.AppImage", &bad).is_err());
+        assert!(dirs.app_dir(&r).join("app/AppRun").exists());
+        assert!(!dirs.app_dir(&r).join(".new").exists());
+        assert_eq!(installed_tag(&dirs, &r).as_deref(), Some("v1"));
+        let _ = fs::remove_dir_all(&root);
     }
 
     #[test]
@@ -522,8 +717,7 @@ mod tests {
             applications: root.join("apps"),
         };
         fs::create_dir_all(&root).unwrap();
-        let dl = root.join("Tool-x86_64.AppImage");
-        fs::write(&dl, b"\x7fELF fake").unwrap();
+        let dl = fake_appimage(&root);
         let r = repo("tool");
         let got = install(
             &dirs,
@@ -534,8 +728,18 @@ mod tests {
             &dl,
         )
         .unwrap();
-        let exe = dirs.app_dir(&r).join("Tool-x86_64.AppImage");
+        let exe = dirs.app_dir(&r).join("app/AppRun");
         assert!(exe.exists());
+        // Only the unpacked app is kept: no copy of the AppImage, no work folder.
+        let kept: Vec<_> = fs::read_dir(dirs.app_dir(&r))
+            .unwrap()
+            .flatten()
+            .map(|e| e.file_name())
+            .collect();
+        assert_eq!(kept, vec![std::ffi::OsString::from("app")]);
+        let launcher = fs::read_to_string(dirs.desktop_file(&r)).unwrap();
+        assert!(launcher.contains("Name=Tool Pro\n"), "{launcher}");
+        assert!(launcher.contains("app/.DirIcon\n"), "{launcher}");
         assert!(fs::read_to_string(dirs.desktop_file(&r))
             .unwrap()
             .contains(&exe.to_string_lossy().to_string()));
@@ -544,6 +748,11 @@ mod tests {
         assert_eq!(m["someone/tool"]["tag"], "v2");
         assert_eq!(m["someone/tool"]["kind"], "appimage");
         assert_eq!(installed_tag(&dirs, &r).as_deref(), Some("v2"));
+        assert!(!needs_repair(&dirs, &r));
+        // The way 0.4.0 left it (the AppImage file itself, no unpacked app): installing again fixes it.
+        fs::remove_dir_all(dirs.app_dir(&r).join("app")).unwrap();
+        fs::write(dirs.app_dir(&r).join("Tool-x86_64.AppImage"), "old").unwrap();
+        assert!(needs_repair(&dirs, &r));
 
         // Removing it takes the folder and launcher, and forgets it; other apps' files stay.
         let other = dirs.data.join("github/someone-other");
@@ -587,8 +796,7 @@ mod tests {
         fs::create_dir_all(&old_dir).unwrap();
         fs::create_dir_all(&dirs.applications).unwrap();
         fs::write(&old_desktop, "[Desktop Entry]\n").unwrap();
-        let dl = root.join("Tool-x86_64.AppImage");
-        fs::write(&dl, b"\x7fELF fake").unwrap();
+        let dl = fake_appimage(&root);
         install(
             &dirs,
             &r,
@@ -599,7 +807,7 @@ mod tests {
         )
         .unwrap();
         assert!(!old_dir.exists() && !old_desktop.exists());
-        assert!(dirs.app_dir(&r).join("Tool-x86_64.AppImage").exists());
+        assert!(dirs.app_dir(&r).join("app/AppRun").exists());
         let _ = fs::remove_dir_all(&root);
     }
 }

@@ -121,6 +121,11 @@ EOF
 		((DRY_RUN)) || { mkdir -p "$EXT_HOME" && tar -C "$EXT_HOME" -xzf "$RESTORE_DIR/extensions.tar.gz" --skip-old-files; }
 	fi
 
+	# The Store's daily update check: off before its unit files go.
+	if systemctl --user is-enabled --quiet ostrich-store-updates.timer 2>/dev/null; then
+		run_cmd systemctl --user disable --now ostrich-store-updates.timer
+	fi
+
 	# 3. Files: ours removed, originals put back. Each one's current version is kept first: you or
 	# your tools may have changed it since (lines in .bashrc, a git name in .gitconfig).
 	local path copy
@@ -138,7 +143,8 @@ EOF
 	done <"$RESTORE_DIR/originals.txt"
 
 	# 4. System files (sudo), the power unit, the graphics mode.
-	if [[ -s $RESTORE_DIR/created-root.txt || -s $RESTORE_DIR/originals-root.txt || -e /etc/udev/rules.d/90-ubuntu-ostrich-touchscreen.rules ]]; then
+	if [[ -s $RESTORE_DIR/created-root.txt || -s $RESTORE_DIR/originals-root.txt || -e /etc/udev/rules.d/90-ubuntu-ostrich-touchscreen.rules ]] ||
+		compgen -G '/etc/apparmor.d/ubuntu-ostrich-github-*' >/dev/null; then
 		# A touchscreen switched off by the helper comes back on before the helper goes.
 		[[ -x /usr/libexec/ubuntu-ostrich/system-helper ]] &&
 			run_cmd "$SUDO" /usr/libexec/ubuntu-ostrich/system-helper touchscreen on >/dev/null 2>&1 || true
@@ -157,6 +163,13 @@ EOF
 				run_cmd "$SUDO" mv -f -- "$copy" "$path"
 		done <"$RESTORE_DIR/originals-root.txt"
 		run_cmd "$SUDO" rm -f /etc/udev/rules.d/90-ubuntu-ostrich-touchscreen.rules
+		# The Store's sandbox profiles for apps from GitHub (system-helper apparmor allow).
+		local profile
+		for profile in /etc/apparmor.d/ubuntu-ostrich-github-*; do
+			[[ -f $profile ]] || continue
+			run_cmd "$SUDO" apparmor_parser -R "$profile" >/dev/null 2>&1 || true
+			run_cmd "$SUDO" rm -f -- "$profile"
+		done
 		run_cmd "$SUDO" rmdir --ignore-fail-on-non-empty /usr/libexec/ubuntu-ostrich
 		run_cmd "$SUDO" systemctl daemon-reload
 	fi

@@ -21,10 +21,10 @@ setup() {
 	stub flatpak 'if [[ $1 == remotes ]]; then cat "$REMOTES"; else echo "flatpak $*" >>"$CALLS"; fi'
 	stub sudo 'echo "sudo $*" >>"$CALLS"'
 	export PATH="$STUBS:$PATH"
-	# Nothing reaches the real desktop session: gsettings, dconf and xdg-mime write through it, not
+	# Nothing reaches the real desktop session: gsettings, dconf, xdg-mime and systemctl --user act on it, not
 	# through $HOME (a test once changed the developer's own dock). Tests that need them stub them.
 	local c
-	for c in gsettings dconf xdg-mime; do
+	for c in gsettings dconf xdg-mime systemctl; do
 		stub "$c" "echo \"$c \$*\" >>\"\$BATS_TEST_TMPDIR/session-calls\""
 	done
 	# No speaker-tuning clips unless a test asks for them (nothing real is downloaded).
@@ -291,6 +291,10 @@ tools_fake_bins() {
 
 @test "tools: installs a local build, stages the helper, autostarts the drawer; idempotent" {
 	export BUILD_DIR="$BATS_TEST_TMPDIR/build" DIST="$BATS_TEST_TMPDIR/dist"
+	# The helper and its policy go to a fake root, and "sudo" really copies them there, so the second
+	# run finds them in place.
+	export HELPER_DEST="$BATS_TEST_TMPDIR/root/helper" POLICY_DEST="$BATS_TEST_TMPDIR/root/policy"
+	stub sudo 'echo "sudo $*" >>"$CALLS"; "$@"'
 	tools_fake_bins "$BUILD_DIR"
 	# Default apps, remembered between runs: "default ID TYPE" sets, "query default TYPE" answers.
 	stub xdg-mime 'm="$BATS_TEST_TMPDIR/mime"; case $1 in default) for t in "${@:3}"; do echo "$t $2" >>"$m"; done ;; query) awk -v t="$3" "\$1 == t { d = \$2 } END { if (d) print d }" "$m" 2>/dev/null ;; esac'
@@ -299,6 +303,9 @@ tools_fake_bins() {
 	[ -x "$HOME/.local/bin/ostrich" ] && [ -x "$HOME/.local/libexec/ubuntu-ostrich/ostrich-store" ] && [ -x "$HOME/.local/libexec/ubuntu-ostrich/ostrich-drawer" ]
 	[ -x "$DIST/ostrich-system-helper" ]
 	[ ! -e "$HOME/.local/bin/ostrich-system-helper" ]
+	[ -x "$HELPER_DEST" ] && [ -f "$POLICY_DEST" ]
+	[ -f "$HOME/.config/systemd/user/ostrich-store-updates.timer" ]
+	grep -q "^ExecStart=$HOME/.local/libexec/ubuntu-ostrich/ostrich-store-gtk --check-updates$" "$HOME/.config/systemd/user/ostrich-store-updates.service"
 	grep -q "^Exec=$HOME/.local/libexec/ubuntu-ostrich/ostrich-drawer --hidden$" "$HOME/.config/autostart/ostrich-drawer.desktop"
 	[ -f "$HOME/.config/autostart/ostrich-setup.desktop" ]
 	[ -f "$HOME/.local/share/applications/ubuntu-ostrich.setup.desktop" ]

@@ -18,12 +18,14 @@ setup() {
 }
 
 # Icon= names in the desktop entries we write: ours must have a file; others must be on this list
-# of names every Ubuntu 26.04 icon theme has. ({icon} is the drawer's per-site favicon path.)
+# of names every Ubuntu 26.04 icon theme has. ({icon} is the drawer's per-site favicon path; {} is a
+# GitHub app's own icon file, or application-x-executable.)
 @test "every Icon= we ship resolves" {
-	allowed="application-x-executable {icon}"
+	allowed="application-x-executable {icon} {}"
 	names=$(grep -rhoE 'Icon=[^\\"[:space:]]+' "$ROOT/modules" "$ROOT/tools"/*/src | sed 's/^Icon=//' | sort -u)
 	[ -n "$names" ]
 	for n in $names; do
+		[[ $n == /* ]] && continue # a file's path (a test's fake app icon)
 		if [[ $n == ostrich-* ]]; then
 			[ -f "$ROOT/modules/tools/icons/$n.svg" ] || {
 				echo "Icon=$n has no modules/tools/icons/$n.svg"

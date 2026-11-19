@@ -23,7 +23,7 @@ Ubuntu Ostrich is opinionated: it makes the choices below for you, so a fresh in
 
 | Area | Default |
 |---|---|
-| Apps | Flatpak with Flathub. `ostrich store` searches everything; paste a GitHub link to install a project. |
+| Apps | Flatpak with Flathub. `ostrich store` searches everything; paste a GitHub link to install a project (an AppImage is unpacked into your home folder; an Electron app asks for your password once, for the AppArmor rule its sandbox needs). Once a day the Store looks for updates to both, and a notification opens its Updates tab. |
 | Terminal | Ghostty, set as the default terminal. |
 | Shell | A small `~/.bashrc` addition (your own `.bashrc` is kept). Dotfiles are managed by chezmoi. |
 | Graphics (NVIDIA laptops) | Hybrid: the desktop runs on the integrated GPU and the NVIDIA GPU sleeps until an app needs it. Set once; your later choice sticks. The NVIDIA driver itself comes from `sudo ubuntu-drivers install`. |

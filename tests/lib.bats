@@ -156,8 +156,8 @@ PY
 }
 
 # The system helper's polkit policy: well-formed, one action per command, and only power and the
-# touchscreen promptless (DESIGN.md, Safety).
-@test "polkit policy: graphics asks, power and touchscreen don't" {
+# touchscreen promptless (DESIGN.md, Safety); a GitHub app's sandbox profile asks.
+@test "polkit policy: graphics and apparmor ask, power and touchscreen don't" {
 	run python3 -I - "$BATS_TEST_DIRNAME/../modules/hardware/org.ubuntu-ostrich.system-helper.policy" <<'PY'
 import sys, xml.etree.ElementTree as ET
 actions = {}
@@ -165,7 +165,7 @@ for a in ET.parse(sys.argv[1]).getroot().iter("action"):
     argv1 = [x.text for x in a.iter("annotate") if x.get("key") == "org.freedesktop.policykit.exec.argv1"]
     actions[argv1[0] if argv1 else None] = a.find("defaults/allow_active").text
 print(actions)
-assert actions == {"power": "yes", "touchscreen": "yes", "graphics": "auth_admin_keep"}, actions
+assert actions == {"power": "yes", "touchscreen": "yes", "graphics": "auth_admin_keep", "apparmor": "auth_admin_keep"}, actions
 PY
 	echo "$output"
 	[ "$status" -eq 0 ]
