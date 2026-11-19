@@ -159,7 +159,8 @@ check "Ostrich Store opens Flatpak files and app links" '[ "$(xdg-mime query def
 check "replaced extensions off" 'gsettings get org.gnome.shell disabled-extensions | grep -q tiling-assistant@ubuntu.com'
 check "power boot unit enabled (the VM has PCIe ASPM)" 'systemctl is-enabled --quiet ubuntu-ostrich-power.service'
 check "helper installed for polkit" '[ -x /usr/libexec/ubuntu-ostrich/system-helper ] && [ -f /usr/share/polkit-1/actions/org.ubuntu-ostrich.system-helper.policy ]'
-check "polkit has the helper's three actions" '[ "$(pkaction | grep -c "^org.ubuntu-ostrich.system-helper\.")" = 3 ]'
+check "polkit has the helper's four actions" '[ "$(pkaction | grep -c "^org.ubuntu-ostrich.system-helper\.")" = 4 ]'
+check "the Store's daily update check is on" 'systemctl --user is-enabled --quiet ostrich-store-updates.timer && systemctl --user is-active --quiet ostrich-store-updates.timer'
 check "our app icons are installed and used" 'for n in store settings drawer; do [ -f ~/.local/share/icons/hicolor/scalable/apps/ostrich-$n.svg ] && [ -f ~/.local/share/icons/hicolor/symbolic/apps/ostrich-$n-symbolic.svg ] || exit 1; done; grep -q "^Icon=ostrich-store$" ~/.local/share/applications/ubuntu-ostrich.store.desktop'
 EOF
 
