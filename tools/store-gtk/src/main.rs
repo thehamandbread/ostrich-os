@@ -1233,30 +1233,73 @@ fn notify_updates() -> glib::ExitCode {
     } else {
         format!("{} apps can be updated", u.len())
     };
-    // --wait: notify-send prints the chosen action once the notification is answered.
-    let answer = std::process::Command::new("notify-send")
-        .args([
-            "--app-name=Ostrich Store",
-            "--icon=ostrich-store",
-            "--action=default=Open Updates", // a click on the notification itself
-            "--action=open=Open Updates",
-            "--wait",
-            &title,
-            &format!("{}{more}", names.join(", ")),
-        ])
-        .output();
-    let chosen = |o: &std::process::Output| {
-        matches!(
-            String::from_utf8_lossy(&o.stdout).trim(),
-            "open" | "default"
-        )
-    };
-    if answer.is_ok_and(|o| chosen(&o)) {
+    if notify_and_wait(&title, &format!("{}{more}", names.join(", "))) {
         if let Ok(me) = std::env::current_exe() {
             let _ = std::process::Command::new(me).arg("--updates").spawn();
         }
     }
     glib::ExitCode::SUCCESS
+}
+
+/// Shows a notification and waits until it's answered: true when it was clicked. Straight over
+/// D-Bus: notify-send 0.8.8 says GNOME Shell 50 doesn't do actions, and it does (2026-11-18).
+fn notify_and_wait(title: &str, body: &str) -> bool {
+    const NAME: &str = "org.freedesktop.Notifications";
+    const PATH: &str = "/org/freedesktop/Notifications";
+    let Ok(bus) = gio::bus_get_sync(gio::BusType::Session, gio::Cancellable::NONE) else {
+        return false;
+    };
+    let main = glib::MainLoop::new(None, false);
+    let id = Rc::new(std::cell::Cell::new(0u32));
+    let clicked = Rc::new(std::cell::Cell::new(false));
+    // Subscribed first; the shell sends these to this connection only.
+    let _sub = {
+        let (main, id, clicked) = (main.clone(), id.clone(), clicked.clone());
+        bus.subscribe_to_signal(
+            Some(NAME),
+            Some(NAME),
+            None,
+            Some(PATH),
+            None,
+            gio::DBusSignalFlags::NONE,
+            move |sig| {
+                let ours = sig.parameters.child_value(0).get::<u32>() == Some(id.get());
+                if ours && matches!(sig.signal_name, "ActionInvoked" | "NotificationClosed") {
+                    clicked.set(sig.signal_name == "ActionInvoked");
+                    main.quit();
+                }
+            },
+        )
+    };
+    let actions = vec!["default", "Open Updates", "open", "Open Updates"];
+    let hints: HashMap<String, glib::Variant> = HashMap::new();
+    let args = (
+        "Ostrich Store",
+        0u32,
+        "ostrich-store",
+        title,
+        body,
+        actions,
+        hints,
+        0i32,
+    )
+        .to_variant();
+    match bus.call_sync(
+        Some(NAME),
+        PATH,
+        NAME,
+        "Notify",
+        Some(&args),
+        None,
+        gio::DBusCallFlags::NONE,
+        -1,
+        gio::Cancellable::NONE,
+    ) {
+        Ok(r) => id.set(r.child_value(0).get::<u32>().unwrap_or(0)),
+        Err(_) => return false,
+    }
+    main.run();
+    clicked.get()
 }
 
 /// Asks the remotes for updates (network, off the UI thread).
