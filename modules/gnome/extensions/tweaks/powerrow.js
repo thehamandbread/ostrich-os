@@ -15,7 +15,7 @@ import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import * as QuickSettings from 'resource:///org/gnome/shell/ui/quickSettings.js';
 
 import {hideStockTile} from './_lib/patches.js';
-import {profilesProxy} from './_lib/timers.js';
+import {BeforeRedraw, profilesProxy} from './_lib/timers.js';
 
 const MODES = [
     ['power-saver', 'Power Saver', 'power-profile-power-saver-symbolic'],
@@ -82,7 +82,11 @@ export class PowerRow {
         const three = MODES.every(([id]) => ids.includes(id));
         if (three && !this._restore) {
             const qs = Main.panel.statusArea.quickSettings;
-            this._restore = hideStockTile(qs, '_powerProfiles', 'tweaks');
+            this._restore = hideStockTile(qs, '_powerProfiles', 'tweaks', fn => {
+                const later = new BeforeRedraw(fn);
+                later.queue();
+                return () => later.cancel();
+            });
             // Where the tile was, not at the end of the grid.
             const stock = qs._powerProfiles?.quickSettingsItems?.[0];
             if (stock?.get_parent() === this._row.get_parent())

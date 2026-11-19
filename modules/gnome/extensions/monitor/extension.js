@@ -37,7 +37,7 @@ import {
     parseLoadavg, parseUptime, parseNetDev, parseDiskstats, rate, cpuFrequency,
     readText, readTextSync, listDir, findHwmon, readChip, readBattery, readIgpuFrequency, readFilesystem,
 } from './sources.js';
-import {SECTIONS, buildSections, panelItems, togglePin, needed, rowName} from './vitals.js';
+import {SECTIONS, buildSections, panelItems, togglePin, needed, rowName, fmt} from './vitals.js';
 
 const HELPER = '/usr/libexec/ubuntu-ostrich/system-helper';
 // Opened by the popup's monitor button: the first that is installed.
@@ -152,16 +152,19 @@ class MonitorIndicator extends PanelMenu.Button {
         this._fanChips = null;
 
         // ---- top bar: the pinned values, each an icon and its value ----
-        // One row (a panel button lays out only its first child): the readings, and the icon that stands
-        // in their place in power saver (see _pausedTick).
+        // One row (a panel button lays out only its first child): the readings, and what stands in their
+        // place in power saver: its icon and, on battery, the time left (owner, 2026-11-18; see _pausedTick).
         const row = new St.BoxLayout();
         this.add_child(row);
         this._box = new St.BoxLayout({style_class: 'ost-monitor-panel', pivot_point: new Graphene.Point({x: 0, y: 0.5})});
         row.add_child(this._box);
-        this._saverIcon = new St.Icon({
-            gicon: this._gicon('theme:power-profile-power-saver-symbolic'), style_class: 'system-status-icon', visible: false,
-        });
-        row.add_child(this._saverIcon);
+        this._saver = new St.BoxLayout({style_class: 'ost-monitor-item', visible: false});
+        this._saver.add_child(new St.Icon({
+            gicon: this._gicon('theme:power-profile-power-saver-symbolic'), style_class: 'system-status-icon ost-monitor-icon',
+        }));
+        this._saverTime = new St.Label({style_class: 'ost-monitor-value', y_align: Clutter.ActorAlign.CENTER, visible: false});
+        this._saver.add_child(this._saverTime);
+        row.add_child(this._saver);
         this._panelItems = new Map(); // id → {box, icon, value, shown}
         this._panelKeys = null;
 
@@ -389,8 +392,9 @@ class MonitorIndicator extends PanelMenu.Button {
         animate(this._box, {opacity: 0, scale_x: 0.3}, {
             duration: STANDARD, mode: Clutter.AnimationMode.EASE_IN_QUAD, onDone: () => {
                 this._box.hide();
-                this._saverIcon.set({opacity: 0, visible: true});
-                animate(this._saverIcon, {opacity: 255}, {duration: QUICK});
+                this._syncSaverTime();
+                this._saver.set({opacity: 0, visible: true});
+                animate(this._saver, {opacity: 255}, {duration: QUICK});
             },
         });
     }
@@ -401,12 +405,22 @@ class MonitorIndicator extends PanelMenu.Button {
         this._pausedNote.visible = false;
         if (this._folded) {
             this._folded = false;
-            stop(this._saverIcon);
-            this._saverIcon.hide();
+            stop(this._saver);
+            this._saver.hide();
             this._box.set({opacity: 0, scale_x: 0.3, visible: true});
             animate(this._box, {opacity: 255, scale_x: 1}, {duration: STANDARD});
         }
         this._tick();
+    }
+
+    // UPower's estimate, from its own signals (nothing read here); none while charging or plugged in.
+    _syncSaverTime() {
+        const b = this._battery;
+        const left = b?.get_cached_property('State')?.unpack() === UPOWER_DISCHARGING
+            ? b.get_cached_property('TimeToEmpty')?.unpack() ?? 0 : 0;
+        this._saverTime.visible = left > 0;
+        this._saverTime.text = left > 0 ? fmt.duration(left) : '';
+        this._saverTime.accessible_name = left > 0 ? `Power saver, ${fmt.duration(left)} of battery left` : '';
     }
 
     // Memory and swap nearly full: one notice naming the app holding the most, before it grinds.
@@ -936,9 +950,13 @@ class MonitorIndicator extends PanelMenu.Button {
                 }
                 if (!this._settings)
                     return;
-                this._signals.connect(this._battery, 'g-properties-changed', () => this._checkBattery());
+                this._signals.connect(this._battery, 'g-properties-changed', () => {
+                    this._checkBattery();
+                    this._syncSaverTime();
+                });
                 this._signals.connect(this._settings, 'changed::auto-saver-percent', () => this._checkBattery());
                 this._checkBattery();
+                this._syncSaverTime(); // logged in already in saver: the fold ran before the battery was here
             });
     }
 

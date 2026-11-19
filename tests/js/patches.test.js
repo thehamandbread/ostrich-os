@@ -72,6 +72,24 @@ restore();
 check('restore puts back what GNOME last asked for', tile.visible === true);
 tile.visible = false;
 check('after restore GNOME is in charge again', tile.visible === false && tile._h.size === 0);
+// GNOME's _sync reads visible right after setting it: the hide must wait until it's done.
+const later = new Item(true);
+const queued = [];
+const undoLater = hideStockTile({_powerProfiles: {quickSettingsItems: [later]}}, '_powerProfiles', 'test', fn => {
+    queued.push(fn);
+    return () => queued.splice(queued.indexOf(fn), 1);
+});
+check('the first hide is at once (not inside a GNOME sync)', later.visible === false && queued.length === 0);
+later.visible = true; // GNOME's sync
+check('GNOME still sees visible during its sync', later.visible === true);
+later.visible = false;
+later.visible = true;
+check('one hide queued per sync', queued.length === 1);
+queued.shift()();
+check('then it is hidden', later.visible === false);
+later.visible = true;
+undoLater();
+check('restore cancels a queued hide', queued.length === 0 && later.visible === true);
 check('a renamed field hides nothing', hideStockTile(qs, '_renamedInGnome51') === null);
 check('a null field (no Bluetooth here) hides nothing', hideStockTile(qs, '_bluetooth') === null);
 

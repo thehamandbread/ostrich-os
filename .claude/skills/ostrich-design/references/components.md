@@ -36,7 +36,7 @@ Sizes are tokens (`tools/icons/tokens.toml`), colours are palette names (`tools/
 - **Pattern:** a popup menu (`[[radius_menu]]` 20px, items `[[radius_item]]` 12px) with expandable
   sections, like Vitals' layout the owner used.
 - **Built:** `monitor/extension.js`. In power saver the top bar's readings fold away to a
-  power-saver icon (`motion.js`), and a short note in the popup says the readings are paused.
+  power-saver icon and, on battery, UPower's time left (`motion.js`), and a short note in the popup says the readings are paused.
 - **Open (owner's notes 2026-11-05):** "doesn't seem designed well", wants a resize option, and a
   redesign. For the council: section layout, how much it shows by default, sizing.
 

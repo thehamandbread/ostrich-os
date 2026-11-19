@@ -7,6 +7,7 @@
 #   - each segment is one click after quick settings is open, and power-profiles-daemon agrees;
 #   - the keyboard works: Right or Left, then Enter, picks the next or the previous mode;
 #   - GNOME's own tile stays hidden through the changes (its slot, beside the Wired tile, stays empty);
+#   - GNOME's top-bar power icon still follows the mode while its tile is hidden;
 #   - quick-settings-style 'stock' brings GNOME's tile back, 'ostrich' the row;
 #   - with two profiles the row is gone and GNOME's tile is back;
 #   - the journal gate.
@@ -26,6 +27,7 @@ BALANCED_XY="${BALANCED_XY:-1711 228}"
 PERFORMANCE_XY="${PERFORMANCE_XY:-1832 228}"
 TABS_TO_SAVER="${TABS_TO_SAVER:-9}"       # Tab stops from a fresh quick settings to Power Saver (the focus ring in keys-focus.png shows it)
 SLOT_BOX="${SLOT_BOX:-1725,150,1895,195}" # beside the Wired tile: GNOME's Power Mode tile sits here when it shows
+ICONS_BOX="${ICONS_BOX:-1650,0,1920,32}"  # the quick-settings icons in the top bar, where GNOME shows the power mode
 while (($# > 0)); do
 	case $1 in
 	--snapshot) SNAPSHOT=$2 && shift ;;
@@ -63,6 +65,15 @@ import sys
 from PIL import Image, ImageStat
 im = Image.open(sys.argv[1]).convert("L").crop(tuple(int(v) for v in sys.argv[2].split(",")))
 print(round(ImageStat.Stat(im).stddev[0]))
+PYEND
+}
+differ() { # png png: the icons box differs (6+ pixels changed, the same mode gives 0: Yaru's saver and performance icons differ only in the needle)
+	python3 -I - "$ICONS_BOX" "$@" <<'PYEND'
+import sys
+from PIL import Image, ImageChops
+box = tuple(int(v) for v in sys.argv[1].split(","))
+a, b = (Image.open(f).convert("L").crop(box) for f in sys.argv[2:4])
+sys.exit(0 if sum(v > 60 for v in ImageChops.difference(a, b).tobytes()) >= 6 else 1)
 PYEND
 }
 slot_empty() { # name: the stock tile is hidden
@@ -125,6 +136,17 @@ echo "== a change from outside (the daemon's own)"
 sleep 2
 shot outside
 if slot_empty outside; then ok "GNOME's tile stays hidden after a change from outside"; else bad "after a change from outside GNOME's tile is back"; fi
+"$VM" ssh "sudo powerprofilesctl set balanced"
+
+echo "== GNOME's top-bar power icon follows the mode (it stuck on the first one: owner, 2026-11-18)"
+"$VM" key esc >/dev/null
+for m in performance power-saver balanced performance; do
+	"$VM" ssh "sudo powerprofilesctl set $m"
+	sleep 2
+	shot "icon-$m"
+done
+if differ "$OUT/icon-performance.png" "$OUT/icon-power-saver.png"; then ok "the icon changes from performance to power saver"; else bad "the icon stays the same in performance and power saver"; fi
+if differ "$OUT/icon-power-saver.png" "$OUT/icon-balanced.png"; then ok "the icon changes from power saver to balanced"; else bad "the icon stays the same in power saver and balanced"; fi
 "$VM" ssh "sudo powerprofilesctl set balanced"
 
 echo "== quick-settings-style = stock: GNOME's tile is back, then ostrich: the row again"

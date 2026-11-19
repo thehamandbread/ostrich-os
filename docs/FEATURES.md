@@ -44,7 +44,7 @@ Notes are the owner's VM critiques (`tests/vm/critique.sh show ID`), by their ti
 | ID | Should do | How checked | Status |
 |---|---|---|---|
 | MON-1 | Top bar shows CPU, memory, temperature (the average of all sensors, also the Temperature section's summary) and GPU state; values pinned with the star show in the order pinned. | ui-test | untested |
-| MON-2 | Updates every 2 s on AC, 5 s on battery; in power saver it stops reading, and the top bar's readings fold away (fade and squeeze to the left) to a power-saver icon, which unfolds back when saver ends (owner, 2026-11-09); none while locked or blanked; a shut popup reads only what's pinned. | ext-test, power-test | built; VM check pending |
+| MON-2 | Updates every 2 s on AC, 5 s on battery; in power saver it stops reading, and the top bar's readings fold away (fade and squeeze to the left) to a power-saver icon and, on battery, the time left (owner, 2026-11-18), which unfolds back when saver ends (owner, 2026-11-09); none while locked or blanked; a shut popup reads only what's pinned. | ext-test, power-test | built; VM check pending |
 | MON-3 | Popup sections (processor, memory, temperature, fans, voltage, system, network, storage, battery, graphics) with values on the right; hide zero values; refresh, open System Monitor, settings. | ui-test | untested |
 | MON-4 | Never wakes the NVIDIA GPU: reads it only when `runtime_status` is `active`; shows which apps woke it, with quit and keep-off. | hw | hw |
 | MON-5 | Battery time left and draw in watts. | hw | hw |

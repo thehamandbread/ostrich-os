@@ -25,9 +25,12 @@ export function shellField(obj, name, owner = 'ubuntu-ostrich') {
 // a field GNOME leaves null on purpose (no Bluetooth on this machine) is skipped quietly.
 // GNOME sets these tiles' visibility itself on every sync (powerProfiles.js: visible while the daemon
 // runs), so each item is held hidden, and restore puts back the value GNOME last asked for.
+// The hide waits for `defer` (fn → cancel function; the shell passes a BeforeRedraw, so nothing is
+// painted in between): GNOME's _sync sets visible and then returns early while it reads false, which
+// left its panel icon stuck on the old power mode (owner, 2026-11-18).
 // shortcut: GNOME hiding an item we already hide sends no notify, so restore can show a tile GNOME
 // had just hidden, until its next sync; read GNOME's own condition if that ever shows up.
-export function hideStockTile(quickSettings, field, owner = 'ubuntu-ostrich') {
+export function hideStockTile(quickSettings, field, owner = 'ubuntu-ostrich', defer = fn => (fn(), () => {})) {
     const indicator = quickSettings?.[field];
     if (indicator === undefined) {
         shellField(quickSettings, field, owner);
@@ -47,14 +50,19 @@ export function hideStockTile(quickSettings, field, owner = 'ubuntu-ostrich') {
             if (h.ours)
                 return;
             h.wanted = item.visible;
-            if (h.wanted)
-                hide();
+            if (h.wanted && !h.cancel) {
+                h.cancel = defer(() => {
+                    h.cancel = null;
+                    hide();
+                });
+            }
         });
         hide();
         return h;
     });
     return () => {
         for (const h of held) {
+            h.cancel?.();
             h.item.disconnect(h.id);
             h.item.visible = h.wanted;
         }
