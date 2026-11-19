@@ -19,11 +19,15 @@ Sizes are tokens (`tools/icons/tokens.toml`), colours are palette names (`tools/
 
 ## Now-playing pill
 
-- **For:** what's playing, beside the clock, only while something plays.
-- **Pattern:** a pill (`[[radius_pill]]`) like the clock's own bubble; its menu is a standard
-  popup menu with previous / play-pause / next.
+- **For:** what's playing, left of the clock (owner, 2026-11-18: the right side is crowded), only
+  while something plays. The bar shows the title only (24 characters); the artist is in its menu.
+- **Pattern:** a panel-button pill (`[[radius_pill]]`): as tall as the clock's button, the bubble an
+  inset shadow inside a transparent border, spaced with `-natural-hpadding` (a panel button ignores
+  CSS padding), tinted with the live accent. Its menu is plain St boxes (a non-activatable menu item
+  is greyed): the track, then previous / play-pause / next.
 - **Built:** `tweaks/nowplaying.js`, MPRIS via `_lib/mpris.js`; floats beside the clock (top chrome)
-  so the clock never moves; springs out of the clock on Play, back 6 s after it stops.
+  so the clock never moves, its right edge fixed (placed before redraw, not from the clock's
+  allocation); springs out of the clock on Play, back 6 s after it stops.
 
 ## System monitor menu
 

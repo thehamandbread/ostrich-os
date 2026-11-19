@@ -1,11 +1,12 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 // tweaks/nowplaying.js: what's playing, beside the clock (council verdict 2026-10-24, M7; owner,
 // 2026-11-02). It pops out of the clock bubble when something starts playing and goes back into it
-// HIDE_AFTER_MS after playback pauses or stops; a click opens its own drop-down with previous,
-// play/pause and next. MPRIS over D-Bus, followed by signals: one timer only while it waits to go.
-// On by default (`now-playing-pill`), and invisible until something plays. It floats just right of
-// the clock instead of sitting in the bar's layout, so the clock never moves when it comes and goes.
-// GNOME's own media card in the clock menu stays.
+// HIDE_AFTER_MS after playback pauses or stops; a click opens its own drop-down with the track and
+// previous, play/pause and next. MPRIS over D-Bus, followed by signals: one timer only while it waits
+// to go. On by default (`now-playing-pill`), and invisible until something plays. It floats just
+// left of the clock (the right side holds the drawer, tray and quick settings: owner, 2026-11-18)
+// instead of sitting in the bar's layout, so the clock never moves when it comes and goes. The bar
+// shows the title only; the artist is in the drop-down. GNOME's own media card in the clock menu stays.
 
 import Clutter from 'gi://Clutter';
 import GLib from 'gi://GLib';
@@ -14,12 +15,12 @@ import St from 'gi://St';
 
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import * as PanelMenu from 'resource:///org/gnome/shell/ui/panelMenu.js';
-import * as PopupMenu from 'resource:///org/gnome/shell/ui/popupMenu.js';
 
 import {popOut, retreat} from './_lib/motion.js';
 import {Players} from './_lib/mpris.js';
+import {BeforeRedraw} from './_lib/timers.js';
 
-const MAX_CHARS = 32;
+const MAX_CHARS = 24;
 const HIDE_AFTER_MS = 6000; // paused or stopped this long: back into the clock
 const GAP = 6; // between the clock and the pill
 
@@ -32,11 +33,10 @@ export function pickPlayer(players) {
     return titled.find(p => p.status === 'Playing') ?? titled.find(p => p.status === 'Paused') ?? null;
 }
 
-// "Title · Artist", shortened to max characters (whole characters, not halves of an emoji).
+// The title, shortened to max characters (whole characters, not halves of an emoji).
 export function pillText(p, max = MAX_CHARS) {
-    const text = p.artist ? `${p.title} · ${p.artist}` : p.title;
-    const chars = [...text];
-    return chars.length > max ? `${chars.slice(0, max - 1).join('').trimEnd()}…` : text;
+    const chars = [...p.title];
+    return chars.length > max ? `${chars.slice(0, max - 1).join('').trimEnd()}…` : p.title;
 }
 
 // ---- the pill ----
@@ -49,22 +49,20 @@ const NowPlaying = GObject.registerClass({
         super._init(0.5, 'Now playing');
         this.add_style_class_name('ost-now-playing');
         const box = new St.BoxLayout({style_class: 'panel-status-menu-box'});
-        // Sized here: it floats beside the bar, outside the bar's own icon rules.
-        this._icon = new St.Icon({icon_name: 'media-playback-start-symbolic', icon_size: 12, y_align: Clutter.ActorAlign.CENTER});
+        // Styled in the stylesheet: it floats beside the bar, outside the bar's own icon rules.
+        this._icon = new St.Icon({style_class: 'ost-now-playing-icon', icon_name: 'media-playback-start-symbolic', y_align: Clutter.ActorAlign.CENTER});
         this._label = new St.Label({y_align: Clutter.ActorAlign.CENTER});
         box.add_child(this._icon);
         box.add_child(this._label);
         this.add_child(box);
 
+        // Plain St boxes, not menu items: GNOME greys a menu item that can't be activated.
         this._title = new St.Label({style_class: 'ost-now-playing-title'});
         this._artist = new St.Label({style_class: 'ost-now-playing-artist'});
-        const info = new PopupMenu.PopupBaseMenuItem({reactive: false});
-        const text = new St.BoxLayout({vertical: true});
+        const text = new St.BoxLayout({vertical: true, style_class: 'ost-now-playing-track'});
         text.add_child(this._title);
         text.add_child(this._artist);
-        info.add_child(text);
-        this.menu.addMenuItem(info);
-        const controls = new PopupMenu.PopupBaseMenuItem({reactive: false, can_focus: false});
+        this.menu.box.add_child(text);
         const row = new St.BoxLayout({x_expand: true, x_align: Clutter.ActorAlign.CENTER, style_class: 'ost-now-playing-controls'});
         const button = (icon, name, action) => {
             const b = new St.Button({
@@ -80,8 +78,7 @@ const NowPlaying = GObject.registerClass({
         this._prev = button('media-skip-backward-symbolic', 'Previous', 'Previous');
         this._play = button('media-playback-pause-symbolic', 'Pause', 'PlayPause');
         this._next = button('media-skip-forward-symbolic', 'Next', 'Next');
-        controls.add_child(row);
-        this.menu.addMenuItem(controls);
+        this.menu.box.add_child(row);
 
         this._player = null;
         this._hideId = 0;
@@ -94,14 +91,19 @@ const NowPlaying = GObject.registerClass({
         const pick = pickPlayer(this._players.list());
         this._player = pick?.proxy ?? null;
         const playing = pick?.status === 'Playing';
-        this._show(playing);
         if (!pick) {
+            this._show(false);
             this.menu.close(); // the player quit: nothing left to control, so let the pill go back
             return;
         }
-        this._label.text = pillText(pick);
+        const text = pillText(pick);
+        if (this._label.text !== text) {
+            this._label.text = text;
+            if (this._shown)
+                this.emit('place'); // a new title: a new width, kept beside the clock
+        }
         this._icon.icon_name = playing ? 'media-playback-start-symbolic' : 'media-playback-pause-symbolic';
-        this.accessible_name = `${playing ? 'Playing' : 'Paused'}: ${pillText(pick, 200)}`;
+        this.accessible_name = `${playing ? 'Playing' : 'Paused'}: ${pick.title}${pick.artist ? `, ${pick.artist}` : ''}`;
         this._title.text = pick.title;
         this._artist.text = pick.artist;
         this._artist.visible = !!pick.artist;
@@ -109,6 +111,8 @@ const NowPlaying = GObject.registerClass({
         this._play.accessible_name = playing ? 'Pause' : 'Play';
         this._prev.reactive = pick.proxy.CanGoPrevious !== false;
         this._next.reactive = pick.proxy.CanGoNext !== false;
+        // Last: the first placement measures the new title, not the last one.
+        this._show(playing);
     }
 
     // Out of the clock when playback starts; back in HIDE_AFTER_MS after it pauses or stops (paused,
@@ -121,7 +125,7 @@ const NowPlaying = GObject.registerClass({
             this._shown = true;
             this.container.visible = true;
             this.emit('place');
-            popOut(this.container, clockActor(), {pivot: [0, 0.5]});
+            popOut(this.container, clockActor(), {pivot: [1, 0.5]});
         } else if (this._shown && !this._hideId) {
             // why: repeats only while its menu is open (nothing signals "closed and still paused");
             // its id stays set until it really ends, so playing again can cancel it.
@@ -130,7 +134,7 @@ const NowPlaying = GObject.registerClass({
                     return GLib.SOURCE_CONTINUE;
                 this._hideId = 0;
                 this._shown = false;
-                retreat(this.container, clockActor(), {pivot: [0, 0.5], onDone: () => (this.container.visible = this._shown)});
+                retreat(this.container, clockActor(), {pivot: [1, 0.5], onDone: () => (this.container.visible = this._shown)});
                 return GLib.SOURCE_REMOVE;
             });
         }
@@ -167,15 +171,21 @@ export class NowPlayingPill {
         // child of its container: the container is what goes on the stage, placed and animated.
         Main.layoutManager.addTopChrome(this._button.container, {trackFullscreen: true});
         Main.panel.menuManager.addMenu(this._button.menu);
+        // Left of the clock and as tall as its button, so its bubble lines up with the clock's. Its
+        // right edge stays put: a longer title grows it to the left.
         const place = () => {
             const clock = clockActor();
             const [cx, cy] = clock.get_transformed_position();
-            const [cw, ch] = clock.get_transformed_size();
-            const [, h] = this._button.container.get_preferred_height(-1);
-            this._button.container.set_position(Math.round(cx + cw + GAP), Math.round(cy + (ch - h) / 2));
+            const ch = clock.get_transformed_size()[1];
+            const c = this._button.container;
+            c.set_height(Math.round(ch));
+            const [, w] = c.get_preferred_width(ch);
+            c.set_position(Math.round(cx - GAP - w), Math.round(cy));
         };
         this._button.connectObject('place', place, this);
-        clockActor().connectObject('notify::allocation', place, this);
+        // Not from inside the clock's allocation (that logs warnings and lands a frame late).
+        this._placeLater = new BeforeRedraw(place);
+        clockActor().connectObject('notify::allocation', () => this._placeLater.queue(), this);
         place();
         // trackFullscreen re-shows every top-chrome actor on overview and fullscreen changes; with
         // nothing playing the pill sat at the screen's corner (owner, 2026-11-18). Keep it hidden.
@@ -200,6 +210,7 @@ export class NowPlayingPill {
     }
 
     destroy() {
+        this._placeLater?.cancel();
         clockActor().disconnectObject(this);
         Main.sessionMode.disconnectObject(this);
         if (this._button) {

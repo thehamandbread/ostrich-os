@@ -18,7 +18,7 @@ const here = GLib.path_get_dirname(GLib.filename_from_uri(import.meta.url)[0]);
 const src = new TextDecoder().decode(GLib.file_get_contents(`${here}/../../modules/gnome/extensions/tweaks/nowplaying.js`)[1]);
 const body = src.slice(src.indexOf('export function pickPlayer'), src.indexOf('// ---- the pill')).replaceAll('export ', '');
 // eslint-disable-next-line no-new-func
-const {pickPlayer, pillText} = new Function(`const MAX_CHARS = 32; ${body}; return {pickPlayer, pillText};`)();
+const {pickPlayer, pillText} = new Function(`const MAX_CHARS = 24; ${body}; return {pickPlayer, pillText};`)();
 
 const p = (name, status, title, artist = '') => ({name, status, title, artist});
 check('nothing playing: no pill', pickPlayer([]) === null);
@@ -26,9 +26,9 @@ check('playing wins over paused', pickPlayer([p('a', 'Paused', 'A'), p('b', 'Pla
 check('paused with a title shows', pickPlayer([p('a', 'Paused', 'A')]).name === 'a');
 check('stopped never shows', pickPlayer([p('a', 'Stopped', 'A')]) === null);
 check('an empty player (no title) never shows', pickPlayer([p('drawer', 'Playing', '')]) === null);
-check('title and artist', pillText(p('a', 'Playing', 'Song', 'Band')) === 'Song · Band');
+check('the title only (the artist is in the drop-down)', pillText(p('a', 'Playing', 'Song', 'Band')) === 'Song');
 const long = pillText(p('a', 'Playing', 'x'.repeat(200)));
-check('a long title is cut to 32 characters', [...long].length === 32 && long.endsWith('…'));
+check('a long title is cut to 24 characters', [...long].length === 24 && long.endsWith('…'));
 check('emoji are not cut in half', [...pillText(p('a', 'Playing', '🎵'.repeat(40)))].every(c => c === '🎵' || c === '…'));
 const md = fromMetadata({'xesam:title': ' Song ', 'xesam:artist': ['A', 'B', 3]});
 check('metadata: title trimmed, artists joined', md.title === 'Song' && md.artist === 'A, B');

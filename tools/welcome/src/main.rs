@@ -507,7 +507,7 @@ fn welcome_step() -> Vec<adw::PreferencesGroup> {
         ),
         (
             "The clock",
-            "The date in the middle of the top bar: open it for the calendar and notifications, or just rest the pointer on it.",
+            "The date in the middle of the top bar: click it for the calendar and notifications.",
         ),
         (
             "Quick settings",

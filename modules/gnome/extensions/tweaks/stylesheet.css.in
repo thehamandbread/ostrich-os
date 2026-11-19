@@ -19,20 +19,28 @@
 .ost-today-line { font-feature-settings: "tnum"; }
 .ost-today-link { border-radius: 9px; padding: [[space_xs]] 8px; font-weight: bold; } /* the text colour: an accent like slate was too dim to read */
 .ost-today-link:hover, .ost-today-link:focus { background-color: rgba(127, 127, 127, 0.15); }
-/* The now-playing pill (nowplaying.js): its drop-down's track and controls, 24 px or more to hit. */
-.ost-now-playing-title { font-weight: bold; }
-/* The pill: a bubble like the clock's, beside it (it floats above the bar, so it's styled here). */
+/* The now-playing pill (nowplaying.js), left of the clock. It floats above the bar, so it's styled
+   here, the way GNOME styles a panel button: as tall as the clock's button, the bubble drawn inside a
+   transparent border with an inset shadow, so it lines up with the clock's own highlight. Tinted with
+   the live accent, so it reads as "playing" and follows the colour scheme (owner, 2026-11-18: the
+   grey bubble looked flat). White on the tint over the bar: 7.8:1 or more on every GNOME accent,
+   5.4:1 or more hovered or open (yellow is the lowest). */
 .ost-now-playing {
-  background-color: rgba(255, 255, 255, 0.12);
   color: {{text}};
-  border-radius: 99px;
-  padding: 2px [[space_m]];
-  font-size: 0.9em;
-  font-weight: bold;
+  border-radius: [[radius_pill]];
+  border: [[space_xs]] solid transparent;
+  /* A panel button spaces its content with these, not with padding (as #panel .panel-button does). */
+  -natural-hpadding: [[space_m]];
+  -minimum-hpadding: [[space_s]];
+  box-shadow: inset 0 0 0 100px st-transparentize(-st-accent-color, 0.55); /* token-lint: allow the live accent, see above */
 }
-.ost-now-playing:hover, .ost-now-playing:checked { background-color: rgba(255, 255, 255, 0.2); }
+.ost-now-playing:hover, .ost-now-playing:checked { box-shadow: inset 0 0 0 100px st-transparentize(-st-accent-color, 0.35); } /* token-lint: allow the live accent */
 .ost-now-playing .panel-status-menu-box { spacing: [[space_s]]; }
-.ost-now-playing-controls { spacing: [[space_m]]; }
+.ost-now-playing-icon { icon-size: [[icon_s]]; }
+/* Its drop-down: the track, then previous / play-pause / next, 24 px or more to hit. */
+.ost-now-playing-track { padding: [[space_s]] [[space_m]]; }
+.ost-now-playing-title { font-weight: bold; }
+.ost-now-playing-controls { spacing: [[space_m]]; padding: [[space_s]] [[space_m]]; }
 .ost-now-playing-button { /* token-lint: allow a theme `button`: the shell's focus ring applies */ min-width: [[target_large]]; min-height: [[target_large]]; padding: [[space_xs]]; border-radius: [[radius_card]]; }
 /* Lit quick-settings tiles: white text on Ubuntu's accents is 4.51-4.58:1, a bare pass that small
    anti-aliased labels miss (council 2026-11-09, tests 4 and 9). The accent darkened to 94 % (98 % on

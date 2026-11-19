@@ -5,7 +5,7 @@
 #   nowplaying-test.sh [--snapshot NAME] [--measure]
 #
 # Installs this checkout's tweaks (and blur, which styles GNOME's media card), leaves the pill at its
-# default (on), then checks the top bar to the right of the clock: nothing while no player runs or
+# default (on), then checks the top bar to the left of the clock (owner, 2026-11-18): nothing while no player runs or
 # while a track is only paused; the pill once it plays (out of the clock, owner 2026-11-02);
 # nothing for a player with no title (a page that only registered a media session); gone again a
 # few seconds after it stops or quits; the shortcut pauses and plays; the drop-down opens; no JS
@@ -57,12 +57,12 @@ status() {
 		grep -o "'[A-Za-z]*'" | tr -d "'"
 }
 shot() { "$VM" screenshot "$OUT/$1.png" >/dev/null; }
-# How much the top bar between the clock and the right-hand icons differs from the first shot.
+# How much the top bar between the workspaces and the clock differs from the first shot.
 differs() {
 	python3 -I - "$OUT/0-none.png" "$OUT/$1.png" <<'EOF'
 import sys
 from PIL import Image, ImageChops, ImageStat
-a, b = (Image.open(f).convert("L").crop((1010, 0, 1500, 32)) for f in sys.argv[1:3])
+a, b = (Image.open(f).convert("L").crop((420, 0, 900, 32)) for f in sys.argv[1:3])
 sys.exit(0 if ImageStat.Stat(ImageChops.difference(a, b)).mean[0] > 2 else 1)
 EOF
 }
@@ -98,7 +98,7 @@ if python3 -I - "$OUT/0-none.png" "$OUT/0-after-overview.png" <<'EOF'; then ok "
 import sys
 from PIL import Image, ImageChops, ImageStat
 a, b = (Image.open(f).convert("L") for f in sys.argv[1:3])
-d = max(ImageStat.Stat(ImageChops.difference(a.crop(r), b.crop(r))).mean[0] for r in ((0, 0, 200, 32), (1010, 0, 1500, 32)))
+d = max(ImageStat.Stat(ImageChops.difference(a.crop(r), b.crop(r))).mean[0] for r in ((0, 0, 200, 32), (420, 0, 900, 32)))
 sys.exit(0 if d <= 2 else 1)
 EOF
 
@@ -125,10 +125,10 @@ x=$(
 	python3 -I - "$OUT/0-none.png" "$OUT/2-playing.png" <<'EOF'
 import sys
 from PIL import Image, ImageChops
-a, b = (Image.open(f).convert("L").crop((1010, 0, 1500, 32)) for f in sys.argv[1:3])
+a, b = (Image.open(f).convert("L").crop((420, 0, 900, 32)) for f in sys.argv[1:3])
 d = ImageChops.difference(a, b)
 cols = [x for x in range(d.width) if max(d.getpixel((x, y)) for y in range(d.height)) > 40]
-print(1010 + (cols[0] + cols[-1]) // 2 if cols else 0)
+print(420 + (cols[0] + cols[-1]) // 2 if cols else 0)
 EOF
 )
 "$VM" click "$x" 15 >/dev/null
