@@ -224,6 +224,7 @@ reopened=$(state)
 indent "$reopened"
 is "both Files windows are back" test "$(count_app $FILES "$reopened")" = 2
 # An app started with its saved state has a scope of its own, as a launched app does, not the shell's unit.
+# shellcheck disable=SC2016 # expands in the VM
 [[ -z $GHOSTTY ]] || is "the terminal runs in its own scope, not the shell's" test "$(run 'for p in $(pgrep -x ghostty); do cat /proc/$p/cgroup; done' | grep -c 'org.gnome.Shell')" = 0
 # Closing saves where you left off: what the reopened windows show must be what was saved.
 run "$OSTRICH workspace close state-test"
