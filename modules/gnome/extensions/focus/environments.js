@@ -3,17 +3,27 @@
 // unit tests can run them: the file format, names, and which saved window a new window takes.
 //
 // An environment file (~/.config/ubuntu-ostrich/environments/<id>.json):
-//   {"version": 1, "name": "Video editing",
+//   {"version": 2, "name": "Video editing",
 //    "apps": [{"app": "org.gnome.Nautilus.desktop",
 //              "windows": [{"monitor": 0, "x": 0, "y": 32, "width": 960, "height": 1048,
-//                           "maximized": false}]}],
+//                           "maximized": false,
+//                           "open": ["file:///home/me/Videos"],   // optional: what the window had open
+//                           "cwd": "/home/me/Videos"}]}],         // optional: a terminal's folder
 //    "focus": {"on": false, "allowed": []},     // optional: focus with these apps only
 //    "power": "",                              // optional: power-saver | balanced | performance
 //    "dnd": false,                              // optional: Do Not Disturb
 //    "drawer": {"sites": ["claude", "gmail"],  // optional: Ostrich Drawer's top-bar sites, in order,
 //               "keep": ["gmail"]}}             //   and the ones kept loaded (null: the normal set)
 
-export const FORMAT_VERSION = 1;
+export const FORMAT_VERSION = 2; // 1 (no `open` or `cwd`) is still read
+const READABLE_VERSIONS = [1, 2];
+// What a window had open reaches an app's command line, so only addresses an app can safely be
+// given: web pages and local folders or files. No about:, javascript:, data:, or anything else.
+export const MAX_OPEN_PER_WINDOW = 40;
+export const MAX_OPEN_PER_WORKSPACE = 200;
+const MAX_URI = 4096;
+// eslint-disable-next-line no-control-regex -- control characters are exactly what it keeps out
+const URI_OK = /^(https?:\/\/[^\s\u0000-\u001f\u007f]+|file:\/\/\/[^\s\u0000-\u001f\u007f]*)$/;
 const POWER = ['', 'power-saver', 'balanced', 'performance'];
 const SITE_ID = /^[A-Za-z0-9-]{1,40}$/; // drawer site ids (drawer-host's config::valid_id)
 
@@ -28,11 +38,27 @@ function num(v, min, max) {
     return Number.isFinite(v) && v >= min && v <= max ? Math.round(v) : null;
 }
 
+/** The addresses a window may have saved: web pages and local files, at most `room` of them. */
+export function cleanOpen(list, room = MAX_OPEN_PER_WINDOW) {
+    const ok = (Array.isArray(list) ? list : []).filter(u => typeof u === 'string' && u.length <= MAX_URI && URI_OK.test(u));
+    return ok.slice(0, Math.max(0, Math.min(room, MAX_OPEN_PER_WINDOW)));
+}
+
+/** A terminal's saved folder: an absolute path, no control characters, no `..`; else ''. */
+export function cleanCwd(path) {
+    if (typeof path !== 'string' || path.length > MAX_URI || !path.startsWith('/'))
+        return '';
+    // eslint-disable-next-line no-control-regex -- as above
+    if (/[\u0000-\u001f\u007f]/.test(path) || path.split('/').includes('..'))
+        return '';
+    return path;
+}
+
 /**
  * Builds an environment from the current windows.
  *
  * @param {string} name
- * @param {Array<{app: string, monitor: number, x: number, y: number, width: number, height: number, maximized: boolean}>} windows
+ * @param {Array<{app: string, monitor: number, x: number, y: number, width: number, height: number, maximized: boolean, open?: string[], cwd?: string}>} windows
  * @param {object} [extras] focus / power / dnd
  */
 export function capture(name, windows, extras = {}) {
@@ -44,6 +70,7 @@ export function capture(name, windows, extras = {}) {
             apps.set(w.app, []);
         apps.get(w.app).push({
             monitor: w.monitor, x: w.x, y: w.y, width: w.width, height: w.height, maximized: !!w.maximized,
+            open: w.open, cwd: w.cwd,
         });
     }
     return validate({
@@ -61,11 +88,24 @@ export function capture(name, windows, extras = {}) {
  * A saved workspace with its windows as they are now and everything else kept (focus, power, Do Not
  * Disturb, drawer): closing it saves where you left off, so opening it again resumes there. With no
  * windows left it's unchanged (closing an emptied workspace never wipes what was saved).
+ * (shortcut: a window with nothing readable keeps the old contents of the window at the same place
+ * in its app's list, so a window you moved to a plain page keeps its old pages until you save again.)
  */
 export function withLayout(env, windows) {
     if (!windows.some(w => w.app))
         return env;
-    return capture(env.name, windows, {focus: env.focus, power: env.power, dnd: env.dnd, drawer: env.drawer});
+    // A window whose contents couldn't be read this time (a slow answer, a file mid-write) keeps
+    // what the same window of the same app had saved, rather than losing it.
+    const seen = new Map();
+    const withKept = windows.map(w => {
+        const n = seen.get(w.app) ?? 0;
+        seen.set(w.app, n + 1);
+        if (w.open?.length || w.cwd)
+            return w;
+        const old = env.apps.find(a => a.app === w.app)?.windows[n];
+        return old && (old.open || old.cwd) ? {...w, open: old.open, cwd: old.cwd} : w;
+    });
+    return capture(env.name, withKept, {focus: env.focus, power: env.power, dnd: env.dnd, drawer: env.drawer});
 }
 
 /** GNOME's workspace-names list with `index` named `name` (padded with empty names). */
@@ -101,11 +141,12 @@ export function drawerSet(d) {
 export function validate(env) {
     if (typeof env !== 'object' || env === null)
         throw new Error('not an environment');
-    if (env.version !== FORMAT_VERSION)
+    if (!READABLE_VERSIONS.includes(env.version))
         throw new Error(`unknown format version ${env.version}`);
     if (!idFor(env.name))
         throw new Error('environment has no name');
     const appId = /^[A-Za-z0-9._-]+\.desktop$/;
+    let room = MAX_OPEN_PER_WORKSPACE; // addresses left for the whole workspace
     const apps = (Array.isArray(env.apps) ? env.apps : []).map(a => {
         if (!appId.test(a?.app ?? ''))
             throw new Error(`bad app id ${a?.app}`);
@@ -116,7 +157,15 @@ export function validate(env) {
             };
             if (Object.values(g).includes(null))
                 throw new Error(`bad window geometry for ${a.app}`);
-            return {...g, maximized: !!w.maximized};
+            const open = cleanOpen(w.open, room);
+            room -= open.length;
+            const state = {};
+            if (open.length > 0)
+                state.open = open;
+            const cwd = cleanCwd(w.cwd);
+            if (cwd)
+                state.cwd = cwd;
+            return {...g, maximized: !!w.maximized, ...state};
         });
         return {app: a.app, windows};
     });

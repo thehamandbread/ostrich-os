@@ -9,7 +9,7 @@
 # new workspace named after it; opens Calculator there too, then closes it (`ostrich workspace`):
 # every window goes, the workspace and its name go, and the saved file now has Calculator (closing
 # saves where you left off). Then checks focus with only Files allowed keeps Text Editor minimised.
-# The focus extension from this checkout replaces the installed one. Window state comes from the extension's D-Bus State method. Screenshots go to DIR.
+# The focus, dock and blur extensions from this checkout replace the installed ones. Window state comes from the extension's D-Bus State method. Screenshots go to DIR.
 set -euo pipefail
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -84,9 +84,11 @@ step "start from $SNAPSHOT"
 "$VM" snapshot restore "$SNAPSHOT"
 "$VM" start
 sleep 10
-"$ROOT/modules/gnome/extensions/build.sh" focus >/dev/null
-"$VM" copy "$ROOT/dist/focus@ubuntu-ostrich.shell-extension.zip" /tmp/focus.zip
-run "gnome-extensions install --force /tmp/focus.zip"
+"$ROOT/modules/gnome/extensions/build.sh" focus dock blur >/dev/null
+for e in focus dock blur; do
+	"$VM" copy "$ROOT/dist/$e@ubuntu-ostrich.shell-extension.zip" "/tmp/$e.zip"
+	run "gnome-extensions install --force /tmp/$e.zip"
+done
 # This checkout's ostrich command too (`ostrich workspace`), from the VM tools build if there is one.
 if [[ -x $VM_DIR/tools-bin/ostrich ]]; then
 	"$VM" copy "$VM_DIR/tools-bin/ostrich" /tmp/ostrich
@@ -173,6 +175,85 @@ handclosed=$(state)
 is "it counts as closed" grep -qx "open -" <<<"$handclosed"
 n=$(names)
 if [[ $n != *"'Test env'"* ]]; then ok "no workspace kept its name ($n)"; else bad "a workspace kept the name: $n"; fi
+
+step "what was inside the apps: Files folders, a terminal folder, a browser's pages (owner, 2026-11-20)"
+# shellcheck disable=SC2016 # expands in the VM
+STATE_FILE='$HOME/.config/ubuntu-ostrich/environments/state-test.json'
+# The saved windows of one app, as one line each: "open: URI URI" or "cwd: PATH" or "-".
+saved_windows() { # app
+	run "python3 -c '
+import json, os, sys
+env = json.load(open(os.path.expandvars(\"$STATE_FILE\")))
+for a in env[\"apps\"]:
+    if a[\"app\"] == sys.argv[1]:
+        for w in a[\"windows\"]:
+            print(\"open: \" + \" \".join(w[\"open\"]) if \"open\" in w else (\"cwd: \" + w[\"cwd\"] if \"cwd\" in w else \"-\"))
+' $1"
+}
+run "mkdir -p /tmp/site && printf '<title>State page one</title><p>1</p>' > /tmp/site/one.html && printf '<title>State page two</title><p>2</p>' > /tmp/site/two.html && (cd /tmp/site && setsid -f python3 -m http.server 8767 </dev/null >/dev/null 2>&1)"
+FIREFOX=$(run "ls /usr/share/applications /var/lib/snapd/desktop/applications 2>/dev/null | grep -i -m1 '^firefox'" || true)
+GHOSTTY=$(run "ls /usr/share/applications | grep -m1 '^com.mitchellh.ghostty.desktop'" || true)
+run "setsid -f nautilus --new-window /usr/share </dev/null >/dev/null 2>&1; sleep 2; setsid -f nautilus --new-window /var/lib </dev/null >/dev/null 2>&1"
+[[ -z $GHOSTTY ]] || run "setsid -f ghostty --working-directory=/usr/share/icons </dev/null >/dev/null 2>&1"
+[[ -z $FIREFOX ]] || run "setsid -f firefox --new-window http://localhost:8767/one.html --new-tab http://localhost:8767/two.html </dev/null >/dev/null 2>&1"
+sleep 25 # Firefox writes its session file every 15 s
+shot 05-state-before
+out=$(run "$OSTRICH env save State test" 2>&1) || true
+if [[ $out == *"saved"* ]]; then ok "saved with what was inside"; else bad "save: $out"; fi
+files_saved=$(saved_windows $FILES)
+indent "$files_saved"
+is "Files: both folders saved" test "$(grep -c '^open: file:///' <<<"$files_saved")" = 2
+is "Files: /usr/share is one of them" grep -q "file:///usr/share$" <<<"$files_saved"
+if [[ -n $GHOSTTY ]]; then
+	term_saved=$(saved_windows com.mitchellh.ghostty.desktop)
+	indent "$term_saved"
+	is "the terminal's folder saved" grep -q "^cwd: /usr/share/icons$" <<<"$term_saved"
+else echo "  (Ghostty isn't in this VM: the terminal's folder isn't checked)"; fi
+if [[ -n $FIREFOX ]]; then
+	ff_saved=$(saved_windows "$FIREFOX")
+	indent "$ff_saved"
+	# Firefox adds a tab of its own on a first run, so: both pages, in order, in one window.
+	is "Firefox: both pages saved, in order, in one window" test "$(grep -c '^open: http://localhost:8767/one.html http://localhost:8767/two.html' <<<"$ff_saved")" = 1
+else echo "  (Firefox isn't in this VM: the pages aren't checked)"; fi
+run "nautilus -q 2>/dev/null; pkill -f '[g]hostty'; pkill -f '[f]irefox'; true"
+sleep 4
+run "$OSTRICH env open state-test"
+sleep 25
+shot 06-state-reopened
+reopened=$(state)
+indent "$reopened"
+is "both Files windows are back" test "$(count_app $FILES "$reopened")" = 2
+# An app started with its saved state has a scope of its own, as a launched app does, not the shell's unit.
+[[ -z $GHOSTTY ]] || is "the terminal runs in its own scope, not the shell's" test "$(run 'for p in $(pgrep -x ghostty); do cat /proc/$p/cgroup; done' | grep -c 'org.gnome.Shell')" = 0
+# Closing saves where you left off: what the reopened windows show must be what was saved.
+run "$OSTRICH workspace close state-test"
+sleep 8
+files_again=$(saved_windows $FILES)
+is "the Files windows show the same folders again" test "$(sort <<<"$files_again")" = "$(sort <<<"$files_saved")"
+[[ -z $GHOSTTY ]] || is "the terminal is in the same folder again" test "$(saved_windows com.mitchellh.ghostty.desktop)" = "$term_saved"
+[[ -z $FIREFOX ]] || is "Firefox shows the same pages again, in one window" test "$(saved_windows "$FIREFOX" | grep -c '^open: http://localhost:8767/one.html http://localhost:8767/two.html')" = 1
+[[ -z $FIREFOX ]] || is "and it is the only Firefox window" test "$(count_app firefox_firefox.desktop "$reopened")" = 1
+
+step "a version 1 file and a hand-edited one"
+run "python3 - <<'PYEND'
+import json, os
+d = os.path.expanduser('~/.config/ubuntu-ostrich/environments')
+win = {'monitor': 0, 'x': 10, 'y': 40, 'width': 800, 'height': 600, 'maximized': False}
+json.dump({'version': 1, 'name': 'Old one', 'apps': [{'app': '$FILES', 'windows': [win]}]}, open(d + '/old-one.json', 'w'))
+evil = dict(win, open=['javascript:alert(1)', 'file:///usr/share', 'about:config'], cwd='relative/path')
+json.dump({'version': 2, 'name': 'Edited', 'apps': [{'app': '$FILES', 'windows': [evil]}]}, open(d + '/edited.json', 'w'))
+PYEND"
+list=$(run "$OSTRICH env list" 2>&1 || true)
+is "a version 1 workspace is still listed" grep -q "Old one" <<<"$list"
+is "so is the edited one" grep -q "Edited" <<<"$list"
+run "$OSTRICH env open edited"
+sleep 8
+edited=$(state)
+is "the edited workspace opens (only its Files window)" test "$(count_app $FILES "$edited")" -ge 1
+run "$OSTRICH workspace close edited"
+sleep 6
+run "$OSTRICH env delete old-one; $OSTRICH env delete edited; $OSTRICH env delete state-test; true"
+quit_apps
 
 step "focus with only Files allowed"
 run "$FOCUS \"['$FILES']\""

@@ -1309,7 +1309,7 @@ fn focus_step() -> Vec<adw::PreferencesGroup> {
         missing(&g, "The focus extension");
         return vec![g];
     };
-    vec![g, allow_group(&fs), environments_group()]
+    vec![g, allow_group(&fs), environments_group(&fs)]
 }
 
 /// Which apps stay in focus. None ticked: every app stays (only distractions are hidden).
@@ -1429,11 +1429,17 @@ fn refresh_envs(e: &std::rc::Rc<Envs>) {
     }
 }
 
-fn environments_group() -> adw::PreferencesGroup {
+fn environments_group(fs: &gio::Settings) -> adw::PreferencesGroup {
     let g = group(
         "Saved workspaces",
-        "Save a workspace (its apps, where their windows are, and the drawer sites in the top bar) and open it again with one click: it comes back on its own workspace, named after it, say \"Video editing\" or \"School\". Closing it saves where you left off and closes its apps. Open them here, from the Focus menu in the top-right, or with `ostrich workspace open NAME`. Focus is separate: it quiets the whole desktop.",
+        "Save a workspace (its apps, where their windows are, what was open inside them, and the drawer sites in the top bar) and open it again with one click: it comes back on its own workspace, named after it, say \"Video editing\" or \"School\". Closing it saves where you left off and closes its apps. Open them here, from the Focus menu in the top-right, or with `ostrich workspace open NAME`. Focus is separate: it quiets the whole desktop.",
     );
+    g.add(&switch_row(
+        fs,
+        "restore-app-contents",
+        "Bring back what was open inside the apps",
+        "The folder in Files and in terminals, and the pages in each Firefox, Zen or LibreWolf window. Not running programs, splits or scrollback.",
+    ));
     let ostrich = glib::home_dir()
         .join(".local/bin/ostrich")
         .to_string_lossy()

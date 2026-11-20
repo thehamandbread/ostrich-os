@@ -4,6 +4,10 @@
   <schema id="org.gnome.shell.extensions.ubuntu-ostrich.focus"
           path="/org/gnome/shell/extensions/ubuntu-ostrich/focus/">
     <key name="toggle-focus" type="as"><default><![CDATA[['<Super><Alt>f']]]></default><summary>Keyboard shortcut for focus mode</summary></key>
+    <key name="restore-app-contents" type="b">
+      <default>true</default>
+      <summary>A saved workspace also remembers what was inside its apps (the folder in Files and in terminals, the pages in a Firefox family browser's windows) and opens them again with it</summary>
+    </key>
     <key name="allowed-apps" type="as"><default>[]</default><summary>Focus with an allow-list: only these apps (desktop ids) stay visible; empty keeps every app</summary></key>
     <key name="focus-on" type="b">
       <default>false</default>

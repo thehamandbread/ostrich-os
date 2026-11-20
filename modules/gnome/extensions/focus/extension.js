@@ -151,6 +151,8 @@ export default class FocusExtension extends Extension {
         this._envs = new EnvironmentManager({
             setFocus: (on, allowed) => this.setFocus(on, allowed),
             isOn: () => this._active,
+            // Saving and opening a workspace includes what is inside its apps (the setting).
+            restoreContents: () => this._settings.get_boolean('restore-app-contents'),
             // The Workspaces tile is lit while a saved workspace is open, and is named after it
             // (owner, 2026-11-06).
             changed: () => this._syncWorkspacesTile(),

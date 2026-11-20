@@ -3,10 +3,11 @@
 // and the D-Bus API; the owner renamed them Workspaces on 2026-11-01). The file format and matching
 // rules are in environments.js; this file talks to GNOME.
 //
-//   Save    the windows on the current workspace: their apps, monitors and places, and Ostrich
-//           Drawer's top-bar sites
-//   Open    a fresh workspace named after it, the apps launched there, each window put back in its
-//           saved place, then the extras (power mode, focus with an allow-list, Do Not Disturb,
+//   Save    the windows on the current workspace: their apps, monitors and places, what is inside
+//           them (the folder in Files and in terminals, the pages in a Firefox family browser:
+//           appstate-live.js), and Ostrich Drawer's top-bar sites
+//   Open    a fresh workspace named after it, the apps launched there (with their folders and pages),
+//           each window put back in its saved place, then the extras (power mode, focus with an allow-list, Do Not Disturb,
 //           drawer sites)
 //   Close   saves where you left off (the windows on that workspace now), closes them, removes the
 //           workspace and its name, puts back the normal drawer sites, and goes back to where you were
@@ -24,6 +25,7 @@ import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 
 import {Signals} from './_lib/signals.js';
 import {PROFILES_BUSES} from './_lib/timers.js';
+import {captureState, launchWithState} from './appstate-live.js';
 import {idFor, capture, validate, placementQueue, takePlace, allPlaced, drawerSet, withLayout, namedAt, withoutIndex} from './environments.js';
 
 const BUS_NAME = 'org.ubuntuostrich.Environments';
@@ -103,6 +105,12 @@ function normalWindows(workspace = null) {
         !tracker.get_window_app(w).get_id().startsWith('ubuntu-ostrich.'));
 }
 
+/** The windows as saved: where each is, and (unless switched off) what is inside it. */
+function describeAll(wins, withContents) {
+    const state = withContents ? captureState(wins) : new Map();
+    return wins.map(w => ({...describe(w), ...state.get(w)}));
+}
+
 function describe(w) {
     const f = w.get_frame_rect();
     return {
@@ -178,7 +186,7 @@ export class EnvironmentManager {
         if (!id)
             throw new Error('give the environment a name with letters or numbers');
         const ws = global.workspace_manager.get_active_workspace();
-        const windows = normalWindows(ws).map(describe);
+        const windows = describeAll(normalWindows(ws), this._focus.restoreContents?.() ?? true);
         if (windows.length === 0)
             throw new Error('there are no app windows on this workspace to save');
         writeEnv(id, capture(name, windows, {drawer: currentDrawerSet()}));
@@ -238,7 +246,12 @@ export class EnvironmentManager {
                 continue;
             }
             const count = Math.max(1, a.windows.length);
+            const contents = this._focus.restoreContents?.() ?? true;
             for (let i = 0; i < count; i++) {
+                // A window with something inside (a folder, pages): opened with it.
+                const inside = a.windows[i];
+                if (contents && (inside?.open || inside?.cwd) && launchWithState(app, inside))
+                    continue;
                 if (app.get_state() === Shell.AppState.RUNNING || i > 0) {
                     if (app.can_open_new_window())
                         app.open_new_window(ws.index());
@@ -283,7 +296,7 @@ export class EnvironmentManager {
         // Every app window on the workspace, also ones opened after it was: they're its progress.
         const windows = new Set([...record.windows, ...normalWindows(ws)]);
         try {
-            writeEnv(id, withLayout(readEnv(id), normalWindows(ws).map(describe)));
+            writeEnv(id, withLayout(readEnv(id), describeAll(normalWindows(ws), this._focus.restoreContents?.() ?? true)));
         } catch (e) {
             console.warn(`environments: could not save where ${id} was left: ${e.message}`);
         }
