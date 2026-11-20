@@ -212,8 +212,12 @@ struct Drawer {
     /// The power-profiles-daemon proxies; held so their signals keep coming.
     power_proxies: Vec<gio::DBusProxy>,
     state: gio::SimpleAction,
-    /// About how much one loaded site uses, in MB (0: not measured yet); see `measure_memory`.
-    site_mb: u32,
+    /// What each loaded site uses, in MB, by site id; see `measure_memory`.
+    site_mb: HashMap<String, u32>,
+    /// The web processes each site owns, by site id (claimed when its page commits).
+    web_pids: HashMap<String, Vec<u32>>,
+    /// Sites whose view was made but hold no web process yet, in the order they were made.
+    web_waiting: Vec<String>,
     /// The machine's memory (MemTotal), for the warning about keeping many sites loaded.
     mem_total_kb: u64,
 }
@@ -234,6 +238,20 @@ impl Drawer {
     }
 
     /// The sites with a top-bar icon, in order.
+    /// The average a kept-loaded site uses, in MB (0: none measured yet), for the small-machine warning.
+    fn kept_site_mb(&self) -> u32 {
+        let kept: Vec<u32> = self
+            .tabs
+            .iter()
+            .filter(|t| self.is_kept(&t.service.id))
+            .filter_map(|t| self.site_mb.get(&t.service.id).copied())
+            .collect();
+        kept.iter()
+            .sum::<u32>()
+            .checked_div(kept.len() as u32)
+            .unwrap_or(0)
+    }
+
     fn bar(&self) -> Vec<String> {
         match &self.set {
             Some(set) => set
@@ -268,7 +286,7 @@ fn publish(d: &Shared) {
                     "playing": t.view.as_ref().is_some_and(|v| v.is_playing_audio()),
                     "shape": s.shape().as_str(), "width": s.width, "height": s.height,
                     "icon": icon_for(s),
-                    "mb": (t.view.is_some() && dr.site_mb > 0).then_some(dr.site_mb),
+                    "mb": t.view.as_ref().and_then(|_| dr.site_mb.get(&s.id)),
                 })
             })
             .collect();
@@ -285,7 +303,7 @@ fn publish(d: &Shared) {
             "lastAdded": dr.last_added,
             "lastError": dr.last_error,
             "errorCount": dr.error_count,
-            "memWarning": config::memory_warning(kept, dr.site_mb, dr.mem_total_kb),
+            "memWarning": config::memory_warning(kept, dr.kept_site_mb(), dr.mem_total_kb),
             "recommended": recommended::all().iter().map(|r| serde_json::json!({
                 "id": r.id, "name": r.name, "group": r.group,
                 "drm": r.status == recommended::Status::Drm,
@@ -307,52 +325,93 @@ fn publish(d: &Shared) {
     }
 }
 
-/// The memory of this drawer's web processes, in kB: PSS, so libraries they share count once.
-fn web_memory_kb() -> u64 {
-    let mut procs = HashMap::new(); // pid: (parent pid, is a web process)
+/// This drawer's WebKit processes: (pid, is a web process). The network and GPU processes are
+/// the others. They run inside the sandbox (bubblewrap), so they're further down than our children.
+fn webkit_processes() -> Vec<(u32, bool)> {
+    let mut procs = HashMap::new(); // pid: (parent pid, comm)
     for e in std::fs::read_dir("/proc").into_iter().flatten().flatten() {
         let Ok(pid) = e.file_name().to_string_lossy().parse::<u32>() else {
             continue;
         };
         if let Ok(stat) = std::fs::read_to_string(e.path().join("stat")) {
             if let Some((comm, ppid)) = config::stat_comm_ppid(&stat) {
-                procs.insert(pid, (ppid, comm.starts_with("WebKitWebProc")));
+                procs.insert(pid, (ppid, comm.to_string()));
             }
         }
     }
-    // They run inside the sandbox (bubblewrap), so they're further down than our children.
     let me = std::process::id();
     let ours = |mut pid: u32| {
-        while let Some(&(ppid, _)) = procs.get(&pid) {
-            if ppid == me {
+        while let Some((ppid, _)) = procs.get(&pid) {
+            if *ppid == me {
                 return true;
             }
-            pid = ppid;
+            pid = *ppid;
         }
         false
     };
     procs
         .iter()
-        .filter(|(pid, (_, web))| *web && ours(**pid))
-        .filter_map(|(pid, _)| {
-            let read = |f: &str| std::fs::read_to_string(format!("/proc/{pid}/{f}")).ok();
-            read("smaps_rollup")
-                .and_then(|t| config::kb_field(&t, "Pss"))
-                .or_else(|| read("status").and_then(|t| config::kb_field(&t, "VmRSS")))
-        })
-        .sum()
+        .filter(|(pid, (_, comm))| comm.starts_with("WebKit") && ours(**pid))
+        .map(|(pid, (_, comm))| (*pid, comm.starts_with("WebKitWebProc")))
+        .collect()
 }
 
-/// Measures what a loaded site costs, for the MB next to "Keep loaded" and the warning.
-/// shortcut: one average for all loaded sites, as WebKitGTK doesn't say which web process is
-/// which view's; give each site its own figure if webkit6 ever exposes a view's process id.
+/// A process's memory in kB: PSS, so libraries it shares count once.
+fn pss_kb(pid: u32) -> Option<u64> {
+    let read = |f: &str| std::fs::read_to_string(format!("/proc/{pid}/{f}")).ok();
+    read("smaps_rollup")
+        .and_then(|t| config::kb_field(&t, "Pss"))
+        .or_else(|| read("status").and_then(|t| config::kb_field(&t, "VmRSS")))
+}
+
+/// Gives the site that just committed a page the web processes that are new (see
+/// `config::claim_processes`).
+fn claim_web_processes(d: &Shared, id: &str) {
+    let live: Vec<u32> = webkit_processes()
+        .into_iter()
+        .filter(|(_, web)| *web)
+        .map(|(pid, _)| pid)
+        .collect();
+    let mut dr = d.borrow_mut();
+    let dr = &mut *dr;
+    config::claim_processes(&mut dr.web_pids, &mut dr.web_waiting, id, &live);
+}
+
+/// Measures what each loaded site costs, for the MB in its menu and the warning. The /proc reads
+/// run on a worker thread: the window never waits for them.
 fn measure_memory(d: &Shared) {
-    let kb = web_memory_kb();
-    let loaded = d.borrow().tabs.iter().filter(|t| t.view.is_some()).count() as u64;
-    let mb = kb.checked_div(loaded).map_or(0, |k| (k / 1024) as u32);
-    if std::mem::replace(&mut d.borrow_mut().site_mb, mb) != mb {
-        publish(d);
-    }
+    let (pids, loaded) = {
+        let dr = d.borrow();
+        let loaded: Vec<String> = dr
+            .tabs
+            .iter()
+            .filter(|t| t.view.is_some())
+            .map(|t| t.service.id.clone())
+            .collect();
+        (dr.web_pids.clone(), loaded)
+    };
+    let dd = d.clone();
+    glib::spawn_future_local(async move {
+        let read = gio::spawn_blocking(|| {
+            let mut web = HashMap::new();
+            let mut shared = 0;
+            for (pid, is_web) in webkit_processes() {
+                let kb = pss_kb(pid).unwrap_or(0);
+                if is_web {
+                    web.insert(pid, kb);
+                } else {
+                    shared += kb;
+                }
+            }
+            (web, shared)
+        })
+        .await;
+        let Ok((web, shared)) = read else { return };
+        let mb = config::site_memory_mb(&pids, &web, shared, &loaded);
+        if std::mem::replace(&mut dd.borrow_mut().site_mb, mb.clone()) != mb {
+            publish(&dd);
+        }
+    });
 }
 
 /// Measures once, a little later (a page is still growing as it loads; an unloaded one's process
@@ -622,6 +681,7 @@ fn load_tab(d: &Shared, idx: usize) {
         (dr.tabs[idx].service.clone(), dr.tabs[idx].page.clone())
     };
     measure_later(d, 30);
+    d.borrow_mut().web_waiting.push(service.id.clone());
     let view = webkit6::WebView::builder()
         .network_session(&session_for(&service.id))
         .build();
@@ -685,6 +745,8 @@ fn load_tab(d: &Shared, idx: usize) {
         }
         set_page(&pg, &failed_page(v, &pg, &name, &url, err.message()));
         set_failed(&dd, &sid, true);
+        // It will never commit a page, so it must not wait for (and take) another site's process.
+        dd.borrow_mut().web_waiting.retain(|s| s != &sid);
         true
     });
     // Leaving the site (a link, a script, a redirect) opens the browser instead, so a drawer site
@@ -711,6 +773,7 @@ fn load_tab(d: &Shared, idx: usize) {
     view.connect_load_changed(move |_, ev| {
         if ev == webkit6::LoadEvent::Committed {
             set_failed(&dd, &sid, false);
+            claim_web_processes(&dd, &sid);
         }
     });
     let dd = d.clone();
@@ -940,6 +1003,11 @@ fn unload_tab(d: &Shared, idx: usize) {
             t.unread = 0;
             t.failed = false;
         }
+        {
+            let mut dr = d.borrow_mut();
+            dr.web_pids.remove(&service.id);
+            dr.web_waiting.retain(|s| s != &service.id);
+        }
         publish(d);
         measure_later(d, 5);
     }
@@ -981,6 +1049,95 @@ fn select(d: &Shared, id: &str) {
         }
     }
     publish(d);
+}
+
+/// Dictionary names from the session's locale list ("en_US.UTF-8", "en_US", "en", "C"): the
+/// language and region without the encoding, once each, "C" and "POSIX" left out.
+fn spelling_languages<'a>(names: impl Iterator<Item = &'a str>) -> Vec<String> {
+    let mut out: Vec<String> = Vec::new();
+    for n in names {
+        let n = n.split(['.', '@']).next().unwrap_or(n);
+        if n.is_empty() || n == "C" || n == "POSIX" || n.contains('-') || out.iter().any(|o| o == n)
+        {
+            continue;
+        }
+        out.push(n.to_string());
+    }
+    out
+}
+
+/// The script that hands the page a pasted image as a file, in a paste event on the focused element.
+/// WebKitGTK inserts a pasted image into a text field itself but gives the page's own paste handler
+/// (ChatGPT, Claude, Messages: they read `clipboardData.files`) an empty clipboardData, so the
+/// drawer does the reading and dispatches the event itself.
+fn paste_script(png_base64: &str) -> String {
+    format!(
+        "(() => {{ const bin = atob('{png_base64}'); \
+         const bytes = Uint8Array.from(bin, c => c.charCodeAt(0)); \
+         const dt = new DataTransfer(); \
+         dt.items.add(new File([bytes], 'image.png', {{type: 'image/png'}})); \
+         (document.activeElement || document.body).dispatchEvent(new ClipboardEvent('paste', \
+         {{clipboardData: dt, bubbles: true, cancelable: true, composed: true}})); }})()"
+    )
+}
+
+/// Ctrl+V with an image (and no text) on the clipboard: reads it and pastes it into the page as a
+/// file. False when it isn't that case, so the page gets the key as usual.
+fn paste_image(d: &Shared) -> bool {
+    let Some(display) = gtk::gdk::Display::default() else {
+        return false;
+    };
+    let clipboard = display.clipboard();
+    let formats = clipboard.formats();
+    if !formats.contains_type(gtk::gdk::Texture::static_type())
+        || formats.contains_type(String::static_type())
+        || current_view(d).is_none()
+    {
+        return false;
+    }
+    let dd = d.clone();
+    glib::spawn_future_local(async move {
+        let Ok(Some(texture)) = clipboard.read_texture_future().await else {
+            return;
+        };
+        let png = texture.save_to_png_bytes();
+        let script = paste_script(&glib::base64_encode(&png));
+        if let Some(view) = current_view(&dd) {
+            view.evaluate_javascript(&script, None, None, None::<&gio::Cancellable>, |_| {});
+        }
+    });
+    true
+}
+
+/// The site after (dir 1) or before (dir -1) `current` in `bar`, wrapping; the first or last when
+/// `current` isn't in it. Browser-style Ctrl+Tab inside the drawer.
+fn step_in(bar: &[String], current: Option<&str>, dir: i32) -> Option<String> {
+    if bar.is_empty() {
+        return None;
+    }
+    let n = bar.len() as i32;
+    let at = current.and_then(|c| bar.iter().position(|id| id == c));
+    let to = match at {
+        Some(i) => (i as i32 + dir).rem_euclid(n) as usize,
+        None if dir > 0 => 0,
+        None => bar.len() - 1,
+    };
+    Some(bar[to].clone())
+}
+
+/// Opens the site `pick` chooses from the bar's order (and the open one); true if there was one.
+fn switch_site(d: &Shared, pick: impl Fn(&[String], Option<&str>) -> Option<String>) -> bool {
+    let (bar, current) = {
+        let dr = d.borrow();
+        (dr.bar(), dr.current.clone())
+    };
+    match pick(&bar, current.as_deref()) {
+        Some(id) => {
+            select(d, &id);
+            true
+        }
+        None => false,
+    }
 }
 
 /// A site's page in the stack: its placeholder until it loads.
@@ -1234,6 +1391,14 @@ fn build(app: &gtk::Application) -> Shared {
 
     if let Some(ctx) = webkit6::WebContext::default() {
         ctx.set_cache_model(webkit6::CacheModel::DocumentViewer); // low memory
+                                                                  // Red underlines and suggestions in text fields, in the session's languages (enchant, with
+                                                                  // Ubuntu's hunspell dictionaries). Off by default in WebKitGTK.
+        ctx.set_spell_checking_enabled(true);
+        let languages = spelling_languages(glib::language_names().iter().map(|l| l.as_str()));
+        if !languages.is_empty() {
+            let refs: Vec<&str> = languages.iter().map(String::as_str).collect();
+            ctx.set_spell_checking_languages(&refs);
+        }
     }
 
     let (config, from_file) = load_config();
@@ -1309,7 +1474,9 @@ fn build(app: &gtk::Application) -> Shared {
         error_count: 0,
         power_proxies: Vec::new(),
         state,
-        site_mb: 0,
+        site_mb: HashMap::new(),
+        web_pids: HashMap::new(),
+        web_waiting: Vec::new(),
         mem_total_kb: mem_total_kb(),
     }));
     for s in config.services {
@@ -1327,7 +1494,8 @@ fn build(app: &gtk::Application) -> Shared {
             }
         }
     };
-    // Keys without a bar: Esc / Ctrl+W fold it up, Alt+Left/Right go back and forward, Ctrl+R or
+    // Keys without a bar: Ctrl+Tab / Ctrl+Shift+Tab / Ctrl+1..9 switch site like a browser's tabs,
+    // Esc / Ctrl+W fold it up, Alt+Left/Right go back and forward, Ctrl+R or
     // F5 reload (Shift: without the cache).
     let keys = gtk::EventControllerKey::new();
     keys.set_propagation_phase(gtk::PropagationPhase::Capture);
@@ -1359,6 +1527,25 @@ fn build(app: &gtk::Application) -> Shared {
                     }
                 })
                 .is_some(),
+            Key::Tab | Key::ISO_Left_Tab if ctrl => {
+                let back = shift || key == Key::ISO_Left_Tab;
+                switch_site(&dd, |bar, cur| step_in(bar, cur, if back { -1 } else { 1 }))
+            }
+            Key::_1
+            | Key::_2
+            | Key::_3
+            | Key::_4
+            | Key::_5
+            | Key::_6
+            | Key::_7
+            | Key::_8
+            | Key::_9
+                if ctrl && !alt =>
+            {
+                let n = key.to_unicode().and_then(|c| c.to_digit(10)).unwrap_or(1) as usize;
+                switch_site(&dd, |bar, _| bar.get(n - 1).cloned())
+            }
+            Key::v | Key::V if ctrl && !alt && paste_image(&dd) => true,
             Key::F5 => view()
                 .map(|v| {
                     if shift {
@@ -1760,7 +1947,36 @@ fn main() -> glib::ExitCode {
 
 #[cfg(test)]
 mod tests {
-    use super::{load_config_at, media_wanted, popup_title};
+    use super::{
+        load_config_at, media_wanted, paste_script, popup_title, spelling_languages, step_in,
+    };
+
+    #[test]
+    fn a_pasted_image_goes_to_the_page_as_a_file() {
+        let js = paste_script("QUJD");
+        assert!(js.contains("atob('QUJD')") && js.contains("new ClipboardEvent('paste'"));
+        assert!(js.contains("image/png") && js.contains("dt.items.add"));
+    }
+
+    #[test]
+    fn dictionaries_come_from_the_locale_list() {
+        let l = spelling_languages(["en_US.UTF-8", "en_US", "en", "C"].into_iter());
+        assert_eq!(l, ["en_US", "en"]);
+        let l = spelling_languages(["de_DE.UTF-8@euro", "POSIX"].into_iter());
+        assert_eq!(l, ["de_DE"]);
+        assert!(spelling_languages(["C"].into_iter()).is_empty());
+    }
+
+    #[test]
+    fn ctrl_tab_walks_the_bar_and_wraps() {
+        let bar: Vec<String> = ["a", "b", "c"].map(String::from).to_vec();
+        assert_eq!(step_in(&bar, Some("a"), 1).as_deref(), Some("b"));
+        assert_eq!(step_in(&bar, Some("c"), 1).as_deref(), Some("a"));
+        assert_eq!(step_in(&bar, Some("a"), -1).as_deref(), Some("c"));
+        assert_eq!(step_in(&bar, None, 1).as_deref(), Some("a"));
+        assert_eq!(step_in(&bar, Some("gone"), -1).as_deref(), Some("c"));
+        assert_eq!(step_in(&[], Some("a"), 1), None);
+    }
 
     #[test]
     fn a_broken_config_is_kept_aside() {

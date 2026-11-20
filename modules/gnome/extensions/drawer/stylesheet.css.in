@@ -1,5 +1,5 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
-/* Ostrich Drawer's top-bar icons: the stock panel button, plus an unread badge and a loaded dot. */
+/* Ostrich Drawer's top-bar icons: the stock panel button, plus an unread badge. */
 .ost-drawer-badge {
   background-color: -st-accent-color;
   color: -st-accent-fg-color;
@@ -19,13 +19,6 @@
   background-color: -st-accent-color;
   border: 1px solid rgba(0, 0, 0, 0.55);
   margin: 0 -4px -2px 0;
-}
-
-.ost-drawer-dot {
-  width: 3px;
-  height: 3px;
-  border-radius: 2px;
-  background-color: rgba(255, 255, 255, 0.75);
 }
 
 .ost-drawer-add-entry {

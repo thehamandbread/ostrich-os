@@ -18,6 +18,7 @@
 //! ```
 
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 
 #[derive(Clone, Debug, Deserialize, Serialize, PartialEq)]
 pub struct Service {
@@ -400,8 +401,80 @@ impl Config {
     }
 }
 
+/// Hands out the drawer's web processes that nobody holds yet, when a page commits. WebKitGTK
+/// doesn't say which process runs which view, so: sites that were loaded and still hold no process
+/// (`waiting`, in the order their views were made) take the new ones in pid order, which is the
+/// order they were started in; any left over belong to the site that committed (a navigation
+/// swapped its process). Dead pids drop out of every site.
+/// shortcut: if processes start in another order than views were made, two sites loading in the
+/// same moment can swap figures; sites kept loaded at login are the case, and they are only
+/// ever off by one another's figure.
+pub fn claim_processes(
+    procs: &mut HashMap<String, Vec<u32>>,
+    waiting: &mut Vec<String>,
+    committer: &str,
+    live: &[u32],
+) {
+    for pids in procs.values_mut() {
+        pids.retain(|p| live.contains(p));
+    }
+    let mut fresh: Vec<u32> = live
+        .iter()
+        .copied()
+        .filter(|p| !procs.values().any(|v| v.contains(p)))
+        .collect();
+    fresh.sort_unstable();
+    let mut fresh = fresh.into_iter();
+    let empty =
+        |procs: &HashMap<String, Vec<u32>>, s: &str| procs.get(s).is_none_or(|v| v.is_empty());
+    let takers: Vec<String> = waiting
+        .iter()
+        .filter(|s| empty(procs, s))
+        .cloned()
+        .collect();
+    for site in takers {
+        match fresh.next() {
+            Some(pid) => procs.entry(site).or_default().push(pid),
+            None => break,
+        }
+    }
+    procs
+        .entry(committer.to_string())
+        .or_default()
+        .extend(fresh);
+    waiting.retain(|s| empty(procs, s));
+}
+
+/// What each loaded site costs, in MB: its own web processes (PSS, kB by pid) plus an equal share
+/// of the drawer's other WebKit processes (network, GPU). A site with no live process of its own
+/// has no figure (an average would be a guess).
+pub fn site_memory_mb(
+    procs: &HashMap<String, Vec<u32>>,
+    pss_kb: &HashMap<u32, u64>,
+    shared_kb: u64,
+    loaded: &[String],
+) -> HashMap<String, u32> {
+    let share = shared_kb.checked_div(loaded.len() as u64).unwrap_or(0);
+    loaded
+        .iter()
+        .filter_map(|id| {
+            let own: Vec<u64> = procs
+                .get(id)?
+                .iter()
+                .filter_map(|p| pss_kb.get(p).copied())
+                .collect();
+            (!own.is_empty()).then(|| {
+                (
+                    id.clone(),
+                    ((own.iter().sum::<u64>() + share) / 1024) as u32,
+                )
+            })
+        })
+        .collect()
+}
+
 /// The warning shown above two kept-loaded sites on 8 GB of memory or less, else None.
-/// `site_mb`: about how much one loaded site uses (0: not measured yet).
+/// `site_mb`: about how much one kept-loaded site uses, on average (0: not measured yet).
 pub fn memory_warning(kept: usize, site_mb: u32, mem_total_kb: u64) -> Option<String> {
     const EIGHT_GB_KB: u64 = 8 * 1024 * 1024;
     if kept <= 2 || mem_total_kb == 0 || mem_total_kb > EIGHT_GB_KB {
@@ -602,5 +675,56 @@ mod tests {
             memory_warning(12, 0, 3900000).as_deref(),
             Some("12 sites kept loaded; on 4 GB that can slow things down.")
         );
+    }
+    #[test]
+    fn a_site_claims_the_new_web_processes_and_keeps_them() {
+        let mut procs = HashMap::new();
+        let mut waiting = vec!["a".to_string()];
+        claim_processes(&mut procs, &mut waiting, "a", &[10, 11]);
+        assert_eq!(procs["a"], [10, 11]);
+        assert!(waiting.is_empty());
+        waiting.push("b".into());
+        claim_processes(&mut procs, &mut waiting, "b", &[10, 11, 12]);
+        assert_eq!(procs["a"], [10, 11]);
+        assert_eq!(procs["b"], [12]);
+        // A navigation swaps a's process: 11 dies, 13 is new, and nobody is waiting.
+        claim_processes(&mut procs, &mut waiting, "a", &[10, 12, 13]);
+        assert_eq!(procs["a"], [10, 13]);
+        assert_eq!(procs["b"], [12]);
+    }
+
+    #[test]
+    fn sites_loading_together_get_their_own_in_start_order() {
+        let mut procs = HashMap::new();
+        let mut waiting: Vec<String> = ["a", "b", "c"].map(String::from).to_vec();
+        // b commits first, but all three processes are up: each waiting site takes one in order.
+        claim_processes(&mut procs, &mut waiting, "b", &[31, 30, 32]);
+        assert_eq!(procs["a"], [30]);
+        assert_eq!(procs["b"], [31]);
+        assert_eq!(procs["c"], [32]);
+        assert!(waiting.is_empty());
+        // Only one up yet: the first waiting site has it, the others wait for theirs.
+        let mut procs = HashMap::new();
+        let mut waiting: Vec<String> = ["a", "b"].map(String::from).to_vec();
+        claim_processes(&mut procs, &mut waiting, "a", &[40]);
+        assert_eq!(waiting, ["b"]);
+        claim_processes(&mut procs, &mut waiting, "b", &[40, 41]);
+        assert_eq!(procs["b"], [41]);
+    }
+
+    #[test]
+    fn each_site_gets_its_own_figure() {
+        let procs = HashMap::from([
+            ("a".to_string(), vec![1]),
+            ("b".to_string(), vec![2, 3]),
+            ("c".to_string(), vec![99]), // gone
+        ]);
+        let pss = HashMap::from([(1, 100 * 1024), (2, 200 * 1024), (3, 50 * 1024)]);
+        let loaded: Vec<String> = ["a", "b", "c"].map(String::from).to_vec();
+        let mb = site_memory_mb(&procs, &pss, 60 * 1024, &loaded);
+        assert_eq!(mb.get("a"), Some(&120)); // 100 + 60/3
+        assert_eq!(mb.get("b"), Some(&270)); // 250 + 20
+        assert_eq!(mb.get("c"), None); // no live process: no figure, not an average
+        assert!(site_memory_mb(&procs, &pss, 0, &[]).is_empty());
     }
 }

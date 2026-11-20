@@ -4,15 +4,18 @@
 // One icon per site in the bar (the host's state "bar": pinned sites, or an environment's set),
 // up to `bar-max`; the rest, and every other site, are in the ⌄ menu. The + after them adds a site
 // (an address, a name, or one of the recommended ones). An icon shows the site's
-// favicon, an unread badge, and a dot while the site is loaded (dimmed when it isn't).
-// Left click or hover opens the site (the extension decides; see extension.js), right click opens
-// the site's menu. Each icon is a status-area item with the role `drawer@ubuntu-ostrich-<id>`, so
-// focus mode hides them like the other top-bar items.
+// favicon and an unread badge, and is grey while the site isn't loaded, like a browser's unloaded tab.
+// Left click or hover opens the site (the extension decides; see extension.js), middle click unloads
+// it, right click opens the site's menu. The group sits fixed beside quick settings, in the order
+// + ⌄ sites, then the pinned apps, with the tray's background apps to its left (owner, 2026-11-19).
+// Each icon is a status-area item with the role `drawer@ubuntu-ostrich-<id>`, so focus mode hides
+// them like the other top-bar items.
 
 import Clutter from 'gi://Clutter';
 import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
 import GObject from 'gi://GObject';
+import Shell from 'gi://Shell';
 import St from 'gi://St';
 
 import * as Dialog from 'resource:///org/gnome/shell/ui/dialog.js';
@@ -21,7 +24,7 @@ import * as ModalDialog from 'resource:///org/gnome/shell/ui/modalDialog.js';
 import * as PanelMenu from 'resource:///org/gnome/shell/ui/panelMenu.js';
 import * as PopupMenu from 'resource:///org/gnome/shell/ui/popupMenu.js';
 
-import {badgeText, splitBar, inside} from './barlogic.js';
+import {badgeText, splitBar, inside, memoryText} from './barlogic.js';
 import {HoverLabel} from './_lib/label.js';
 
 export const ROLE = 'drawer@ubuntu-ostrich-';
@@ -47,10 +50,8 @@ class SiteButton extends PanelMenu.Button {
             style_class: 'ost-drawer-badge', visible: false,
             x_align: Clutter.ActorAlign.END, y_align: Clutter.ActorAlign.START,
         });
-        this._dot = new St.Widget({
-            style_class: 'ost-drawer-dot',
-            x_align: Clutter.ActorAlign.CENTER, y_align: Clutter.ActorAlign.END,
-        });
+        this._grey = new Clutter.DesaturateEffect({factor: 1, enabled: false});
+        this._icon.add_effect(this._grey);
         // A speaker while the site plays sound (the host's state "playing"), in the bottom-right
         // corner, on an accent disc so it reads over any favicon (note 20261102-014728).
         this._playing = new St.Icon({
@@ -60,7 +61,6 @@ class SiteButton extends PanelMenu.Button {
         box.add_child(this._icon);
         box.add_child(this._playing);
         box.add_child(this._badge);
-        box.add_child(this._dot);
         this.add_child(box);
         // GNOME 50's panel buttons open their menu from a click gesture; ours: the left button
         // (or a tap) opens or folds the site, the right button opens the site's menu.
@@ -77,6 +77,12 @@ class SiteButton extends PanelMenu.Button {
             this.menu.toggle();
         });
         this.add_action(secondary);
+        const middle = new Clutter.ClickGesture({recognize_on_press: true, required_button: Clutter.BUTTON_MIDDLE});
+        middle.connect('recognize', () => {
+            if (this._site.loaded)
+                this._bar.host.activate('unload', new GLib.Variant('s', this.siteId));
+        });
+        this.add_action(middle);
         this.connect('notify::hover', () => {
             if (this.hover)
                 this._bar.hoverEnter(this.siteId);
@@ -105,9 +111,9 @@ class SiteButton extends PanelMenu.Button {
         const badge = badgeText(site.unread);
         this._badge.text = badge;
         this._badge.visible = badge !== '';
-        this._dot.visible = site.loaded;
         this._playing.visible = Boolean(site.playing);
-        this._icon.opacity = site.loaded ? 255 : 153;
+        this._grey.enabled = !site.loaded;
+        this._icon.opacity = site.loaded ? 255 : 170;
         // Says what the icon is (a site in a drop-down panel), not just its name.
         this.accessible_name = `${site.name} (opens in a panel)${site.playing ? ', playing sound' : ''}${badge ? `, ${site.unread} unread` : ''}`;
     }
@@ -132,7 +138,7 @@ class SiteButton extends PanelMenu.Button {
             this.menu.addMenuItem(item);
         };
         // What a loaded site costs (the host's estimate), and its warning on a small machine.
-        toggle(`Keep loaded in the background${s.mb ? ` (about ${s.mb} MB)` : ''}`, s.keep, 'keep');
+        toggle(`Keep loaded in the background${s.mb ? ` (about ${memoryText(s.mb)})` : ''}`, s.keep, 'keep');
         const warning = this._bar.state?.memWarning;
         if (warning)
             this.menu.addMenuItem(new PopupMenu.PopupMenuItem(warning, {reactive: false}));
@@ -205,8 +211,13 @@ class AddButton extends PanelMenu.Button {
         this._entry = entry;
         entry.clutter_text.connect('activate', () => {
             const text = entry.get_text().trim();
-            if (text)
+            const app = text ? this._bar.pinApp(text) : null;
+            if (app) {
+                entry.set_text('');
+                this._showStatus(`Pinned ${app} to the drawer`);
+            } else if (text) {
                 this._submit(text, text);
+            }
         });
         entryItem.add_child(entry);
         this.menu.addMenuItem(entryItem);
@@ -236,6 +247,18 @@ class AddButton extends PanelMenu.Button {
             }
             this.menu.addMenuItem(sub);
         }
+        const apps = new PopupMenu.PopupSubMenuMenuItem('Pin an app');
+        const system = Shell.AppSystem.get_default();
+        const pinned = new Set(this._bar.pinnedApps());
+        const open = system.get_running().filter(a => !pinned.has(a.get_id()));
+        for (const app of open.slice(0, 20)) {
+            const item = new PopupMenu.PopupImageMenuItem(app.get_name(), app.get_icon());
+            item.connect('activate', () => this._bar.pinApp(app.get_id()));
+            apps.menu.addMenuItem(item);
+        }
+        if (open.length === 0)
+            apps.menu.addAction('Open the app first, or type its name above', () => {});
+        this.menu.addMenuItem(apps);
         this.menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
         this.menu.addAction('Sites and settings…', () => this._bar.openSettings());
     }
@@ -280,6 +303,57 @@ class AddButton extends PanelMenu.Button {
     }
 });
 
+// An app pinned to the drawer: its own icon (grey while it isn't running), a click brings its
+// window out in the drawer's place, a middle click quits it, the right button offers both.
+const AppButton = GObject.registerClass(
+class AppButton extends PanelMenu.Button {
+    _init(app, bar) {
+        super._init(0.5, app.get_name(), false);
+        this._bar = bar;
+        this.appId = app.get_id();
+        this.add_style_class_name('ost-drawer-site');
+        this._icon = new St.Icon({gicon: app.get_icon(), style_class: 'system-status-icon', y_align: Clutter.ActorAlign.CENTER});
+        this._grey = new Clutter.DesaturateEffect({factor: 1, enabled: false});
+        this._icon.add_effect(this._grey);
+        this.add_child(this._icon);
+        this._clickGesture.set_enabled(false);
+        const gesture = (button, fn) => {
+            const g = new Clutter.ClickGesture({recognize_on_press: true, required_button: button});
+            g.connect('recognize', fn);
+            this.add_action(g);
+        };
+        gesture(Clutter.BUTTON_PRIMARY, () => {
+            this.menu.close();
+            this._bar.appClicked(this.appId);
+        });
+        gesture(Clutter.BUTTON_MIDDLE, () => this._bar.appQuit(this.appId));
+        gesture(Clutter.BUTTON_SECONDARY, () => {
+            this._fillMenu();
+            this.menu.toggle();
+        });
+        this.update(app, false);
+    }
+
+    update(app, open) {
+        const running = app.state !== Shell.AppState.STOPPED;
+        this._running = running;
+        this._grey.enabled = !running;
+        this._icon.opacity = running ? 255 : 170;
+        if (open)
+            this.add_style_pseudo_class('checked');
+        else
+            this.remove_style_pseudo_class('checked');
+        this.accessible_name = `${app.get_name()} (opens in a panel)`;
+    }
+
+    _fillMenu() {
+        this.menu.removeAll();
+        if (this._running)
+            this.menu.addAction('Quit', () => this._bar.appQuit(this.appId));
+        this.menu.addAction('Remove from drawer', () => this._bar.appUnpin(this.appId));
+    }
+});
+
 const MoreButton = GObject.registerClass(
 class MoreButton extends PanelMenu.Button {
     _init(bar) {
@@ -320,6 +394,8 @@ export class DrawerBar {
         // shows only when hover-to-open is off; keyboard focus always shows it.
         this._labels = new HoverLabel(() => !this._ext.settings.get_boolean('open-on-hover'));
         this._buttons = new Map(); // id -> SiteButton
+        this._apps = new Map(); // desktop id -> AppButton
+        this._appOrder = '';
         this._more = null;
         this._add = null;
         this._order = '';
@@ -350,8 +426,54 @@ export class DrawerBar {
         this._ext.openSettings();
     }
 
+    appClicked(id) {
+        this._ext.appClicked(id);
+    }
+
+    appQuit(id) {
+        this._ext.appQuit(id);
+    }
+
+    appUnpin(id) {
+        this._ext.appUnpin(id);
+    }
+
+    pinnedApps() {
+        return this._ext.pinnedApps();
+    }
+
+    /** Pins the installed app named (any case) or with the desktop id `text`; its name, or null when none. */
+    pinApp(text) {
+        return this._ext.pinApp(text);
+    }
+
     openAdd() {
         this._add?.menu.open();
+    }
+
+    /**
+     * The pinned apps' icons: `ids` are desktop ids in order, `out` the one whose window is out.
+     * Apps that aren't installed any more are skipped.
+     */
+    updateApps(ids, out) {
+        const system = Shell.AppSystem.get_default();
+        const apps = ids.map(id => system.lookup_app(id)).filter(Boolean);
+        const order = apps.map(a => a.get_id()).join(' ');
+        if (order !== this._appOrder) {
+            for (const b of this._apps.values())
+                b.destroy();
+            this._apps.clear();
+            this._appOrder = order;
+            apps.forEach((app, i) => {
+                const b = new AppButton(app, this);
+                this._labels.attach(b);
+                this._apps.set(app.get_id(), b);
+                Main.panel.addToStatusArea(`${ROLE}app:${app.get_id()}`, b, i, 'right');
+            });
+            this._arrange();
+        }
+        for (const app of apps)
+            this._apps.get(app.get_id())?.update(app, app.get_id() === out);
     }
 
     /** The host's state, or null when it isn't running (no icons then). */
@@ -389,6 +511,7 @@ export class DrawerBar {
                 const box = this._add.container.get_parent();
                 box?.set_child_at_index(this._add.container, addAt);
             }
+            this._arrange();
         } else {
             for (const [id, b] of this._buttons)
                 b.update(byId.get(id), !!state?.shown && state?.active === id);
@@ -397,14 +520,28 @@ export class DrawerBar {
             this._add?.update(state, before);
     }
 
+    // The group's place: + ⌄ sites, each just before quick settings in turn, so the sites end up
+    // next to it and never move when the tray gains or loses an app (the tray puts its icons to the
+    // left of the group, tray/extension.js). Without quick settings in the same box it stays as added.
+    _arrange() {
+        const qs = Main.panel.statusArea.quickSettings?.container;
+        const box = qs?.get_parent();
+        if (!box)
+            return;
+        for (const b of [this._add, this._more, ...this._buttons.values(), ...this._apps.values()]) {
+            if (b?.container.get_parent() === box)
+                box.set_child_below_sibling(b.container, qs);
+        }
+    }
+
     /** The icon actor for a site, if it has one in the bar. */
     buttonFor(id) {
-        return this._buttons.get(id) ?? null;
+        return this._buttons.get(id) ?? this._apps.get(id) ?? null;
     }
 
     /** Is a screen point over one of the drawer's top-bar icons? */
     contains(x, y) {
-        for (const b of [...this._buttons.values(), this._more, this._add]) {
+        for (const b of [...this._buttons.values(), ...this._apps.values(), this._more, this._add]) {
             if (!b?.visible)
                 continue;
             const [bx, by] = b.get_transformed_position();
@@ -431,6 +568,9 @@ export class DrawerBar {
 
     destroy() {
         this._clear();
+        for (const b of this._apps.values())
+            b.destroy();
+        this._apps.clear();
         this._labels.destroy();
     }
 }

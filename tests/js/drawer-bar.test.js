@@ -1,5 +1,5 @@
 // tests/js/drawer-bar.test.js: unit tests for drawer/barlogic.js. Run with tests/js-test.sh.
-import {badgeText, splitBar, siteSize, placeUnder, inside, hoverStep, hoverDelay, NARROW_WIDTH, HOVER_CLOSE_MS} from '../../modules/gnome/extensions/drawer/barlogic.js';
+import {badgeText, splitBar, drawerSize, placeUnder, inside, hoverStep, hoverDelay, stepSite, memoryText, pinnedWith, pinnedWithout, HOVER_CLOSE_MS} from '../../modules/gnome/extensions/drawer/barlogic.js';
 
 let failures = 0;
 function check(name, cond) {
@@ -16,12 +16,11 @@ check('zero icons: all in the menu', splitBar(bar, 0).shown.length === 0 && spli
 
 const area = {width: 1920, height: 1048};
 const wide = {width: 50, height: 60};
-const w = siteSize({shape: 'wide', width: 0, height: 0}, area, wide);
-check('wide: percent of the area', w.width === 960 && w.height === 629);
-const n = siteSize({shape: 'narrow', width: 0, height: 0}, area, wide);
-check('narrow: phone width, 75 % tall', n.width === NARROW_WIDTH && n.height === 786);
-check('a resized site keeps its size', JSON.stringify(siteSize({shape: 'wide', width: 700, height: 500}, area, wide)) === '{"width":700,"height":500}');
-check('sizes stay on the screen and usable', JSON.stringify(siteSize({shape: 'wide', width: 9000, height: 10}, area, wide)) === '{"width":1920,"height":240}');
+const w = drawerSize(area, wide, [0, 0]);
+check('never resized: percent of the area', w.width === 960 && w.height === 629);
+check('resized: that size, for every site', JSON.stringify(drawerSize(area, wide, [700, 500])) === '{"width":700,"height":500}');
+check('half set counts as not set', JSON.stringify(drawerSize(area, wide, [700, 0])) === '{"width":960,"height":629}');
+check('sizes stay on the screen and usable', JSON.stringify(drawerSize(area, wide, [9000, 10])) === '{"width":1920,"height":240}');
 
 const m = {x: 0, width: 1920};
 check('centred under the icon', placeUnder(1000, 400, m, 8) === 800);
@@ -45,6 +44,19 @@ const hd = o => hoverDelay({shown: false, active: 'a', id: 'b', delay: 500, swit
 check('closed: a real pause', hd({}) === 500);
 check('open on another site: the switch delay', hd({shown: true}) === 250);
 check('open on this site: nothing', hd({shown: true, id: 'a'}) === null);
+
+const ring = ['a', 'b', 'c'];
+check('next goes on', stepSite(ring, 'a', 1) === 'b');
+check('next wraps', stepSite(ring, 'c', 1) === 'a');
+check('previous goes back and wraps', stepSite(ring, 'b', -1) === 'a' && stepSite(ring, 'a', -1) === 'c');
+check('none open: first for next, last for previous', stepSite(ring, null, 1) === 'a' && stepSite(ring, 'gone', -1) === 'c');
+check('an empty bar has nowhere to go', stepSite([], 'a', 1) === null);
+
+check('memory under a GB in tens of MB', memoryText(263) === '260 MB' && memoryText(4) === '10 MB');
+check('memory over a GB in GB', memoryText(1098) === '1.1 GB' && memoryText(1000) === '1.0 GB');
+
+check('pinning adds once', JSON.stringify(pinnedWith(['a'], 'b')) === '["a","b"]' && JSON.stringify(pinnedWith(['a'], 'a')) === '["a"]');
+check('unpinning removes it', JSON.stringify(pinnedWithout(['a', 'b'], 'a')) === '["b"]' && JSON.stringify(pinnedWithout(['a'], 'x')) === '["a"]');
 
 print(failures === 0 ? '# all passed' : `# ${failures} failed`);
 if (failures > 0)

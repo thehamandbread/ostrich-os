@@ -152,8 +152,8 @@ EOF
 	exit 0
 fi
 
-"$ROOT/modules/gnome/extensions/build.sh" drawer focus >/dev/null
-for e in drawer focus; do
+"$ROOT/modules/gnome/extensions/build.sh" drawer focus tray dock blur monitor >/dev/null
+for e in drawer focus tray dock blur monitor; do
 	"$VM" copy "$ROOT/dist/$e@ubuntu-ostrich.shell-extension.zip" "/tmp/$e.zip"
 	run "gnome-extensions install --force /tmp/$e.zip"
 done
@@ -185,7 +185,9 @@ shot 01-no-icons
 run "$DS set $DRAWER_SCHEMA bar-max 4"
 sleep 2
 shot 02-icons
-# The icons are what changed in the top bar between the two shots.
+# The icons are what changed in the top bar between the two shots. The group sits fixed beside quick
+# settings, as + then the icons, so the + moves left when the icons come: its new place is the first
+# changed spot, the icons are the last four.
 mapfile -t centers < <(
 	python3 -I - "$OUT/01-no-icons.png" "$OUT/02-icons.png" "$TOP" <<'EOF' 2>/dev/null || true
 import sys
@@ -209,8 +211,13 @@ for s, e in segs:
 EOF
 )
 echo "    icon centres: ${centers[*]:-none}"
-is "4 site icons in the top bar (no ⌄ menu: every site has an icon)" test "${#centers[@]}" = 4
+is "the + and 4 site icons in the top bar (no ⌄ menu: every site has an icon)" test "${#centers[@]}" = 5
+plus=${centers[0]:-0}
+centers=("${centers[@]:1}")
 cx() { echo "${centers[$1]:-0}"; }
+step "order: + then the sites, all against quick settings"
+is "the + is left of the sites ($plus < $(cx 0))" test "$plus" -lt "$(cx 0)"
+is "the sites are next to quick settings (last one at $(cx 3))" test "$(cx 3)" -gt $((1920 - 230))
 
 step "click: Claude drops down under its icon, at the wide size; click again folds it"
 "$VM" click "$(cx 2)" 15
@@ -224,12 +231,33 @@ is "wide size (960 x 629, got $ww x $wh)" test "$ww" -ge 940 -a "$ww" -le 980 -a
 sleep 2
 is "folded up" test "$(field shown "$(state)")" = false
 
-step "Messages opens narrow; dragging the grip resizes it and it remembers"
+step "unloaded icons are grey; a middle click unloads a loaded site"
+# Mean colour saturation of one icon: a loaded site's favicon has colour, an unloaded one is grey.
+sat() { # png x
+	python3 -I - "$1" "$2" <<'PYEND'
+import sys
+from PIL import Image
+x = int(sys.argv[2])
+v = list(Image.open(sys.argv[1]).convert("RGB").crop((x - 9, 8, x + 9, 24)).convert("HSV").getdata())
+print(round(sum(p[1] for p in v) / len(v)))
+PYEND
+}
+shot 03a-claude-loaded
+is "Claude is loaded" site_has claude "loaded=true" "$(state)"
+loaded_sat=$(sat "$OUT/03a-claude-loaded.png" "$(cx 2)")
+"$VM" click "$(cx 2)" 15 middle
+sleep 3
+shot 03b-claude-unloaded
+is "a middle click unloaded Claude" site_has claude "loaded=false" "$(state)"
+grey_sat=$(sat "$OUT/03b-claude-unloaded.png" "$(cx 2)")
+is "the unloaded icon is greyer (saturation $loaded_sat -> $grey_sat)" test $((loaded_sat - grey_sat)) -ge 20
+
+step "one size for every site: Messages opens as wide as Claude; dragging the grip resizes them all"
 "$VM" click "$(cx 0)" 15
 sleep 3
 s=$(state)
 read -r ww wh <<<"$(field window "$s")"
-is "narrow size (420 wide, got $ww x $wh)" test "$ww" -ge 400 -a "$ww" -le 440
+is "same size as the other sites (960 wide, got $ww x $wh)" test "$ww" -ge 940 -a "$ww" -le 980
 shot 04-messages
 # The drawer sits centred under the icon, inside the screen; the grip is at the bottom middle.
 x0=$(python3 -I -c "print(max(8, min(1920 - $ww - 8, $(cx 0) - $ww // 2)))")
@@ -240,14 +268,52 @@ s=$(state)
 read -r _ nh <<<"$(field window "$s")"
 shot 05-resized
 is "taller by about 100 px ($wh -> $nh)" test $((nh - wh)) -ge 80 -a $((nh - wh)) -le 120
-saved=$(sed -n 's/^site messages .*height=\([0-9]*\).*/\1/p' <<<"$s")
-is "size saved for Messages ($saved, window $nh)" test "${saved:-0}" -ge $((nh - 4)) -a "${saved:-0}" -le $((nh + 4))
-"$VM" click "$(cx 0)" 15
+saved=$(run "$DS get $DRAWER_SCHEMA size" | tr -dc '0-9 ,' | awk -F'[ ,]+' '{print $NF}')
+is "the size is kept for all sites ($saved, window $nh)" test "${saved:-0}" -ge $((nh - 4)) -a "${saved:-0}" -le $((nh + 4))
+# Another site while it is open: no resize and no move (that was the stutter).
+"$VM" click "$(cx 3)" 15
+sleep 1
+read -r sw sh <<<"$(field window "$(state)")"
+is "switching sites keeps the window ($ww x $nh -> $sw x $sh)" test "$sw" = "$ww" -a "$sh" = "$nh"
+"$VM" key esc
 sleep 2
-"$VM" click "$(cx 0)" 15
+"$VM" click "$(cx 2)" 15
 sleep 3
-read -r _ rh <<<"$(field window "$(state)")"
-is "reopened at the saved size ($rh)" test "$rh" = "$nh"
+read -r cw ch <<<"$(field window "$(state)")"
+is "another site opens at the same size ($cw x $ch)" test "$cw" = "$ww" -a "$ch" = "$nh"
+"$VM" key esc
+sleep 2
+
+step "an image copied elsewhere can be pasted into a page"
+"$VM" copy "$HERE/paste-server.py" /tmp/paste-server.py
+"$VM" copy "$HERE/clip-owner.js" /tmp/clip-owner.js
+"$VM" copy "$HERE/clip-check.js" /tmp/clip-check.js
+run "rm -f /tmp/paste.log; setsid -f python3 /tmp/paste-server.py 8766 /tmp/paste.log </dev/null >/dev/null 2>&1"
+# Another app owns the clipboard (a small window that copies a PNG when clicked), as a screenshot tool does.
+run "setsid -f timeout 90 gjs -m /tmp/clip-owner.js </dev/null >/dev/null 2>&1"
+# Its window takes a while to appear on a busy machine: click it until the clipboard holds the image.
+for try in 1 2 3 4 5 6; do
+	sleep 4
+	"$VM" move 960 560
+	"$VM" click 960 560
+	sleep 1
+	run "timeout 20 gjs -m /tmp/clip-check.js 2>&1" | grep -q "image/png" && break
+	shot "30-clip-owner-$try"
+done
+is "another app put an image on the clipboard" run "timeout 20 gjs -m /tmp/clip-check.js 2>&1 | grep -q image/png"
+run "$HOST --add http://localhost:8766/"
+run "$HOST --show localhost >/dev/null 2>&1 &"
+sleep 8
+"$VM" click 960 $((TOP + 200))
+sleep 1
+"$VM" key ctrl-v
+sleep 3
+p=$(run "cat /tmp/paste.log 2>/dev/null || true")
+echo "    page saw: ${p:-nothing}"
+is "the page got an image from the paste" grep -q "image%2Fpng" <<<"$p"
+is "and as a file" grep -q "files=1" <<<"$p"
+run "$HOST --remove localhost"
+run "kill \$(pgrep -f 'paste-serve[r].py') 2>/dev/null; kill \$(pgrep -f 'clip-owne[r].js') 2>/dev/null; true"
 "$VM" key esc
 sleep 2
 
@@ -354,7 +420,7 @@ step "hover opens, leaving closes; a click inside keeps it open"
 sleep 1
 shot 08-before-hover
 "$VM" move "$(cx 3)" 15
-sleep 1
+sleep 3 # past the open animation and the page's first paint
 s=$(state)
 is "hover opened YouTube" test "$(field active "$s") $(field shown "$s")" = "youtube true"
 shot 08-hover
@@ -365,10 +431,12 @@ moved=$(
 	python3 -I - "$OUT/08-before-hover.png" "$OUT/08-hover.png" "$(cx 3)" "$far" "$((TOP + 80))" <<'EOF'
 import sys
 from PIL import Image
-a, b = Image.open(sys.argv[1]).convert("RGB"), Image.open(sys.argv[2]).convert("RGB")
+from PIL import ImageChops, ImageStat
+a, b = Image.open(sys.argv[1]).convert("L"), Image.open(sys.argv[2]).convert("L")
 ix, fx, y = int(sys.argv[3]), int(sys.argv[4]), int(sys.argv[5])
-d = lambda x: sum(abs(p - q) for p, q in zip(a.getpixel((x, y)), b.getpixel((x, y))))
-print(f"{int(d(ix) > 30)} {int(d(fx) > 30)}")
+# A block, not a pixel: a loading page is nearly the colour of what it covers.
+d = lambda x: ImageStat.Stat(ImageChops.difference(a.crop((x - 20, y - 20, x + 20, y + 20)), b.crop((x - 20, y - 20, x + 20, y + 20)))).mean[0]
+print(f"{int(d(ix) > 4)} {int(d(fx) > 4)}")
 EOF
 )
 is "the hover-opened drawer is under its icon (under icon, far side changed: $moved)" test "$moved" = "1 0"
@@ -428,7 +496,6 @@ step "+ adds sites, and says when it can't"
 "$VM" move 960 600
 sleep 1
 shot 12-before-add
-plus=$(($(cx 3) + $(cx 3) - $(cx 2))) # one icon step to the right of the last site
 "$VM" click "$plus" 15
 sleep 2
 shot 12-add-menu
@@ -527,6 +594,90 @@ is "a page that can't load says so" site_has nothing "failed=true" "$(state)"
 "$VM" key esc
 act remove nothing
 sleep 1
+
+step "keys: Super+Alt+Tab opens the next site (Shift: the previous); Ctrl+Tab and Ctrl+2 switch inside the drawer"
+s=$(state)
+read -ra bar_ids <<<"$(field bar "$s")"
+"$VM" key meta_l-alt-tab
+sleep 3
+s=$(state)
+is "Super+Alt+Tab opened the drawer on a site ($(field active "$s"), shown $(field shown "$s"))" test "$(field shown "$s")" = true
+now=$(field active "$s")
+"$VM" key ctrl-tab
+sleep 2
+s=$(state)
+after=$(field active "$s")
+want=$(python3 -I -c "b='${bar_ids[*]}'.split(); print(b[(b.index('$now') + 1) % len(b)])")
+is "Ctrl+Tab inside the drawer goes to the next site ($now -> $after, wanted $want)" test "$after" = "$want"
+"$VM" key ctrl-2
+sleep 2
+is "Ctrl+2 goes to the second site (${bar_ids[1]})" test "$(field active "$(state)")" = "${bar_ids[1]}"
+"$VM" key meta_l-alt-shift-tab
+sleep 2
+want=$(python3 -I -c "b='${bar_ids[*]}'.split(); print(b[(b.index('${bar_ids[1]}') - 1) % len(b)])")
+is "Super+Alt+Shift+Tab goes back ($want)" test "$(field active "$(state)")" = "$want"
+"$VM" key esc
+sleep 2
+
+step "an app pinned to the drawer opens in the same floating window; middle click quits it"
+# Nothing else out, so the shots below differ only by the app.
+[[ $(field shown "$(state)") == true ]] && "$VM" key meta_l-alt-d && sleep 2
+# The pointer off the top bar: a new icon shifts the others, and a pointer resting on one would
+# hover-open whatever site slides under it.
+"$VM" move 960 700
+sleep 1
+shot 20-before-pin
+run "$DS set $DRAWER_SCHEMA pinned-apps \"['org.gnome.Calculator.desktop']\""
+sleep 3
+shot 21-pinned
+# The app's icon is the last one that appeared (the group sits against quick settings).
+app_x=$(
+	python3 -I - "$OUT/20-before-pin.png" "$OUT/21-pinned.png" "$TOP" <<'PYEND'
+import sys
+from PIL import Image, ImageChops
+a, b = (Image.open(f).convert("L") for f in sys.argv[1:3])
+top = int(sys.argv[3])
+d = ImageChops.difference(a.crop((0, 0, a.width, top)), b.crop((0, 0, b.width, top)))
+cols = [x for x in range(d.width * 3 // 5, d.width) if max(d.getpixel((x, y)) for y in range(4, top - 4)) > 40]
+segs, start, prev = [], None, None
+for x in cols:
+    if start is None:
+        start = prev = x
+    elif x - prev > 6:
+        segs.append((start, prev)); start = x
+    prev = x
+if start is not None:
+    segs.append((start, prev))
+print((segs[-1][0] + segs[-1][1]) // 2 if segs else 0)
+PYEND
+)
+is "the pinned app has an icon in the top bar (x $app_x)" test "${app_x:-0}" -gt 1500
+# Not running yet: grey. One click launches it into the drawer's place, under its icon.
+"$VM" click "$app_x" 15
+sleep 8
+shot 22-app-out
+changed() { # png png x y: did the pixel at x,y change
+	python3 -I - "$@" <<'PYEND'
+import sys
+from PIL import Image
+a, b = Image.open(sys.argv[1]).convert("RGB"), Image.open(sys.argv[2]).convert("RGB")
+x, y = int(sys.argv[3]), int(sys.argv[4])
+print(int(sum(abs(p - q) for p, q in zip(a.getpixel((x, y)), b.getpixel((x, y)))) > 30))
+PYEND
+}
+is "the app's window is out under its icon" test "$(changed "$OUT/21-pinned.png" "$OUT/22-app-out.png" "$((app_x - 100))" "$((TOP + 200))")" = 1
+is "and not at the far side of the screen" test "$(changed "$OUT/21-pinned.png" "$OUT/22-app-out.png" 100 "$((TOP + 200))")" = 0
+"$VM" click "$app_x" 15
+sleep 3
+shot 23-app-away
+is "its icon again puts it away" test "$(changed "$OUT/21-pinned.png" "$OUT/23-app-away.png" "$((app_x - 100))" "$((TOP + 200))")" = 0
+"$VM" click "$app_x" 15 middle
+sleep 4
+is "a middle click quit the app" test "$(run 'pgrep -c -x gnome-calculator || true')" = 0
+run "$DS set $DRAWER_SCHEMA pinned-apps \"@as []\""
+sleep 2
+shot 24-unpinned
+is "unpinning removes its icon" test "$(changed "$OUT/21-pinned.png" "$OUT/24-unpinned.png" "$app_x" 15)" = 1
 
 step "crashes"
 # Including xdg-desktop-portal: it crashed on every drawer page while the app id had a dash before

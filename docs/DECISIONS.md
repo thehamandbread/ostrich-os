@@ -342,3 +342,14 @@ Their calls, which replace earlier ones:
 - **Glass everywhere:** the cards the theme paints solid grey on top of glass (clock-menu notifications
   and buttons, quick settings' submenus, overview search results, the monitor's footer buttons and
   open section headers) take the glass tint; still solid when blur is off.
+
+## 2026-11-19 (drawer round)
+
+- **One drawer size, no move on a switch:** the owner saw a second of stutter and a resize each time they changed sites. Every site opens at the same size (the settings' percents, or the size the user dragged it to, kept in the `size` setting), and switching sites while it is open does not move or resize the window. Per-site narrow/wide shapes and per-site saved sizes are gone from the shell side (the host still reads them from drawer.toml and ignores them).
+- **Order in the top bar:** tray apps, +, drawer sites, pinned apps, quick settings. The group sits fixed against quick settings and the tray puts new icons to its left, so a new background app moves nothing but the tray.
+- **Unloaded sites are grey, middle click unloads:** the white "loaded" dot is gone; an unloaded icon is desaturated (like a browser's unloaded tab).
+- **Memory per site:** the host assigns each WebKit web process to the site that committed a page when it appeared (WebKitGTK doesn't say which process runs which view), adds an equal share of the network and GPU processes, and shows that. The old figure was the total divided by the number of loaded sites, so every site said the same ("538 MB").
+- **Pinned apps** share the drawer's floating window (`appslot.js`): the app's own first window, adopted and placed under its icon.
+- **The monitor doesn't warn about Ostrich's own apps** (the drawer, Store, Settings), by cgroup id.
+- **Dock:** running apps with no window (tray-only apps) get no dock icon: they widened the dock and moved it.
+- **Keys:** Super+Alt+Tab / Super+Alt+Shift+Tab (next/previous site), Ctrl+Tab, Ctrl+Shift+Tab, Ctrl+1…9 inside the drawer.

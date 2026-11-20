@@ -54,7 +54,7 @@ Commands:
   ssh [cmd...]           Run a command in the VM (interactive shell if none)
   copy <src> <dest>      Copy a host file into the VM
   screenshot <file.png>  Save the VM screen as PNG (works during install too)
-  click <x> <y> [right]  Click at screen pixel x,y (works headless, via QMP)
+  click <x> <y> [right|middle]  Click at screen pixel x,y (works headless, via QMP)
   move <x> <y>           Move the pointer to screen pixel x,y (absolute)
   drag <x1> <y1> <x2> <y2>  Press, move, release (left button)
   scroll <x> <y> up|down [n]  Wheel clicks at screen pixel x,y
@@ -352,9 +352,9 @@ qmp() {
 }
 
 cmd_click() {
-	(($# >= 2)) || die "usage: vm.sh click <x> <y> [right]"
+	(($# >= 2)) || die "usage: vm.sh click <x> <y> [right|middle]"
 	local x=$1 y=$2 button=left
-	[[ ${3:-} == right ]] && button=right
+	[[ ${3:-} == right || ${3:-} == middle ]] && button=$3
 	[[ $x =~ ^[0-9]+$ && $y =~ ^[0-9]+$ ]] || die "x and y must be pixel numbers"
 	# Absolute axes run 0..32767 across the screen.
 	local ax=$((x * 32767 / ${VM_WIDTH:-1920})) ay=$((y * 32767 / ${VM_HEIGHT:-1080}))

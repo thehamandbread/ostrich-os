@@ -1,10 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 // drawer/barlogic.js: the parts of Ostrich Drawer's top bar with no GNOME calls, so the gjs unit
-// tests can run them: badges, which sites get an icon, where and how big a site opens, and when
+// tests can run them: badges, which sites get an icon, where and how big the drawer opens, and when
 // a drawer opened by hovering closes again.
 
-export const NARROW_WIDTH = 420; // px: chat sites open like a phone
-export const NARROW_HEIGHT_PCT = 75;
 export const HOVER_CLOSE_MS = 500;
 const MIN_SIZE = 240;
 
@@ -13,6 +11,20 @@ export function badgeText(n) {
     if (!Number.isFinite(n) || n <= 0)
         return '';
     return n > 9 ? '9+' : String(Math.floor(n));
+}
+
+/** The pinned apps with `id` added once (a new list), or without it. */
+export function pinnedWith(list, id) {
+    return list.includes(id) ? [...list] : [...list, id];
+}
+
+export function pinnedWithout(list, id) {
+    return list.filter(x => x !== id);
+}
+
+/** "260 MB" or "1.1 GB": a site's memory rounded to what the measurement can claim. */
+export function memoryText(mb) {
+    return mb >= 1000 ? `${(mb / 1024).toFixed(1)} GB` : `${Math.max(10, Math.round(mb / 10) * 10)} MB`;
 }
 
 /**
@@ -27,22 +39,35 @@ export function splitBar(bar, max) {
 }
 
 /**
- * A site's size before placing: the size the user resized it to, else from its shape.
+ * The site a next/previous shortcut goes to: the one after (or before) the open one in the bar's
+ * order, wrapping round; the first (or last) when none is open. Null when the bar is empty.
  *
- * @param {{shape: string, width: number, height: number}} site
- * @param {{width: number, height: number}} area  the monitor below the top bar
- * @param {{width: number, height: number}} wide  percent of the area for wide sites (settings)
+ * @param {string[]} bar  site ids in the bar, in order
+ * @param {string|null} active  the open (or last open) site
+ * @param {number} dir  1 for next, -1 for previous
  */
-export function siteSize(site, area, wide) {
-    let width, height;
-    if (site.width > 0 && site.height > 0) {
-        ({width, height} = site);
-    } else if (site.shape === 'narrow') {
-        width = NARROW_WIDTH;
-        height = Math.round(area.height * NARROW_HEIGHT_PCT / 100);
-    } else {
-        width = Math.round(area.width * wide.width / 100);
-        height = Math.round(area.height * wide.height / 100);
+export function stepSite(bar, active, dir) {
+    if (bar.length === 0)
+        return null;
+    const at = bar.indexOf(active);
+    if (at < 0)
+        return dir > 0 ? bar[0] : bar[bar.length - 1];
+    return bar[(at + dir + bar.length) % bar.length];
+}
+
+/**
+ * The drawer's size before placing: one size for every site (owner, 2026-11-19), so switching
+ * sites never resizes it. The size the user dragged it to (px), else percents of the area.
+ *
+ * @param {{width: number, height: number}} area  the monitor below the top bar
+ * @param {{width: number, height: number}} percent  the settings' default size
+ * @param {[number, number]} dragged  the size the user chose, [0, 0] when they never did
+ */
+export function drawerSize(area, percent, dragged) {
+    let [width, height] = dragged;
+    if (!(width > 0 && height > 0)) {
+        width = Math.round(area.width * percent.width / 100);
+        height = Math.round(area.height * percent.height / 100);
     }
     return {
         width: Math.min(area.width, Math.max(MIN_SIZE, width)),

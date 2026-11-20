@@ -32,7 +32,8 @@ import {Patches} from './_lib/patches.js';
 import {PowerAwareTimer} from './_lib/timers.js';
 import {Signals} from './_lib/signals.js';
 import {DrawerBar} from './bar.js';
-import {siteSize, placeUnder, inside, hoverStep, hoverDelay} from './barlogic.js';
+import {AppSlot} from './appslot.js';
+import {drawerSize, placeUnder, inside, hoverStep, hoverDelay, stepSite, pinnedWith, pinnedWithout} from './barlogic.js';
 
 const APP_ID = 'ubuntu_ostrich.drawer';
 const APP_PATH = '/ubuntu_ostrich/drawer'; // GApplication turns '.' and '-' into '/' and '_'
@@ -90,19 +91,30 @@ export default class DrawerExtension extends Extension {
             hoverLeave: () => this._cancelHoverOpen(),
             hoverMove: id => this._hoverMove(id),
             openSettings: () => this._spawn([libexec('ostrich-setup'), '--step', 'drawer']),
+            appClicked: id => this._appClicked(id),
+            appQuit: id => this._appQuit(id),
+            appUnpin: id => this._unpin(id),
+            pinApp: text => this._pin(text),
+            pinnedApps: () => this._settings.get_strv('pinned-apps'),
         });
+        // Apps pinned to the drawer open in its floating window (appslot.js).
+        this._slot = new AppSlot({settings: this._settings, rectFor: id => this._rect(id), onChange: () => this._syncApps()});
+        this._signals.connect(this._settings, 'changed::pinned-apps', () => this._syncApps());
+        this._signals.connect(Shell.AppSystem.get_default(), 'app-state-changed', () => this._syncApps());
+        this._syncApps();
 
         // Every switcher (Alt+Tab, Super+Tab, the window switcher) goes through get_tab_list.
+        const ext = this;
         this._patches.replace(Meta.Display.prototype, 'get_tab_list', orig => function (type, workspace) {
-            return orig.call(this, type, workspace).filter(w => !isDrawerApp(w));
+            return orig.call(this, type, workspace).filter(w => !isDrawerApp(w) && !ext._slot?.has(w));
         });
         // Nor in the overview or its workspace thumbnails: there it would be a window anyone could
         // close (GNOME's filter is skip_taskbar, which a Wayland app can't set).
         this._patches.replace(Workspace.Workspace.prototype, '_isOverviewWindow', orig => function (win) {
-            return !isDrawerApp(win) && orig.call(this, win);
+            return !isDrawerApp(win) && !ext._slot?.has(win) && orig.call(this, win);
         });
         this._patches.replace(WorkspaceThumbnail.WorkspaceThumbnail.prototype, '_isOverviewWindow', orig => function (win) {
-            return !isDrawerApp(win.get_meta_window?.()) && orig.call(this, win);
+            return !isDrawerApp(win.get_meta_window?.()) && !ext._slot?.has(win.get_meta_window?.()) && orig.call(this, win);
         });
         this._patches.replace(Main.wm, '_shouldAnimateActor', orig => function (actor, types) {
             return isDrawer(actor?.meta_window) ? false : orig.call(this, actor, types);
@@ -111,20 +123,19 @@ export default class DrawerExtension extends Extension {
         // A Wayland window's app id isn't known yet at window-created; check once it's shown.
         this._signals.connect(global.display, 'window-created', (_d, win) => this._watchNew(win));
         this._signals.connect(global.display, 'notify::focus-window', () => this._onFocusChanged());
-        // The user resized the drawer (grips, or Super+right-drag): remember it for this site.
+        // The user resized the drawer (grips, or Super+right-drag): every site opens at that size.
         // Read once the drag has settled: at grab-op-end the last resize step hasn't reached the
-        // window yet, so the size saved was a step short and the site reopened smaller each time.
+        // window yet, so the size saved was a step short and it reopened smaller each time.
         this._signals.connect(global.display, 'grab-op-end', (_d, win) => {
-            const id = this._state?.active;
-            if (win !== this._win || !id)
+            if (win !== this._win)
                 return;
             if (this._sizeId)
                 GLib.source_remove(this._sizeId);
             this._sizeId = GLib.timeout_add(GLib.PRIORITY_DEFAULT, 200, () => {
                 this._sizeId = 0;
-                if (this._win === win && this._state?.active === id) {
+                if (this._win === win) {
                     const r = win.get_frame_rect();
-                    this.host.activate('set-size', new GLib.Variant('(suu)', [id, r.width, r.height]));
+                    this._settings.set_value('size', new GLib.Variant('(uu)', [r.width, r.height]));
                 }
                 return GLib.SOURCE_REMOVE;
             });
@@ -138,8 +149,11 @@ export default class DrawerExtension extends Extension {
         this._nameWatch = Gio.bus_watch_name(Gio.BusType.SESSION, APP_ID, Gio.BusNameWatcherFlags.NONE,
             () => this._hostAppeared(), () => this._hostVanished());
 
-        Main.wm.addKeybinding('toggle-drawer', this._settings, Meta.KeyBindingFlags.NONE,
-            Shell.ActionMode.NORMAL | Shell.ActionMode.OVERVIEW, () => this.toggle());
+        for (const [key, run] of [['toggle-drawer', () => this.toggle()],
+            ['next-site', () => this.step(1)], ['previous-site', () => this.step(-1)]]) {
+            Main.wm.addKeybinding(key, this._settings, Meta.KeyBindingFlags.NONE,
+                Shell.ActionMode.NORMAL | Shell.ActionMode.OVERVIEW, run);
+        }
     }
 
     disable() {
@@ -149,9 +163,12 @@ export default class DrawerExtension extends Extension {
         if (this._placeLater)
             global.compositor.get_laters().remove(this._placeLater);
         this._placeLater = 0;
-        Main.wm.removeKeybinding('toggle-drawer');
+        for (const key of ['toggle-drawer', 'next-site', 'previous-site'])
+            Main.wm.removeKeybinding(key);
         Gio.bus_unwatch_name(this._nameWatch);
         this._hostVanished();
+        this._slot?.destroy();
+        this._slot = null;
         this._bar.destroy();
         this._bar = null;
         this._signals.disconnectAll();
@@ -209,11 +226,9 @@ export default class DrawerExtension extends Extension {
         // And to be folded up (Esc, Ctrl+W, a close request): with the animation.
         if (before && state.hideRequests !== before.hideRequests)
             this._slideOut();
-        // Another site while shown: its own size and place.
-        if (before && before.active !== state.active) {
-            this._placeTries = 0;
-            this._replace();
-        }
+        // Another site while shown: the drawer stays where it is, one size and place for all, so a
+        // switch never moves or resizes the window (owner, 2026-11-19: it stuttered for a second).
+        // A folded drawer opens under the new site's icon (_slideIn).
         if (state.engaged)
             this._stopHover();
     }
@@ -238,6 +253,7 @@ export default class DrawerExtension extends Extension {
     }
 
     _open(id, byHover) {
+        this._slot?.hide(); // one floating window at a time
         this._hoverOpened = byHover;
         if (!this._group) {
             this._spawn([libexec(this._settings.get_string('host-command')), '--show', id]);
@@ -346,6 +362,7 @@ export default class DrawerExtension extends Extension {
     toggle() {
         const win = this._win;
         this._stopHover();
+        this._slot?.hide();
         if (!win) {
             this._spawn([libexec(this._settings.get_string('host-command'))]);
         } else if (win.minimized) {
@@ -355,6 +372,49 @@ export default class DrawerExtension extends Extension {
         } else {
             this._slideOut();
         }
+    }
+
+    // ---- apps pinned to the drawer ----
+
+    _syncApps() {
+        const ids = this._settings.get_strv('pinned-apps');
+        this._slot?.keepOnly(ids);
+        this._bar?.updateApps(ids, this._slot?.shownId() ?? null);
+    }
+
+    _appClicked(id) {
+        this._stopHover();
+        if (this._shown())
+            this._slideOut();
+        this._slot.toggle(id);
+    }
+
+    _appQuit(id) {
+        Shell.AppSystem.get_default().lookup_app(id)?.request_quit();
+    }
+
+    _unpin(id) {
+        this._settings.set_strv('pinned-apps', pinnedWithout(this._settings.get_strv('pinned-apps'), id));
+    }
+
+    // Pins the installed app with this name or desktop id; its name, or null when there is none.
+    _pin(text) {
+        const t = text.trim().toLowerCase();
+        const app = Gio.AppInfo.get_all().find(a => a.should_show() &&
+            (a.get_name().toLowerCase() === t || a.get_id()?.toLowerCase() === t));
+        if (!app?.get_id())
+            return null;
+        this._settings.set_strv('pinned-apps', pinnedWith(this._settings.get_strv('pinned-apps'), app.get_id()));
+        return app.get_name();
+    }
+
+    // Super+Alt+Tab and its Shift version: the next or previous site in the bar's order, opening the
+    // drawer if it is folded.
+    step(dir) {
+        const known = new Set((this._state?.sites ?? []).map(x => x.id));
+        const id = stepSite((this._state?.bar ?? []).filter(x => known.has(x)), this._state?.active ?? null, dir);
+        if (id)
+            this._open(id, false);
     }
 
     // ---- the window ----
@@ -434,15 +494,15 @@ export default class DrawerExtension extends Extension {
         return iw > 0 ? icon : null;
     }
 
-    _rect() {
+    _rect(id = this._state?.active) {
         const m = Main.layoutManager.primaryMonitor;
         const top = Main.panel.height;
         const area = {width: m.width, height: m.height - top};
-        const site = this._site() ?? {shape: 'wide', width: 0, height: 0};
-        const {width, height} = siteSize(site, area, {
+        const site = {id};
+        const {width, height} = drawerSize(area, {
             width: this._settings.get_uint('width'),
             height: this._settings.get_uint('height'),
-        });
+        }, this._settings.get_value('size').deepUnpack());
         const gap = width < m.width ? EDGE_GAP : 0;
         const position = this._settings.get_string('position');
         let x = m.x + Math.round((m.width - width) / 2);

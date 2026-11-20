@@ -172,7 +172,7 @@ Environments are renamed **Workspaces**.
 |---|---|---|---|
 | DRW-1 | An icon per pinned site in the top bar (up to 4), the rest in a ⌄ menu; favicon, unread badge 1–9/9+, dimmed while unloaded, a dot while loaded. | drawer-test | untested |
 | DRW-2 | Click drops the site under its icon; click again, Esc or click outside folds it; hover 300 ms opens, leaving for 500 ms folds (unless clicked or typed in). Super+Alt+D toggles. | drawer-test | untested |
-| DRW-3 | Chat sites open narrow (420 px × 75 %), others wide (50 % × 60 %); grips resize; size kept per site. | drawer-test | untested |
+| DRW-3 | One size for every site (50 % × 60 %); grips resize and the size holds for all; switching sites never moves or resizes the window. | drawer-test | built |
 | DRW-4 | Right-click: load/unload, reload, keep loaded, mute notifications, pin/unpin, remove. | drawer-test | untested |
 | DRW-5 | + adds any site by address, or from the recommended list, and says so when it can't; DRM sites can't be added and say why (with "open the app / in browser"). | drawer-test | untested |
 | DRW-6 | Logins are kept across restarts (cookies on disk) and separate per site; Google sign-in pop-ups work. | drawer-test --sites, manual | untested |

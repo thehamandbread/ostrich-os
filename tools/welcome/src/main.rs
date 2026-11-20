@@ -1141,7 +1141,7 @@ fn drawer_step() -> Vec<adw::PreferencesGroup> {
     let sites = std::rc::Rc::new(Sites {
         group: group(
             "Your sites",
-            "Chat sites open narrow, like a phone; the rest open wide. Any web page can be a site. Sites that need DRM video (Spotify, Netflix) open in their app or your browser instead.",
+            "Every site opens at the same size, and Super+Alt+Tab or Ctrl+Tab moves between them. Any web page can be a site, and so can an app you pin. Sites that need DRM video (Spotify, Netflix) open in their app or your browser instead.",
         ),
         rows: Default::default(),
         drawer,

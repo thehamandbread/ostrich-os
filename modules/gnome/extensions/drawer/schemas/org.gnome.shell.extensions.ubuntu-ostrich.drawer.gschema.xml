@@ -4,12 +4,16 @@
   <schema id="org.gnome.shell.extensions.ubuntu-ostrich.drawer"
           path="/org/gnome/shell/extensions/ubuntu-ostrich/drawer/">
     <key name="toggle-drawer" type="as"><default><![CDATA[['<Super><Alt>d']]]></default><summary>Keyboard shortcut to show or hide the drawer</summary></key>
+    <key name="next-site" type="as"><default><![CDATA[['<Super><Alt>Tab']]]></default><summary>Keyboard shortcut to open the next site in the drawer's top-bar order (opens the drawer if it is folded)</summary></key>
+    <key name="previous-site" type="as"><default><![CDATA[['<Shift><Super><Alt>Tab']]]></default><summary>Keyboard shortcut to open the previous site in the drawer's top-bar order</summary></key>
+    <key name="pinned-apps" type="as"><default>[]</default><summary>Desktop ids of apps pinned to the drawer: each opens in the drawer's small floating window from its own top-bar icon</summary></key>
     <key name="position" type="s">
       <choices><choice value="under-icon"/><choice value="top-center"/><choice value="top-left"/><choice value="top-right"/></choices>
       <default>'under-icon'</default><summary>Where the drawer drops down: under the site's top-bar icon, top centre, or the top-left or top-right corner</summary>
     </key>
-    <key name="width" type="u"><range min="20" max="100"/><default>50</default><summary>Width of wide sites (AI, mail, video), in percent of the screen, until resized</summary></key>
-    <key name="height" type="u"><range min="20" max="100"/><default>60</default><summary>Height of wide sites, in percent of the screen below the top bar, until resized</summary></key>
+    <key name="width" type="u"><range min="20" max="100"/><default>50</default><summary>Width of the drawer, in percent of the screen, until it is resized</summary></key>
+    <key name="height" type="u"><range min="20" max="100"/><default>60</default><summary>Height of the drawer, in percent of the screen below the top bar, until it is resized</summary></key>
+    <key name="size" type="(uu)"><default>(0, 0)</default><summary>The drawer's size in pixels after the user resized it, the same for every site; (0, 0) uses the percents above</summary></key>
     <key name="bar-max" type="u"><range min="0" max="12"/><default>4</default><summary>How many site icons the top bar shows; the rest are in its ⌄ menu</summary></key>
     <key name="open-on-hover" type="b"><default>true</default><summary>Open a site by resting the pointer on its top-bar icon</summary></key>
     <key name="hover-delay-ms" type="u"><range min="100" max="2000"/><default>500</default><summary>How long the pointer rests (without moving) on an icon before its site opens, in milliseconds</summary></key>
