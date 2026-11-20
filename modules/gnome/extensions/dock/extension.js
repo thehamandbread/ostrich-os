@@ -32,7 +32,7 @@ import {readPalette} from './_lib/palette.js';
 import {SchemeStyle} from './_lib/scheme.js';
 import {Signals} from './_lib/signals.js';
 import {BeforeRedraw} from './_lib/timers.js';
-import {clickAction, nextWindow, dotCount, hasDockWindow, mergeLauncherEntry, appIdFromUri, countText} from './docklogic.js';
+import {clickAction, nextWindow, dotCount, hasDockWindow, showAppsAction, mergeLauncherEntry, appIdFromUri, countText} from './docklogic.js';
 import {WindowPreviews} from './previews.js';
 
 const PRESSURE_TIMEOUT = 1000; // ms: pressure has to build up within this window
@@ -130,12 +130,23 @@ export default class DockExtension extends Extension {
             if (!this._dash.showAppsButton.checked)
                 return;
             this._dash.showAppsButton.checked = false;
-            // In the overview's app grid it goes back to the windows, as the overview's own dash did.
+            // GNOME's own dash button (hidden, still wired into the overview) says which page shows.
+            // Closed: the app grid. In the app grid: the overview closes, back to the window the user
+            // was in (GNOME's dash only went to the window picker, since it couldn't be pressed with
+            // the overview closed). In the window picker, after Super: on to the app grid; showApps()
+            // does nothing there, the overview is already open (owner, 2026-11-20).
             const grid = Main.overview.dash?.showAppsButton;
-            if (Main.overview.visible && grid?.checked)
-                grid.checked = false;
-            else
+            const action = showAppsAction({
+                target: Main.overview.visibleTarget,
+                animating: Main.overview.animationInProgress,
+                appGrid: !!grid?.checked,
+            });
+            if (action === 'show')
                 Main.overview.showApps();
+            else if (action === 'hide')
+                Main.overview.hide();
+            else if (action === 'grid' && grid)
+                grid.checked = true;
         });
 
         this._signals.connect(this._box, 'notify::hover', () => this._onHover());

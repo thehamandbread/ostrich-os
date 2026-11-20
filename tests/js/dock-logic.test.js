@@ -1,5 +1,5 @@
 // tests/js/dock-logic.test.js: unit tests for dock/docklogic.js. Run with tests/js-test.sh.
-import {clickAction, nextWindow, dotCount, hasDockWindow, mergeLauncherEntry, appIdFromUri, countText} from '../../modules/gnome/extensions/dock/docklogic.js';
+import {clickAction, nextWindow, dotCount, hasDockWindow, showAppsAction, mergeLauncherEntry, appIdFromUri, countText} from '../../modules/gnome/extensions/dock/docklogic.js';
 
 let failures = 0;
 function check(name, cond) {
@@ -36,6 +36,13 @@ check('app ids from URIs', appIdFromUri('application://firefox_firefox.desktop')
 check('an app with a window is in the dock', hasDockWindow([{skip_taskbar: false}]));
 check('a tray-only app (no windows) is not', !hasDockWindow([]));
 check('a window that skips the taskbar does not count', !hasDockWindow([{skip_taskbar: true}]) && hasDockWindow([{skip_taskbar: true}, {skip_taskbar: false}]));
+
+const sa = o => showAppsAction({target: true, animating: false, appGrid: false, ...o});
+check('closed: opens the app grid', showAppsAction({target: false, animating: false, appGrid: false}) === 'show');
+check('on its way out: opens it again', showAppsAction({target: false, animating: true, appGrid: false}) === 'show');
+check('app grid showing: back to the window', sa({appGrid: true}) === 'hide');
+check('window picker (after Super): on to the app grid', sa({}) === 'grid');
+check('mid-animation: ignored', sa({animating: true}) === 'ignore' && sa({animating: true, appGrid: true}) === 'ignore');
 
 print(failures === 0 ? '# all passed' : `# ${failures} failed`);
 if (failures > 0)

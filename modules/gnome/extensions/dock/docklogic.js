@@ -27,6 +27,24 @@ export function hasDockWindow(windows) {
     return windows.some(w => !w.skip_taskbar);
 }
 
+/**
+ * What a press of the dock's Show Apps button does, from the overview's state.
+ *
+ * @param {{target: boolean, animating: boolean, appGrid: boolean}} overview  target: the overview is
+ *     showing or on its way (false: hidden or on its way out); animating: it is opening or closing;
+ *     appGrid: the app grid is the page showing (GNOME's own dash button is checked)
+ * @returns {'show'|'hide'|'grid'|'ignore'}  show: open the app grid; hide: back to the window the
+ *     user was in; grid: from the window picker (after Super) to the app grid; ignore: mid-animation,
+ *     where the page isn't settled
+ */
+export function showAppsAction({target, animating, appGrid}) {
+    if (!target)
+        return 'show';
+    if (animating)
+        return 'ignore';
+    return appGrid ? 'hide' : 'grid';
+}
+
 /** The window after `current` in a list (wrapping); the first if `current` isn't in it. */
 export function nextWindow(windows, current, step = 1) {
     if (windows.length === 0)
