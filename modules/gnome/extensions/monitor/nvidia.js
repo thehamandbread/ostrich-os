@@ -54,6 +54,12 @@ export function appFromCgroup(cgroup) {
     return {kind, id, name: id.split('.').pop(), scope};
 }
 
+// Ubuntu Ostrich's own apps (the drawer, Store, Settings: ostrich-*, ubuntu_ostrich.*): the monitor
+// doesn't warn about them. The drawer's web pages are what the owner chose to keep running.
+export function isOwnApp(app) {
+    return /^(ostrich-|ubuntu_ostrich[.-])/.test(app?.id ?? '');
+}
+
 function describe(comm, app) {
     if (!app || app.name.toLowerCase().includes(comm.toLowerCase()))
         return app?.name ?? comm;

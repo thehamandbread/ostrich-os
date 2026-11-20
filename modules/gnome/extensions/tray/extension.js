@@ -283,12 +283,21 @@ class Tray {
         if (this._items.has(key))
             return;
         const button = new TrayButton(key, busName, objectPath);
-        // Always just left of quick settings, never at the start of the box: the drawer's icons start
-        // there, and both claiming index 0 made them swap as apps came and went (owner, 2026-11-18).
+        // Left of the drawer's group (+ ⌄ sites, which sits fixed beside quick settings), else just left
+        // of quick settings; never at the start of the box. A new background app grows the bar to the
+        // left and moves nothing else (owner, 2026-11-18 and 2026-11-19).
         Main.panel.addToStatusArea(`${this._uuid}-${key}`, button, 0, 'right');
+        const box = button.container.get_parent();
+        const kids = box.get_children();
+        const drawer = Object.entries(Main.panel.statusArea)
+            .filter(([role]) => role.startsWith('drawer@ubuntu-ostrich-'))
+            .map(([, b]) => b.container)
+            .filter(c => c.get_parent() === box)
+            .sort((a, b) => kids.indexOf(a) - kids.indexOf(b))[0];
         const qs = Main.panel.statusArea.quickSettings?.container;
-        if (qs?.get_parent() === button.container.get_parent())
-            qs.get_parent().set_child_below_sibling(button.container, qs);
+        const before = drawer ?? (qs?.get_parent() === box ? qs : null);
+        if (before)
+            box.set_child_below_sibling(button.container, before);
         // Vanishes with its app: no polling, D-Bus tells us.
         const watchId = Gio.bus_watch_name_on_connection(Gio.DBus.session, busName, Gio.BusNameWatcherFlags.NONE,
             null, () => this._removeItem(key));

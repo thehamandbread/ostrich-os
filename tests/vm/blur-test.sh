@@ -165,6 +165,20 @@ for blur in true false; do
 done
 run "$BS set $SCHEMA menus true"
 
+step "quick settings: a tile's own menu is frosted all the way down (owner, 2026-11-19)"
+"$VM" move 960 500
+"$VM" click 1880 15
+sleep 2
+shot 07a-qs
+# The Wired tile's arrow opens its list inside the same menu, which grows to make room.
+"$VM" click "${QS_ARROW_X:-1705}" "${QS_ARROW_Y:-172}"
+sleep 2
+shot 07b-qs-submenu
+"$VM" key esc
+sleep 1
+"$VM" key esc
+sleep 1
+
 step "power saver: the top bar keeps a wallpaper blur, menus are solid black (owner, 2026-11-01)"
 run "sudo powerprofilesctl set power-saver" # SSH isn't the active session polkit allows
 sleep 3

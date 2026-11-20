@@ -1,5 +1,5 @@
 // tests/js/dock-logic.test.js: unit tests for dock/docklogic.js. Run with tests/js-test.sh.
-import {clickAction, nextWindow, dotCount, mergeLauncherEntry, appIdFromUri, countText} from '../../modules/gnome/extensions/dock/docklogic.js';
+import {clickAction, nextWindow, dotCount, hasDockWindow, mergeLauncherEntry, appIdFromUri, countText} from '../../modules/gnome/extensions/dock/docklogic.js';
 
 let failures = 0;
 function check(name, cond) {
@@ -32,6 +32,10 @@ check('hidden count: no badge', countText(e) === '');
 check('large counts', countText(mergeLauncherEntry({}, {'count': 250, 'count-visible': true})) === '99+');
 check('progress clamped', mergeLauncherEntry({}, {progress: 7}).progress === 1);
 check('app ids from URIs', appIdFromUri('application://firefox_firefox.desktop') === 'firefox_firefox.desktop' && appIdFromUri('file:///x') === null);
+
+check('an app with a window is in the dock', hasDockWindow([{skip_taskbar: false}]));
+check('a tray-only app (no windows) is not', !hasDockWindow([]));
+check('a window that skips the taskbar does not count', !hasDockWindow([{skip_taskbar: true}]) && hasDockWindow([{skip_taskbar: true}, {skip_taskbar: false}]));
 
 print(failures === 0 ? '# all passed' : `# ${failures} failed`);
 if (failures > 0)

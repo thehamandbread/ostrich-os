@@ -18,6 +18,15 @@ export function clickAction(app, setting) {
     return setting === 'focus-or-minimize' ? 'minimize' : 'activate';
 }
 
+/**
+ * Whether a running app belongs in the dock: it has a window of its own. An app that only sits in
+ * the tray (a chat client, a sync tool) has none, and a new icon would widen the dock and move it
+ * (owner, 2026-11-19).
+ */
+export function hasDockWindow(windows) {
+    return windows.some(w => !w.skip_taskbar);
+}
+
 /** The window after `current` in a list (wrapping); the first if `current` isn't in it. */
 export function nextWindow(windows, current, step = 1) {
     if (windows.length === 0)

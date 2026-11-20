@@ -1,5 +1,5 @@
 // tests/js/monitor-nvidia.test.js: unit tests for monitor/nvidia.js parsing. Run with tests/js-test.sh.
-import {appFromCgroup} from '../../modules/gnome/extensions/monitor/nvidia.js';
+import {appFromCgroup, isOwnApp} from '../../modules/gnome/extensions/monitor/nvidia.js';
 
 let failures = 0;
 function check(name, cond) {
@@ -24,6 +24,11 @@ const snap = appFromCgroup('snap.steam.steam-1234.scope');
 check('snap scope', snap?.kind === 'snap' && snap.id === 'steam');
 
 check('session scope is not an app', appFromCgroup('/user.slice/user-1000.slice/session-2.scope') === null);
+
+const drawer = appFromCgroup('app-gnome-ostrich\\x2ddrawer-1732465.scope');
+check('the drawer scope is read as ostrich-drawer', drawer?.id === 'ostrich-drawer');
+check('the drawer, Store and Settings are Ostrich\'s own', isOwnApp(drawer) && isOwnApp({id: 'ostrich-store'}) && isOwnApp({id: 'ubuntu_ostrich.drawer'}));
+check('other apps are not', !isOwnApp(desktop) && !isOwnApp(flatpak) && !isOwnApp(null) && !isOwnApp({id: 'not-ostrich-at-all'}));
 
 print(failures === 0 ? '# all passed' : `# ${failures} failed`);
 if (failures > 0)

@@ -32,7 +32,7 @@ import {readPalette} from './_lib/palette.js';
 import {SchemeStyle} from './_lib/scheme.js';
 import {Signals} from './_lib/signals.js';
 import {BeforeRedraw} from './_lib/timers.js';
-import {clickAction, nextWindow, dotCount, mergeLauncherEntry, appIdFromUri, countText} from './docklogic.js';
+import {clickAction, nextWindow, dotCount, hasDockWindow, mergeLauncherEntry, appIdFromUri, countText} from './docklogic.js';
 import {WindowPreviews} from './previews.js';
 
 const PRESSURE_TIMEOUT = 1000; // ms: pressure has to build up within this window
@@ -42,13 +42,14 @@ const PRESSURE_TIMEOUT = 1000; // ms: pressure has to build up within this windo
 const PREVIEW_DELAY = 600; // ms of hovering an icon before its window previews show
 const LAUNCHER_IFACE = 'com.canonical.Unity.LauncherEntry';
 
-// Running apps whose id starts with one of these are left out of the dock (e.g. the web-app drawer).
+// Running apps whose id starts with one of these are left out of the dock (e.g. the web-app drawer),
+// and so are running apps with no window (tray-only apps): they'd widen the dock and move it.
 function filteredAppSystem(real, prefixes) {
     // By the app's id, or by its windows' application id: a window GNOME couldn't match to a desktop
     // entry gets a placeholder app ("window:N", a gear icon) that only its window names.
     const named = (app, p) => (app.get_id() ?? '').startsWith(p) ||
         app.get_windows().some(w => (w.get_gtk_application_id() ?? w.get_wm_class() ?? '').startsWith(p));
-    const hidden = app => prefixes.some(p => named(app, p));
+    const hidden = app => prefixes.some(p => named(app, p)) || !hasDockWindow(app.get_windows());
     return new Proxy(real, {
         get(target, prop) {
             if (prop === 'get_running')

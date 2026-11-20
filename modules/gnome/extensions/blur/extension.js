@@ -144,26 +144,31 @@ class Backdrop {
     }
 
     sync() {
-        if (!this.actor || this._disposed)
+        // Not in the stage (its parent went, or it isn't added yet): nothing to place, and St logs
+        // "not in the stage" for every call that asks it for a style.
+        if (!this.actor || this._disposed || !this.actor.get_stage())
             return;
         const t = this._track;
         const shown = t.mapped && t.opacity > 0;
-        this.actor.visible = shown;
         if (!shown) {
+            this.actor.visible = false;
             // A hidden surface (a closed menu) keeps no live copy of the windows: a Scene follows
             // every window move and restack, and a day's worth of menus each kept one running.
             this._scene?.destroy();
             this._scene = null;
             return;
         }
+        const [tx, ty] = t.get_transformed_position();
+        const [tw, th] = t.get_transformed_size();
+        // Not laid out yet (a menu's first open): stays hidden, and the next allocation syncs again.
+        // Shown without a size it was mapped unallocated ("needs an allocation").
+        if (![tx, ty, tw, th].every(Number.isFinite) || tw <= 0 || th <= 0) {
+            this.actor.visible = false;
+            return;
+        }
         if (!this._scene)
             this._setSource();
         this._restack();
-        const [tx, ty] = t.get_transformed_position();
-        const [tw, th] = t.get_transformed_size();
-        // Not laid out yet (a menu's first open): the next allocation syncs again.
-        if (![tx, ty, tw, th].every(Number.isFinite))
-            return;
         const r = {x: Math.round(tx), y: Math.round(ty), width: Math.round(tw), height: Math.round(th)};
         const p = paddedRect(r, this._blurRadius, global.stage, {below: this._below ?? this._blurRadius});
         this.actor.set_position(r.x, r.y);
@@ -172,6 +177,7 @@ class Backdrop {
         this._padded.set_position(p.x - r.x, p.y - r.y);
         this._padded.set_size(p.width, p.height);
         this._scene.setArea(p.x, p.y, p.width, p.height);
+        this.actor.visible = true;
         // Lay it out now: an unallocated backdrop isn't drawn ("needs an allocation"), and the bar
         // showed the theme's solid black until something else relaid the UI, then flipped to glass.
         this.actor.queue_relayout();

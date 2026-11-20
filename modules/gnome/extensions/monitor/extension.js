@@ -28,7 +28,7 @@ import {Signals} from './_lib/signals.js';
 import {HoverLabel} from './_lib/label.js';
 import * as KeepOff from './keepoff.js';
 import {lowBatteryRule, saverValue, SAVER_DESKTOP, UPOWER_DISCHARGING} from './battery.js';
-import {Nvidia, findNvidiaGpu, quit, appFromCgroup} from './nvidia.js';
+import {Nvidia, findNvidiaGpu, quit, appFromCgroup, isOwnApp} from './nvidia.js';
 import {memoryPressure, memoryWarningRule, biggestApp, warningText, blames} from './memory.js';
 import {PopOut} from './_lib/alert.js';
 import {animate, stop, QUICK, STANDARD} from './_lib/motion.js';
@@ -491,7 +491,7 @@ class MonitorIndicator extends PanelMenu.Button {
                 continue;
             const app = appFromCgroup(readTextSync(`/proc/${pid}/cgroup`)?.trim() ?? '');
             const pages = Number((readTextSync(`/proc/${pid}/statm`) ?? '').split(' ')[1]);
-            if (app && pages > 0) {
+            if (app && !isOwnApp(app) && pages > 0) {
                 const found = apps.lookup_app(`${app.id}.desktop`);
                 const name = found?.get_name() ?? app.name;
                 if (found)
@@ -798,7 +798,7 @@ class MonitorIndicator extends PanelMenu.Button {
         if (!this._timer?.state.onBattery)
             return;
         this._nvAlerted ??= new Set();
-        const user = this._nvidia.users.find(u => u.app && !this._nvAlerted.has(u.key));
+        const user = this._nvidia.users.find(u => u.app && !isOwnApp(u.app) && !this._nvAlerted.has(u.key));
         if (!user)
             return;
         this._nvAlerted.add(user.key);
