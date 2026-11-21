@@ -12,7 +12,10 @@ readonly PROJECT="ubuntu-ostrich"
 readonly TARGET_ID="ubuntu"
 readonly TARGET_VERSION="26.04"
 REPO_URL="${REPO_URL:-https://github.com/thehamandbread/ubuntu-ostrich.git}"
-REPO_REF="${REPO_REF:-main}"
+REPO_SLUG="${REPO_SLUG:-thehamandbread/ubuntu-ostrich}"
+# A tag or branch to fetch. Unset: `main` for a first install, the latest release for --update
+# (the tools and extension zips are published per release, so main can be ahead of them).
+REPO_REF="${REPO_REF:-}"
 
 # Overridable for tests only.
 OS_RELEASE_FILE="${OS_RELEASE_FILE:-/etc/os-release}"
@@ -42,7 +45,7 @@ Set up Ubuntu Ostrich on Ubuntu ${TARGET_VERSION}. Safe to re-run.
 Options:
   -n, --dry-run   Show what would be done without changing anything
   -f, --force     Run on an OS other than Ubuntu ${TARGET_VERSION} (unsupported)
-  -u, --update    Fetch the latest version into ${SRC_DIR}, then run it
+  -u, --update    Fetch the latest release into ${SRC_DIR}, then run it
       --keep      Keep your other extensions and settings (the default)
       --clean     Switch off every other extension and reset its settings (undoable)
       --uninstall Put everything back as it was before the first install
@@ -112,8 +115,20 @@ ensure_prereqs() {
 	fi
 }
 
+# Fills REPO_REF when it wasn't given: the latest GitHub release for --update, else main.
+resolve_ref() {
+	[[ -n $REPO_REF ]] && return 0
+	if ((UPDATE)); then
+		REPO_REF=$(curl -fsSL --proto '=https' "https://api.github.com/repos/$REPO_SLUG/releases/latest" 2>/dev/null |
+			sed -n 's/.*"tag_name": *"\([^"]*\)".*/\1/p' | head -n 1) || REPO_REF=""
+		[[ -z $REPO_REF ]] || early_log INFO "Latest release: $REPO_REF"
+	fi
+	[[ -n $REPO_REF ]] || REPO_REF=main
+}
+
 fetch_repo() {
 	ensure_prereqs
+	resolve_ref
 	if [[ -d $SRC_DIR/.git ]]; then
 		early_log INFO "Updating $SRC_DIR"
 		git -C "$SRC_DIR" fetch --quiet --depth 1 origin "$REPO_REF"

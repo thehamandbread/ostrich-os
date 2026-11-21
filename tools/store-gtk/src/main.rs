@@ -22,7 +22,7 @@ use store_core::appstream::{self, App};
 use store_core::flatpak::{self, Action, Installed};
 use store_core::github::{self, Kind};
 use store_core::search::Searcher;
-use store_core::{cache, ghinstall};
+use store_core::{cache, ghinstall, ostrich_update};
 
 const APP_ID: &str = "ubuntu-ostrich.store";
 const REMOTE: &str = "flathub";
@@ -1115,6 +1115,10 @@ fn updates_page(store: &Rc<Store>) -> gtk::ScrolledWindow {
             .map(|(i, _)| i.clone())
             .collect();
         for id in ids {
+            // Ubuntu Ostrich itself opens a terminal and asks for the password: its own button.
+            if id == ostrich_update::UPDATE_ID {
+                continue;
+            }
             match id.strip_prefix(ghinstall::UPDATE_PREFIX) {
                 // Each asks first, as an install from GitHub always does.
                 Some(slug) => github_install(&s, &format!("https://github.com/{slug}")),
@@ -1165,6 +1169,20 @@ fn updates_page(store: &Rc<Store>) -> gtk::ScrolledWindow {
                         n => format!("{n} updates"),
                     });
                     for (id, version) in u {
+                        if id == ostrich_update::UPDATE_ID {
+                            let row = plain_row(
+                                "Ubuntu Ostrich",
+                                &format!("New release {version}. Updating opens a terminal and asks for your password."),
+                            );
+                            let update = gtk::Button::with_label("Update");
+                            update.set_valign(gtk::Align::Center);
+                            update.add_css_class("suggested-action");
+                            let (s2, tag) = (s.clone(), version.clone());
+                            update.connect_clicked(move |_| run_ostrich_update(&s2, &tag));
+                            row.add_suffix(&update);
+                            list.append(&row);
+                            continue;
+                        }
                         if let Some(slug) = id.strip_prefix(ghinstall::UPDATE_PREFIX) {
                             let repair = github::parse_repo(slug)
                                 .zip(ghinstall::Dirs::from_env())
@@ -1211,7 +1229,33 @@ fn all_updates() -> (Vec<(String, String)>, Option<String>) {
     if let Some(d) = ghinstall::Dirs::from_env() {
         u.extend(ghinstall::updates(&d));
     }
+    // Ubuntu Ostrich itself: a newer release than the one these tools came with.
+    if let Some(tag) = ostrich_update::available(env!("CARGO_PKG_VERSION")) {
+        u.push((ostrich_update::UPDATE_ID.to_string(), tag));
+    }
     (u, err)
+}
+
+/// Runs `ostrich update` pinned to `tag` in a terminal (it needs the password and says what it does).
+fn run_ostrich_update(store: &Rc<Store>, tag: &str) {
+    let Some(script) = ostrich_update::update_script(tag) else {
+        return;
+    };
+    let argv = ostrich_update::terminal_command(
+        |program| glib::find_program_in_path(program).is_some(),
+        &script,
+    );
+    let started = argv.is_some_and(|a| {
+        std::process::Command::new(&a[0])
+            .args(&a[1..])
+            .spawn()
+            .is_ok()
+    });
+    if !started {
+        store.toast(&format!(
+            "Couldn't open a terminal. Run this in one: REPO_REF={tag} ostrich update"
+        ));
+    }
 }
 
 /// `--check-updates` (the daily ostrich-store-updates timer): no window; a notification when
@@ -1223,8 +1267,13 @@ fn notify_updates() -> glib::ExitCode {
     }
     let names: Vec<&str> = u
         .iter()
-        .map(|(id, _)| id.strip_prefix(ghinstall::UPDATE_PREFIX).unwrap_or(id))
-        .map(|id| id.rsplit(['/', '.']).next().unwrap_or(id))
+        .map(|(id, _)| {
+            if id == ostrich_update::UPDATE_ID {
+                return "Ubuntu Ostrich";
+            }
+            let id = id.strip_prefix(ghinstall::UPDATE_PREFIX).unwrap_or(id);
+            id.rsplit(['/', '.']).next().unwrap_or(id)
+        })
         .take(3)
         .collect();
     let more = if u.len() > 3 { ", …" } else { "" };

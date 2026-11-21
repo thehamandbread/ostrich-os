@@ -8,6 +8,7 @@ pub mod cache;
 pub mod flatpak;
 pub mod ghinstall;
 pub mod github;
+pub mod ostrich_update;
 pub mod search;
 
 use std::path::PathBuf;
