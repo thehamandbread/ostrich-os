@@ -356,6 +356,9 @@ sleep 4
 is "a removed site's data is gone after a restart" test "$(run 'test -e ~/.local/share/ubuntu-ostrich/drawer/localhost && echo kept')" = ""
 
 step "a kept site shows what it costs (measured 30 s after it loads)"
+# Messages is kept loaded only on a machine with 12 GB or more; keep it here, so the check doesn't
+# depend on the VM's memory (the restart above left nothing loaded on a fresh install).
+run "gdbus call --session --dest ubuntu_ostrich.drawer --object-path /ubuntu_ostrich/drawer --method org.gtk.Actions.Activate keep \"[<('messages', true)>]\" {}" >/dev/null
 for _ in $(seq 25); do
 	site_has messages "mb=[1-9]" "$(state)" && break
 	sleep 3
