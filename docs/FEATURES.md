@@ -251,6 +251,21 @@ Environments are renamed **Workspaces**.
 | BUD-1 | Idle gnome-shell CPU, wakeups/s and RSS with Ostrich no worse than the `pre` replica. | measure, baseline | untested |
 | BUD-2 | Battery watts no worse than stock; power saver beats stock saver. | hw | hw |
 
+## 11. The rename to Ostrich OS (0.6.0)
+
+Proof is `tests/vm/rename-test.sh` (0.5.0 installed as a user would, state set, upgrade through the
+installer, log out and in, one reboot). **That script has not been written or run yet**: the rows
+below say what each part has so far.
+
+| ID | Should do | How checked | Status |
+|---|---|---|---|
+| REN-1 | Upgrading from 0.5.0 keeps a signed-in drawer site signed in (cookies, `-wal`/`-shm` moved with the database), in the same run, with the 0.5.0 drawer running. | rename-test (new); bats: stop, move, hold, skip, sidecars | untested in a VM; logic pass in bats (2026-11-22) |
+| REN-2 | A drawer site's notification settings (e.g. off) still apply under the new app id. | rename-test (new); bats: three child cases | untested in a VM; logic pass in bats (2026-11-22) |
+| REN-3 | The extensions load under their new UUIDs (ACTIVE, no JS errors, 20 enable/disable cycles); one the user disabled stays disabled. | ext-test (lab overlay); bats | pass (2026-11-22: ext-test on a lab overlay of try-me, all 11, 2 x 20 cycles, RSS growth 0 to 11 MB then at most 10 MB, under the 15 MB limit; disabled-stays-disabled in bats) |
+| REN-4 | The dock keeps the drawer icon (`favorite-apps` and `hidden-app-prefixes` follow the id). | rename-test (new); bats | untested in a VM; logic pass in bats (2026-11-22) |
+| REN-5 | Old root files (helper, polkit policy, units, udev, modprobe, AppArmor) go at the next boot through `ostrich-os-cleanup-old.service`, which then removes itself; it never touches a path the new install owns. | rename-test (new); bats with a fake root | untested in a VM; logic pass in bats (2026-11-22) |
+| REN-6 | No launcher or autostart file names an old slug; every generated `.desktop` id passes the portal's dash rule. | rename-test (new); bats, `tests/appid-lint.sh` | untested in a VM; lint and bats pass (2026-11-22) |
+
 ## Manual checklist (a person has to look or listen)
 
 - EXT-4 / DRW-11: animations look smooth on a real GPU (the VM renders in software).

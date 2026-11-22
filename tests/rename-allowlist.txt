@@ -3,6 +3,7 @@
 # A path ending in / is a directory. Everything after # is the reason.
 docs/DECISIONS.md          # dated history
 docs/INSTALLING.md         # the note for people coming from 0.5.0 and earlier
+docs/RELEASING.md          # the owner steps check the old repo URL
 docs/council/              # dated debates and the process that wrote them
 docs/plans/                # the rename plan, the audit, the evidence it quotes
 lib/migrate.sh             # the old-slug table: the migration's whole input

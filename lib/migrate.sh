@@ -246,6 +246,12 @@ mig_merge() {
 			mig_merge "$e" "$new/$name" || rc=1
 		elif [[ -f $e && -f $new/$name ]] && cmp -s "$e" "$new/$name"; then
 			run_cmd rm -f "$e"
+		elif [[ $name == install.log && -f $e && -f $new/$name ]]; then
+			# A log: the old lines go in front of the new ones, nothing is lost.
+			mig_note "append $e to $new/$name"
+			if ((!DRY_RUN)); then
+				cat "$e" "$new/$name" >"$new/$name.tmp" && mv "$new/$name.tmp" "$new/$name" && rm -f "$e"
+			fi
 		else
 			warn "migrate: conflict, $e and $new/$name differ; keeping $e"
 			rc=1
@@ -266,6 +272,25 @@ mig_move_dir() {
 	else
 		mig_merge "$1" "$2" || warn "migrate: $1 kept (see conflicts above)"
 	fi
+}
+
+# migrate_state_first: called by install.sh before it logs or takes a restore point. The state
+# dir (restore points, backups, install.log) moves whole to the new name when the new one does
+# not exist yet, so the log and the restore point continue the old tree instead of starting a
+# second one beside it (which would make uninstall restore the wrong "original").
+export MIG_STATE_EARLY=""
+migrate_state_first() {
+	local state=${XDG_STATE_HOME:-$HOME/.local/state} i s
+	MIG_STATE_EARLY=""
+	((DRY_RUN)) && return 0
+	for ((i = ${#MIGRATE_OLD_SLUGS[@]} - 1; i >= 0; i--)); do
+		s=${MIGRATE_OLD_SLUGS[i]}
+		[[ -d $state/$s && ! -e $state/$MIGRATE_NEW_SLUG ]] || continue
+		mv -- "$state/$s" "$state/$MIGRATE_NEW_SLUG" || return 0
+		MIG_STATE_EARLY=$s
+		mig_repoint "$state/$s" "$state/$MIGRATE_NEW_SLUG"
+		return 0
+	done
 }
 
 # After the state dir moved, files that still name it (the log, restore points) follow.
@@ -407,12 +432,16 @@ migrate_run() {
 	MIG_RELOGIN=0
 	MIG_DRAWER_SKIPPED=0
 	info "migrate: start (dry-run=$DRY_RUN)"
+	if [[ -n $MIG_STATE_EARLY ]]; then
+		found+=("$MIG_STATE_EARLY")
+		mig_note "the state directory moved first: $MIG_STATE_EARLY -> $n"
+	fi
 
 	# Newest slug first: it wins the move, older ones only add what is missing.
 	for ((i = ${#MIGRATE_OLD_SLUGS[@]} - 1; i >= 0; i--)); do
 		s=${MIGRATE_OLD_SLUGS[i]}
 		if [[ -d $cfg/$s || -d $data/$s || -d $state/$s || -d $libexec/$s ]]; then
-			found+=("$s")
+			[[ " ${found[*]} " == *" $s "* ]] || found+=("$s")
 			if [[ $from_version == unknown && -r $data/$s/src/VERSION ]]; then
 				from_version=$(<"$data/$s/src/VERSION")
 			fi
@@ -582,6 +611,9 @@ migrate_finish() {
 			mig_note "remove stale autostart entry $f"
 			run_cmd rm -f -- "$f"
 			removed=1
+		done
+		for f in "$cfg/$s" "$data/$s" "${XDG_STATE_HOME:-$HOME/.local/state}/$s" "$HOME/.local/libexec/$s"; do
+			[[ -d $f ]] && rmdir "$f" 2>/dev/null && mig_v "removed the empty $f"
 		done
 		for f in "$data"/icons/hicolor/*/apps/"$s"-*; do
 			mig_note "remove old icon $f"

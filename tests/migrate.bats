@@ -608,3 +608,30 @@ cleanup_fixture() {
 	grep -q "ExecStart=/usr/libexec/ostrich-os/cleanup-old/run $HOME/migrated-from" "$root/unit.service"
 	grep -q "systemctl enable ostrich-os-cleanup-old.service" "$BATS_TEST_TMPDIR/calls"
 }
+
+@test "state first: the old state dir moves whole before the log and restore point start, so no second restore point appears" {
+	fixture old-ubuntu-ostrich
+	run sess "migrate_state_first; [[ \$MIG_STATE_EARLY == ubuntu-ostrich ]]; LOG_FILE=\$HOME/.local/state/ostrich-os/install.log; log_init; info after-move; migrate_run"
+	[ "$status" -eq 0 ]
+	[[ $output != *"conflict"* ]]
+	[ ! -e "$HOME/.local/state/ubuntu-ostrich" ]
+	grep -q "log from ubuntu-ostrich" "$HOME/.local/state/ostrich-os/install.log"
+	grep -q "after-move" "$HOME/.local/state/ostrich-os/install.log"
+	[ -f "$HOME/.local/state/ostrich-os/restore/original/version" ]
+	grep -qx 'from_slugs=ubuntu-ostrich' "$HOME/.local/state/ostrich-os/migrated-from"
+}
+
+@test "an install.log in both state dirs is joined, the old lines first" {
+	fixture old-ubuntu-ostrich
+	mkdir -p "$HOME/.local/state/ostrich-os"
+	echo "new line" >"$HOME/.local/state/ostrich-os/install.log"
+	run sess migrate_run
+	[ "$(head -n 1 "$HOME/.local/state/ostrich-os/install.log")" = "log from ubuntu-ostrich" ]
+	[ "$(tail -n 1 "$HOME/.local/state/ostrich-os/install.log")" = "new line" ]
+}
+
+@test "empty old directories are removed once everything moved out of them" {
+	fixture old-ubuntu-ostrich
+	run sess 'migrate_run; migrate_finish'
+	[ ! -e "$HOME/.config/ubuntu-ostrich" ] && [ ! -e "$HOME/.local/libexec/ubuntu-ostrich" ] && [ ! -e "$HOME/.local/share/ubuntu-ostrich" ]
+}

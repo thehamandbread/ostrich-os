@@ -219,6 +219,8 @@ main() {
 	source "$repo/lib/helper.sh"
 
 	check_not_root
+	# Before the first log line and the restore point: the state directory moves whole.
+	((UNINSTALL)) || migrate_state_first
 	log_init
 	if ((UNINSTALL)); then
 		# shellcheck source=lib/pkg.sh
