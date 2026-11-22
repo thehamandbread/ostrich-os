@@ -1,0 +1,14 @@
+[Unit]
+Description=Remove root-owned files left by Ostrich OS's earlier names (one time)
+Documentation=https://github.com/thehamandbread/ostrich-os
+ConditionPathExists=@MARKER@
+After=local-fs.target
+# Before anyone can log in: no old extension or helper is loaded yet.
+Before=display-manager.service graphical.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/libexec/ostrich-os/cleanup-old/run @MARKER@
+
+[Install]
+WantedBy=multi-user.target

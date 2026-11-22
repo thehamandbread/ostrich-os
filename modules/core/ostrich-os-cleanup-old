@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+# ostrich-os-cleanup-old: run by ostrich-os-cleanup-old.service as root, once, at the next boot
+# after an upgrade from an earlier name. Installed (root-owned) to
+# /usr/libexec/ostrich-os/cleanup-old/run beside lib/migrate.sh and lib/logging.sh.
+#
+#   run <marker>     does nothing unless the migration marker exists
+#
+# It calls migrate_root, which touches only the old-name paths in lib/migrate.sh's tables (an old
+# file goes only where its new twin exists) and never a path the new install owns. Then it
+# disables and removes itself. Logs go to the journal (stderr).
+set -uo pipefail
+marker=${1:-}
+[[ -n $marker && -e $marker ]] || exit 0
+dir=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+root=${MIGRATE_ROOT:-}
+# shellcheck source=lib/migrate.sh
+source "$dir/migrate.sh"
+SUDO=""
+DRY_RUN=0
+info "cleanup-old: start"
+migrate_root
+unit=ostrich-os-cleanup-old.service
+systemctl disable "$unit" >/dev/null 2>&1 || true
+rm -f "$root/etc/systemd/system/$unit"
+systemctl daemon-reload || true
+info "cleanup-old: done; removing itself"
+rm -rf "$dir"
+exit 0

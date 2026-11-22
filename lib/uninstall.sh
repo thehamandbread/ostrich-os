@@ -158,6 +158,11 @@ EOF
 		if systemctl is-enabled --quiet ostrich-os-power.service 2>/dev/null; then
 			run_cmd "$SUDO" systemctl disable ostrich-os-power.service
 		fi
+		# The boot-time cleanup of an earlier name's files, if it has not run yet (it removes itself).
+		if systemctl is-enabled --quiet ostrich-os-cleanup-old.service 2>/dev/null; then
+			run_cmd "$SUDO" systemctl disable ostrich-os-cleanup-old.service
+		fi
+		run_cmd "$SUDO" rm -rf /usr/libexec/ostrich-os/cleanup-old /etc/systemd/system/ostrich-os-cleanup-old.service
 		while IFS= read -r path; do
 			[[ -n $path ]] && ours_root "$path" && run_cmd "$SUDO" rm -f -- "$path"
 		done <"$RESTORE_DIR/created-root.txt"

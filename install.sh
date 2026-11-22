@@ -213,6 +213,10 @@ main() {
 	source "$repo/lib/tools-build.sh"
 	# shellcheck source=lib/migrate.sh
 	source "$repo/lib/migrate.sh"
+	# shellcheck source=lib/pkg.sh
+	source "$repo/lib/pkg.sh"
+	# shellcheck source=lib/helper.sh
+	source "$repo/lib/helper.sh"
 
 	check_not_root
 	log_init
@@ -228,28 +232,36 @@ main() {
 		return
 	fi
 	info "Starting $PROJECT installer (dry-run=$DRY_RUN)"
+	# May exec (carrying on from the new source copy); never call it inside $(...), which would
+	# capture the whole install.
+	relocate_repo "$repo"
+	# Tests only: stop here, in the process that will do the install.
+	if [[ ${INSTALL_STOP_AFTER:-} == relocate ]]; then
+		info "RELOCATE-DONE script=$0 pid=$$ bashpid=$BASHPID"
+		return 0
+	fi
 	check_os
 	((DRY_RUN)) && info "Dry run: nothing will be changed"
 	choose_mode
 	check_tools_build "${BUILD_DIR:-$repo/tools/target/release}" "$repo" # before anything changes
-	# May exec; never call it inside $(...), which would capture the whole install.
-	relocate_repo "$repo"
 	take_restore_point
 	# Moves an install made under an earlier name (lib/migrate.sh), in this shell so STATE_DIR,
 	# LOG_FILE, RESTORE_DIR and BACKUP_DIR follow the state directory. Our running apps stop first;
-	# the drawer is asked, never killed, and while it runs its data stays where it is.
+	# app.quit where an app has it, else SIGTERM, never SIGKILL; a data dir whose files are still
+	# open (WebKit's processes too) stays where it is.
 	migrate_stop_apps
 	migrate_run
-	local moved=$MIG_CHANGES
 	remember_source "$repo"
 	export INSTALL_MODE
 	run_modules "$repo"
 	# The new launchers and extensions are in: now the per-site notification settings, then what
-	# the old names left behind. Root-owned old files go on a later run, once you have logged
-	# out and the old extensions are no longer loaded.
+	# the old names left behind. Root-owned old files go at the next boot, through a one-shot unit,
+	# when no old extension or helper can be loaded.
 	migrate_notifications
 	migrate_finish
-	if ((moved == 0)) && [[ -e $STATE_DIR/migrated-from ]]; then migrate_root; fi
+	if [[ -e $STATE_DIR/migrated-from ]] && migrate_root_pending; then
+		install_cleanup_unit "$repo" "$STATE_DIR/migrated-from"
+	fi
 	if ((MIG_DRAWER_SKIPPED)); then
 		info "The drawer was running, so its data (your web logins) was not moved yet. Log out and back in, then run \`ostrich update\`."
 	fi

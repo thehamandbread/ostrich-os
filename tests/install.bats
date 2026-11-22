@@ -96,3 +96,28 @@ setup() {
 	[ "$status" -eq 0 ]
 	[[ $output == *"sudo apt-get install git curl"* ]]
 }
+
+@test "run from an earlier name's source copy: copies itself to the new src and re-execs once, in the process that installs" {
+	export XDG_DATA_HOME="$BATS_TEST_TMPDIR/data"
+	export INSTALL_STOP_AFTER=relocate
+	old="$XDG_DATA_HOME/ubuntu-ostrich/src"
+	mkdir -p "$old"
+	cp -a "$BATS_TEST_DIRNAME/../install.sh" "$BATS_TEST_DIRNAME/../lib" "$BATS_TEST_DIRNAME/../VERSION" "$old/"
+	run bash "$old/install.sh"
+	[ "$status" -eq 0 ]
+	[ "$(grep -c "continuing from" <<<"$output")" -eq 1 ]
+	[ "$(grep -c "RELOCATE-DONE" <<<"$output")" -eq 1 ]
+	new="$XDG_DATA_HOME/ostrich-os/src"
+	[ -f "$new/install.sh" ]
+	line=$(grep "RELOCATE-DONE" <<<"$output")
+	[[ $line == *"script=$new/install.sh"* ]]
+	# a plain process, not a command substitution: $$ and BASHPID agree
+	pid=${line##*pid=}
+	pid=${pid%% *}
+	[[ $line == *"bashpid=$pid" ]]
+	# run again, from the new path: no second re-exec
+	run bash "$new/install.sh"
+	[ "$status" -eq 0 ]
+	[[ $output != *"continuing from"* ]]
+	[ "$(grep -c "RELOCATE-DONE" <<<"$output")" -eq 1 ]
+}

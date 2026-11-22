@@ -11,6 +11,7 @@ modules/gnome/install.sh   # OLD_SUFFIXES: switches off our extensions under all
 home/modify_dot_bashrc     # removes the line an earlier name wrote into ~/.bashrc
 home/.chezmoiremove        # the files an earlier name managed
 tests/fixtures/migrate/    # fake homes of the old installs
+tests/install.bats         # the re-exec from an old name's source copy
 tests/migrate.bats         # tests of the migration
 tests/modules.bats         # tests the old-extension switch-off
 tests/rename-allowlist.txt # this file

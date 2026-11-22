@@ -381,3 +381,5 @@ Their calls, which replace earlier ones:
 
 - Name Ostrich OS; repo thehamandbread/ostrich-os. `ostrich-os` for paths, extension UUIDs and schemas; `ostrich_os` for app, .desktop and D-Bus ids (the portal's dash rule, 2026-10-31), which also fixes the store and setup ids. The CLI stays `ostrich`.
 - Install order: stop our apps (graceful), migrate, install new .desktop files, migrate notification children, remove old launchers and autostart, enable new UUIDs. Cookies are never moved under a running drawer, and a cross-filesystem copy is checksummed before the old copy is deleted.
+- Supersedes "never SIGKILL / never stop a 0.5.0 drawer": apps get app.quit if they have it, else SIGTERM; data moves only when fuser shows no process (including WebKit's network process) holding a file under it. SQLite with its -wal/-shm moved together is consistent after a terminated process. SIGKILL is never used.
+- Old root files go at the next boot through the one-shot ostrich-os-cleanup-old.service, not "on a later run".

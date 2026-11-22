@@ -164,7 +164,21 @@ mig_dconf_copy() {
 
 # --- user directories ---------------------------------------------------------------------
 
-mig_drawer_running() { pgrep -x ostrich-drawer >/dev/null 2>&1; }
+# mig_data_held <dir>: status 0 if any process has a file open under dir. WebKit's network process
+# holds cookies.sqlite, not only ostrich-drawer, so the drawer's own pid proves nothing. Without
+# fuser (psmisc, in Ubuntu's desktop seed) a running ostrich-drawer counts as holding it.
+mig_data_held() {
+	[[ -d $1 ]] || return 1
+	if ! command -v fuser >/dev/null 2>&1; then
+		pgrep -x ostrich-drawer >/dev/null 2>&1
+		return
+	fi
+	local rc=0
+	# 255 stops xargs at the first chunk fuser reports a holder for (xargs then exits 124).
+	find "$1" -type f -print0 |
+		xargs -0 -r -n 400 sh -c 'fuser -s "$@" 2>/dev/null && exit 255; exit 0' _ >/dev/null 2>&1 || rc=$?
+	((rc != 0))
+}
 
 # mig_copy is a function so a test can break it.
 mig_copy() { cp -a -- "$1" "$2"; }
@@ -173,17 +187,35 @@ mig_sums() { # <file or dir>: sha256 of every regular file, by relative path
 	if [[ -d $1 ]]; then (cd "$1" && find . -type f -exec sha256sum {} + | sort -k2); else sha256sum <"$1"; fi
 }
 
+# mig_sidecars <dir>: the -wal/-shm files under it, relative, one per line.
+mig_sidecars() { (cd "$1" && find . -type f \( -name '*-wal' -o -name '*-shm' \) | sort); }
+
+# mig_check_sidecars <new dir> <list from mig_sidecars>: every one must have moved with its
+# database. Status 1 and a warning when one is missing.
+mig_check_sidecars() {
+	local f rc=0
+	while IFS= read -r f; do
+		[[ -z $f || -e $1/$f ]] || {
+			warn "migrate: $f did not move with its database"
+			rc=1
+		}
+	done <<<"$2"
+	return $rc
+}
+
 # mig_mv <old> <new>: a rename on one filesystem. Across filesystems (or with MIG_FORCE_COPY=1):
 # copy, compare sha256 of every file (cookies.sqlite-wal and -shm included), delete the old copy
 # only if all match; otherwise keep both and say so (status 1).
 mig_mv() {
-	local old=$1 new=$2
+	local old=$1 new=$2 sidecars=""
 	if ((DRY_RUN)); then
 		run_cmd mv "$old" "$new"
 		return 0
 	fi
+	[[ -d $old ]] && sidecars=$(mig_sidecars "$old")
 	if [[ -z ${MIG_FORCE_COPY:-} && $(stat -c %d "$old") == "$(stat -c %d "$(dirname "$new")")" ]]; then
-		mv -- "$old" "$new"
+		mv -- "$old" "$new" || return
+		mig_check_sidecars "$new" "$sidecars"
 		return
 	fi
 	info "migrate: $old is on another filesystem: copying, then comparing checksums"
@@ -191,7 +223,7 @@ mig_mv() {
 		warn "migrate: copying $old failed; keeping it (a partial copy may be at $new)"
 		return 1
 	fi
-	if [[ $(mig_sums "$old") == "$(mig_sums "$new")" ]]; then
+	if [[ $(mig_sums "$old") == "$(mig_sums "$new")" ]] && mig_check_sidecars "$new" "$sidecars"; then
 		rm -rf -- "$old"
 	else
 		warn "migrate: checksums of $old and $new differ; keeping both"
@@ -386,9 +418,9 @@ migrate_run() {
 			fi
 		fi
 		mig_move_dir "$cfg/$s" "$cfg/$n"
-		if [[ -d $data/$s/drawer ]] && mig_drawer_running; then
+		if mig_data_held "$data/$s"; then
 			MIG_DRAWER_SKIPPED=1
-			warn "migrate: the drawer is running; its data ($data/$s) stays until it quits: log out, then run \`ostrich update\` again (everything else moved)"
+			warn "migrate: files under $data/$s are still open (the drawer or its web processes); its data stays until they close: log out, then run \`ostrich update\` again (everything else moved)"
 		elif [[ $LIB_DIR/ == "$data/$s/src/"* ]]; then
 			warn "migrate: this installer runs from $data/$s/src; $data/$s stays until it is run from elsewhere"
 		else
@@ -439,40 +471,92 @@ migrate_run() {
 	info "migrate: done, $MIG_CHANGES change(s) (dry-run=$DRY_RUN)"
 }
 
-# migrate_stop_apps: before anything moves. Asks each old drawer to quit over D-Bus (app.quit; a
-# drawer from before 0.6.0 has no such action and keeps running), sends SIGTERM to our other apps
-# under the old libexec dirs, and waits up to MIG_STOP_WAIT seconds (10). It never sends SIGKILL.
-# A drawer that is still running makes migrate_run leave the data dir where it is.
-migrate_stop_apps() {
-	local libexec=$HOME/.local/libexec s u name path pid i left
-	local uid=${UID:-$(id -u)}
-	((DRY_RUN)) && {
-		info "migrate: would stop our running apps (the drawer over D-Bus, the rest with SIGTERM)"
-		return 0
-	}
+# mig_old_install_present: something from an earlier name is still in the home.
+mig_old_install_present() {
+	local cfg=${XDG_CONFIG_HOME:-$HOME/.config} data=${XDG_DATA_HOME:-$HOME/.local/share}
+	local state=${XDG_STATE_HOME:-$HOME/.local/state} s
 	for s in "${MIGRATE_OLD_SLUGS[@]}"; do
+		[[ -d $cfg/$s || -d $data/$s || -d $state/$s || -d $HOME/.local/libexec/$s ]] && return 0
+	done
+	return 1
+}
+
+# migrate_stop_apps: before anything moves, and only when an earlier install is there. For each of
+# our apps (under any old or the new libexec dir): app.quit over D-Bus if the app exports it, else
+# SIGTERM. Then it waits up to MIG_STOP_WAIT seconds (15) until no process has a file open under
+# an old data dir: that covers WebKit's own processes, which outlive the drawer a moment. It
+# never sends SIGKILL. A 0.5.0 drawer has no app.quit and gets SIGTERM; SQLite with its -wal and
+# -shm moved together is consistent after a terminated process. Files still held after the wait:
+# migrate_run leaves that data dir where it is and install.sh says to log out and run again.
+migrate_stop_apps() {
+	local libexec=$HOME/.local/libexec data=${XDG_DATA_HOME:-$HOME/.local/share}
+	local uid=${UID:-$(id -u)} s u kind name path pid cmd held acts
+	local -A quit_ok=()
+	mig_old_install_present || return 0
+	if ((DRY_RUN)); then
+		info "migrate: would stop our running apps (app.quit where exported, else SIGTERM) and wait for their files to close"
+		return 0
+	fi
+	for s in "${MIGRATE_OLD_SLUGS[@]}" "$MIGRATE_NEW_SLUG"; do
 		for u in "$s" "${s//-/_}"; do
-			name=$u.drawer
-			path=/${name//./\/}
-			gdbus call --session --dest "$name" --object-path "${path//-/_}" \
-				--method org.gtk.Actions.Activate quit '[]' '{}' >/dev/null 2>&1 && info "migrate: asked $name to quit"
+			[[ $s == "$MIGRATE_NEW_SLUG" ]] && u=$MIGRATE_NEW_APP
+			for kind in drawer store setup; do
+				name=$u.$kind
+				path=/${name//./\/}
+				path=${path//-/_}
+				acts=$(gdbus call --session --dest "$name" --object-path "$path" --method org.gtk.Actions.List 2>/dev/null) || continue
+				[[ $acts == *"'quit'"* ]] || continue
+				if gdbus call --session --dest "$name" --object-path "$path" --method org.gtk.Actions.Activate quit '[]' '{}' >/dev/null 2>&1; then
+					info "migrate: asked $name to quit"
+					quit_ok[$kind]=1
+				fi
+			done
 		done
 		for pid in $(pgrep -u "$uid" -f -- "$libexec/$s/" 2>/dev/null); do
-			tr '\0' ' ' <"/proc/$pid/cmdline" 2>/dev/null | grep -q ostrich-drawer && continue
-			info "migrate: asking pid $pid to stop"
+			cmd=$(tr '\0' ' ' <"/proc/$pid/cmdline" 2>/dev/null) || continue
+			kind=other
+			case $cmd in
+			*ostrich-drawer*) kind=drawer ;;
+			*ostrich-store*) kind=store ;;
+			*ostrich-setup*) kind=setup ;;
+			esac
+			[[ -n ${quit_ok[$kind]:-} ]] && continue
+			info "migrate: pid $pid ($kind) has no app.quit: asking it to stop (SIGTERM)"
 			kill -TERM "$pid" 2>/dev/null || true
 		done
 	done
-	for ((i = 0; i < ${MIG_STOP_WAIT:-10} * 2; i++)); do
-		left=0
+	# A deadline, not a count: each check scans every file under the dir.
+	local end=$((SECONDS + ${MIG_STOP_WAIT:-15}))
+	while ((SECONDS < end)); do
+		held=0
 		for s in "${MIGRATE_OLD_SLUGS[@]}"; do
-			pgrep -u "$uid" -f -- "$libexec/$s/" >/dev/null 2>&1 && left=1
+			mig_data_held "$data/$s" && held=1
 		done
-		((left)) || return 0
+		((held)) || return 0
 		sleep 0.5
 	done
-	mig_drawer_running && warn "migrate: the drawer is still running; its data stays where it is until you log out and run \`ostrich update\` again"
+	warn "migrate: files under an old data dir are still open after ${MIG_STOP_WAIT:-15} s; that data stays where it is until they close (log out, then run \`ostrich update\` again)"
 	return 0
+}
+
+# migrate_root_pending: an old root-owned item is still there (the boot-time cleanup has work).
+migrate_root_pending() {
+	local s pair f
+	shopt -s nullglob
+	for s in "${MIGRATE_OLD_SLUGS[@]}"; do
+		for pair in "${MIGRATE_ROOT_REPLACED[@]}" "${MIGRATE_ROOT_MOVED[@]}"; do
+			[[ -e $MIGRATE_ROOT$(mig_sub "${pair%%|*}" "$s") ]] && {
+				shopt -u nullglob
+				return 0
+			}
+		done
+		for f in "$MIGRATE_ROOT/etc/apparmor.d/$s"-github-*; do
+			shopt -u nullglob
+			return 0
+		done
+	done
+	shopt -u nullglob
+	return 1
 }
 
 # migrate_finish: after the modules installed the new extensions, launchers and apps. Removes what
@@ -546,11 +630,12 @@ mig_sub() { # <template> <slug>
 # migrate_root: for the installer, after the new helper, policy and units are installed.
 migrate_root() {
 	local s pair old new units=0 udev=0 d
+	shopt -s nullglob
 	for s in "${MIGRATE_OLD_SLUGS[@]}"; do
 		for pair in "${MIGRATE_ROOT_REPLACED[@]}"; do
 			old=$MIGRATE_ROOT$(mig_sub "${pair%%|*}" "$s")
 			new=$MIGRATE_ROOT$(mig_sub "${pair##*|}" "$s")
-			[[ -e $old ]] || continue
+			[[ -e $old && $old != "$new" ]] || continue
 			if [[ ! -e $new ]]; then
 				info "migrate: keeping $old until $new is installed"
 				continue
@@ -578,7 +663,16 @@ migrate_root() {
 			d=$MIGRATE_ROOT$(mig_sub "$pair" "$s")
 			[[ -d $d ]] && mig_root rmdir --ignore-fail-on-non-empty "$d"
 		done
+		# Store sandbox profiles: an old one goes only when its new twin is in place.
+		for old in "$MIGRATE_ROOT/etc/apparmor.d/$s"-github-*; do
+			new=${old/"/$s-github-"/"/$MIGRATE_NEW_SLUG-github-"}
+			[[ -e $new ]] || continue
+			mig_note "remove superseded AppArmor profile $old"
+			mig_root apparmor_parser -R "$old" >/dev/null 2>&1 || true
+			mig_root rm -f "$old"
+		done
 	done
+	shopt -u nullglob
 	((units)) && mig_root systemctl daemon-reload
 	((udev)) && mig_root udevadm control --reload
 	return 0

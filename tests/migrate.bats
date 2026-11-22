@@ -36,10 +36,7 @@ setup() {
 	unset XDG_CONFIG_HOME XDG_DATA_HOME XDG_STATE_HOME DCONF_PROFILE
 	export LOG_FILE="$BATS_TEST_TMPDIR/log/install.log"
 	export DRY_RUN=0 SUDO="" MIGRATE_ROOT="$BATS_TEST_TMPDIR/root"
-	# The real machine may have a drawer running: a fake pgrep says there is none.
 	mkdir -p "$BATS_TEST_TMPDIR/bin"
-	printf '#!/bin/sh\nexit 1\n' >"$BATS_TEST_TMPDIR/bin/pgrep"
-	chmod +x "$BATS_TEST_TMPDIR/bin/pgrep"
 	export PATH="$BATS_TEST_TMPDIR/bin:$PATH"
 }
 
@@ -220,14 +217,25 @@ check_migrated() {
 	[ -f "$HOME/.config/ostrich-os/schemes/mine.json" ]
 }
 
-@test "the drawer running: its data stays, the rest moves" {
+# A holder of a file under the old data dir: bash holding cookies.sqlite open for N seconds.
+hold_file() { # <seconds> [ignore-term]
+	local f="$HOME/.local/share/ubuntu-ostrich/drawer/chat/data/cookies.sqlite"
+	(
+		exec 3<"$f"
+		sleep "$1"
+	) &
+	HOLDER=$!
+}
+
+@test "files held open under the data dir: its data stays, the rest moves" {
 	fixture old-ubuntu-ostrich
-	printf '#!/bin/sh\nexit 0\n' >"$BATS_TEST_TMPDIR/bin/pgrep"
+	hold_file 3
 	run sess migrate_run
 	[ "$status" -eq 0 ]
-	[[ $output == *"the drawer is running"* ]]
+	[[ $output == *"still open"* ]]
 	[ -f "$HOME/.local/share/ubuntu-ostrich/drawer/chat/data/cookies.sqlite" ]
 	[ -f "$HOME/.config/ostrich-os/drawer.toml" ]
+	wait "$HOLDER"
 }
 
 @test "the log file follows the state directory" {
@@ -349,23 +357,104 @@ NOTE=/org/gnome/desktop/notifications/application
 
 # --- stopping our apps, files that name the slug, the clean-up after the install ---
 
-@test "stop apps: each old drawer is asked to quit over D-Bus; a drawer that stays is reported, never killed" {
-	printf '#!/bin/sh\necho "gdbus $*" >>"%s/calls"\nexit 0\n' "$BATS_TEST_TMPDIR" >"$BATS_TEST_TMPDIR/bin/gdbus"
-	printf '#!/bin/sh\nexit 0\n' >"$BATS_TEST_TMPDIR/bin/pgrep"
-	chmod +x "$BATS_TEST_TMPDIR"/bin/*
+# A stand-in app under the old libexec dir, holding the drawer's cookie file open.
+fake_app() { # <name> [ignore-term]
+	local d="$HOME/.local/libexec/ubuntu-ostrich"
+	mkdir -p "$d"
+	{
+		echo '#!/bin/bash'
+		echo "exec 3<\"$HOME/.local/share/ubuntu-ostrich/drawer/chat/data/cookies.sqlite\""
+		[[ ${2:-} == ignore-term ]] && echo "trap '' TERM" || echo "trap 'exit 0' TERM"
+		echo 'for _ in $(seq 60); do sleep 0.1; done'
+	} >"$d/$1"
+	chmod +x "$d/$1"
+	"$d/$1" &
+	APP=$!
+	sleep 0.4
+}
+
+@test "stop apps: an app that exports quit is asked over D-Bus, not signalled" {
+	fixture old-ubuntu-ostrich
+	fake_app ostrich-drawer
+	printf '#!/bin/sh\necho "gdbus $*" >>"%s/calls"\ncase "$*" in *Actions.List*) echo "(%s)" "[\x27quit\x27]";; esac\nexit 0\n' "$BATS_TEST_TMPDIR" "" >"$BATS_TEST_TMPDIR/bin/gdbus"
+	chmod +x "$BATS_TEST_TMPDIR/bin/gdbus"
 	run sess 'MIG_STOP_WAIT=1 migrate_stop_apps'
 	[ "$status" -eq 0 ]
 	grep -q -- "--dest ubuntu_ostrich.drawer --object-path /ubuntu_ostrich/drawer --method org.gtk.Actions.Activate quit" "$BATS_TEST_TMPDIR/calls"
-	grep -q -- "--dest ostrich-ubuntu.drawer --object-path /ostrich_ubuntu/drawer" "$BATS_TEST_TMPDIR/calls"
-	[[ $output == *"the drawer is still running"* ]]
+	kill -0 "$APP" # the fake ignores D-Bus: it was not signalled either
+	kill -TERM "$APP"
+	wait "$APP" || true
 }
 
-@test "stop apps: nothing running, nothing said" {
-	printf '#!/bin/sh\nexit 1\n' >"$BATS_TEST_TMPDIR/bin/gdbus"
-	chmod +x "$BATS_TEST_TMPDIR"/bin/gdbus
+@test "stop apps: a drawer without app.quit (0.5.0) gets SIGTERM and its data moves in the same run" {
+	fixture old-ubuntu-ostrich
+	fake_app ostrich-drawer
+	run sess 'MIG_STOP_WAIT=10 migrate_stop_apps; migrate_run'
+	[ "$status" -eq 0 ]
+	[[ $output == *"has no app.quit"* ]]
+	wait "$APP" || true
+	! kill -0 "$APP" 2>/dev/null
+	[ -f "$HOME/.local/share/ostrich-os/drawer/chat/data/cookies.sqlite" ]
+	[ ! -e "$HOME/.local/share/ubuntu-ostrich" ]
+}
+
+@test "stop apps: a child holding a file under the data dir delays the move until it exits" {
+	fixture old-ubuntu-ostrich
+	hold_file 4
+	start=$SECONDS
+	run sess 'MIG_STOP_WAIT=15 migrate_stop_apps; migrate_run'
+	[ "$status" -eq 0 ]
+	[ $((SECONDS - start)) -ge 3 ]
+	[[ $output != *"still open"* ]]
+	[ -f "$HOME/.local/share/ostrich-os/drawer/chat/data/cookies.sqlite" ]
+	wait "$HOLDER"
+}
+
+@test "stop apps: a process that ignores SIGTERM leads to the skip path, and is not killed" {
+	fixture old-ubuntu-ostrich
+	fake_app ostrich-drawer ignore-term
+	run sess 'MIG_STOP_WAIT=2 migrate_stop_apps; migrate_run'
+	[ "$status" -eq 0 ]
+	[[ $output == *"still open"* ]]
+	[ -f "$HOME/.local/share/ubuntu-ostrich/drawer/chat/data/cookies.sqlite" ]
+	[ -f "$HOME/.config/ostrich-os/drawer.toml" ]
+	kill -0 "$APP"
+	wait "$APP" || true # it ends by itself
+}
+
+@test "stop apps: nothing to migrate, nothing stopped" {
+	fixture migrated
 	run sess 'MIG_STOP_WAIT=1 migrate_stop_apps'
 	[ "$status" -eq 0 ]
-	[[ $output != *"still running"* ]]
+	[[ $output != *"asking"* ]]
+}
+
+@test "nothing in the installer or the cleanup script sends SIGKILL" {
+	cd "$BATS_TEST_DIRNAME/.."
+	run grep -nE 'kill +-(9|KILL)|kill +-s +KILL|-SIGKILL|pkill +-(9|KILL)|killall' lib/*.sh install.sh modules/core/ostrich-os-cleanup-old
+	[ "$status" -eq 1 ]
+}
+
+@test "sidecars: a -wal or -shm that did not move with its database is reported" {
+	d="$BATS_TEST_TMPDIR/new"
+	mkdir -p "$d/x"
+	touch "$d/x/a.sqlite" "$d/x/a.sqlite-wal"
+	list=$'./x/a.sqlite-wal\n./x/a.sqlite-shm'
+	run sess "mig_check_sidecars '$d' '$list'"
+	[ "$status" -eq 1 ]
+	[[ $output == *"a.sqlite-shm did not move with its database"* ]]
+	run sess "mig_check_sidecars '$d' './x/a.sqlite-wal'"
+	[ "$status" -eq 0 ]
+}
+
+@test "a moved data dir takes every -wal and -shm with its database" {
+	fixture old-ubuntu-ostrich
+	d="$HOME/.local/share/ubuntu-ostrich/drawer/chat/data"
+	echo shm >"$d/cookies.sqlite-shm"
+	run sess migrate_run
+	[ "$status" -eq 0 ]
+	n="$HOME/.local/share/ostrich-os/drawer/chat/data"
+	[ -f "$n/cookies.sqlite" ] && [ -f "$n/cookies.sqlite-wal" ] && [ -f "$n/cookies.sqlite-shm" ]
 }
 
 @test "the old source copy is dropped; an installer running from it keeps the data dir in place" {
@@ -438,4 +527,84 @@ export B=2'
 	[ "$(grep -c 'config/ostrich-os/bashrc.sh' <<<"$output")" -eq 1 ]
 	again=$(bash "$BATS_TEST_DIRNAME/../home/modify_dot_bashrc" <<<"$output")
 	[ "$again" = "$output" ]
+}
+
+@test "root: a superseded AppArmor profile goes only when its new twin exists" {
+	root_fixture
+	r=$MIGRATE_ROOT/etc/apparmor.d
+	mkdir -p "$r"
+	echo old >"$r/ubuntu-ostrich-github-a_b"
+	echo new >"$r/ostrich-os-github-a_b"
+	echo old >"$r/ubuntu-ostrich-github-c_d"
+	printf '#!/bin/sh\necho "apparmor_parser $*" >>"%s/calls"\n' "$BATS_TEST_TMPDIR" >"$BATS_TEST_TMPDIR/bin/apparmor_parser"
+	chmod +x "$BATS_TEST_TMPDIR/bin/apparmor_parser"
+	run sess migrate_root
+	[ ! -e "$r/ubuntu-ostrich-github-a_b" ]
+	[ "$(cat "$r/ostrich-os-github-a_b")" = new ]
+	[ -e "$r/ubuntu-ostrich-github-c_d" ]
+}
+
+# --- the boot-time cleanup unit ---
+
+cleanup_fixture() {
+	root_fixture
+	r=$MIGRATE_ROOT
+	CD="$r/usr/libexec/ostrich-os/cleanup-old"
+	mkdir -p "$CD"
+	cp "$BATS_TEST_DIRNAME/../modules/core/ostrich-os-cleanup-old" "$CD/run"
+	cp "$BATS_TEST_DIRNAME/../lib/migrate.sh" "$BATS_TEST_DIRNAME/../lib/logging.sh" "$CD/"
+	echo unit >"$r/etc/systemd/system/ostrich-os-cleanup-old.service"
+	MARKER="$HOME/migrated-from"
+}
+
+@test "cleanup unit: without the marker it does nothing" {
+	cleanup_fixture
+	before=$(find "$r" | sort)
+	run "$CD/run" "$MARKER"
+	[ "$status" -eq 0 ]
+	[ "$before" = "$(find "$r" | sort)" ]
+}
+
+@test "cleanup unit: with the marker it removes old files whose twins exist, keeps the rest and every new file, then itself" {
+	cleanup_fixture
+	touch "$MARKER"
+	run "$CD/run" "$MARKER"
+	[ "$status" -eq 0 ]
+	[ ! -e "$r/etc/systemd/system/ubuntu-ostrich-power.service" ]
+	[ ! -e "$r/etc/udev/rules.d/90-ubuntu-ostrich-touchscreen.rules" ]
+	[ ! -e "$r/usr/libexec/ubuntu-ostrich" ]
+	[ -f "$r/usr/share/polkit-1/actions/org.ubuntu-ostrich.system-helper.policy" ] # no new policy yet: kept
+	[ "$(cat "$r/usr/libexec/ostrich-os/system-helper")" = new ]
+	[ "$(cat "$r/etc/systemd/system/ostrich-os-power.service")" = new ]
+	[ "$(cat "$r/etc/udev/rules.d/90-ostrich-os-touchscreen.rules")" = new ]
+	[ "$(cat "$r/var/lib/ostrich-os/touchscreen.state")" = on ]
+	# it removed itself: the unit file and its own directory
+	[ ! -e "$r/etc/systemd/system/ostrich-os-cleanup-old.service" ]
+	[ ! -e "$CD" ]
+	grep -q "systemctl disable ostrich-os-cleanup-old.service" "$BATS_TEST_TMPDIR/calls"
+}
+
+@test "cleanup unit: it never deletes a path the new install owns" {
+	cleanup_fixture
+	touch "$MARKER"
+	# a new-owned file under an old-looking name would be a bug in the table: none may match
+	run bash -c "source '$CD/migrate.sh'; for p in \"\${MIGRATE_ROOT_REPLACED[@]}\" \"\${MIGRATE_ROOT_MOVED[@]}\" \"\${MIGRATE_ROOT_DIRS[@]}\"; do for s in \"\${MIGRATE_OLD_SLUGS[@]}\"; do o=\$(mig_sub \"\${p%%|*}\" \$s); [[ \$o == *ostrich-os* ]] && echo \"new-owned in table: \$o\"; done; done; true"
+	[ -z "$output" ]
+}
+
+@test "install_cleanup_unit: root-owned copies, the marker in the unit, enabled" {
+	root=$BATS_TEST_TMPDIR/rootfs
+	mkdir -p "$root/bin"
+	printf '#!/bin/sh\necho "systemctl $*" >>"%s/calls"\n' "$BATS_TEST_TMPDIR" >"$BATS_TEST_TMPDIR/bin/systemctl"
+	chmod +x "$BATS_TEST_TMPDIR/bin/systemctl"
+	run dbus-run-session -- bash -c "
+		LIB_DIR='$BATS_TEST_DIRNAME/../lib'
+		source \$LIB_DIR/logging.sh; source \$LIB_DIR/backup.sh; source \$LIB_DIR/pkg.sh; source \$LIB_DIR/helper.sh
+		SUDO=env CLEANUP_DIR='$root/cleanup-old' CLEANUP_UNIT='$root/unit.service'
+		install_cleanup_unit '$BATS_TEST_DIRNAME/..' '$HOME/migrated-from'"
+	[ "$status" -eq 0 ]
+	[ -x "$root/cleanup-old/run" ] && [ -f "$root/cleanup-old/migrate.sh" ] && [ -f "$root/cleanup-old/logging.sh" ]
+	grep -q "ConditionPathExists=$HOME/migrated-from" "$root/unit.service"
+	grep -q "ExecStart=/usr/libexec/ostrich-os/cleanup-old/run $HOME/migrated-from" "$root/unit.service"
+	grep -q "systemctl enable ostrich-os-cleanup-old.service" "$BATS_TEST_TMPDIR/calls"
 }
