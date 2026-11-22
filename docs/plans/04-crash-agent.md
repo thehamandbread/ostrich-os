@@ -1,6 +1,8 @@
 # 04 — Crash → agent diagnosis
 
-Depends on 01 (names), 02 (options, agent choice in Settings), 05 (consent screen and notification copy).
+Amended 2026-11-21 (owner): Rust, names per plan 01 (`ostrich-os` paths, `ostrich_os` app ids), copy in `tools/welcome/data/copy.toml` (plan 02), and the existing `ostrich-design` skill governs the consent screen and notification wording (there is no plan 05).
+
+Depends on 01 (names) and 02 (the Crash help page, `copy.toml`).
 
 ## Spec (kept as written)
 
@@ -8,11 +10,11 @@ Depends on 01 (names), 02 (options, agent choice in Settings), 05 (consent scree
 - (a) If `core_pattern` → systemd-coredump: follow the journal for the coredump `MESSAGE_ID`. If apport: a `systemd --user` path unit on `/var/crash/*.crash`. Don't replace apport by default; "Use systemd-coredump" is an advanced option only if A3 proves apport keeps working.
 - (b) A login-time user service checks the previous boot: `/var/lib/systemd/pstore`, kernel crash files in `/var/crash`, and whether the previous boot's journal lacks a clean shutdown sequence. Define and test the heuristic.
 - Notification with actions "Diagnose with <agent>" / "Ignore"; `ostrich crash mute <exe>`; rate limit 1 per exe per 10 min.
-- Diagnose opens the user's terminal running the chosen agent CLI with the `diagnose-crash` skill and a local report. Agents detection-gated: `claude`, `codex`, `gemini`, `opencode`; default in `~/.config/ostrich/agent`; none installed → open the report in a text editor with instructions.
+- Diagnose opens the user's terminal running the chosen agent CLI with the `diagnose-crash` skill and a local report. Agents detection-gated: `claude`, `codex`, `gemini`, `opencode`; default in `~/.config/ostrich-os/agent`; none installed → open the report in a text editor with instructions.
 - Report (never the raw core): exe, package+version (`dpkg -S`), signal, backtrace (`coredumpctl` / `gdb -batch` with debuginfod), last 200 relevant journal lines, kernel + GPU driver versions (`nvidia-smi` if present), Ostrich version. Redact: `$HOME`→`~`, username, hostname, emails, IPs, MACs; run gitleaks on the bundle and drop flagged lines. First use: consent screen naming the provider the data goes to.
 - `diagnose-crash` skill is read-only: classify the component (Ostrich-owned / Ubuntu package / third-party / hardware-driver), explain, propose a fix; no sudo, edits or installs without explicit in-session approval.
 - Contribute: Ostrich-owned → `gh issue create --web` prefilled against the Ostrich repo (user reviews, nothing auto-posted); Ubuntu package → suggest `ubuntu-bug <pkg>`; third-party → link their tracker.
-- Also ship an `ostrich` skill: system layout, change settings via the options schema/CLI, never hand-edit chezmoi-managed files.
+- Also ship an `ostrich` skill: system layout, change settings with `ostrich config` (`list|get|set|reset|diff|export|import`, which already exists), never hand-edit chezmoi-managed files.
 - Check each agent CLI's current official docs for how it loads skills/instructions; plan install paths per agent.
 
 ## Evidence this plan rests on
@@ -38,7 +40,7 @@ CONFLICT: "run gitleaks on the bundle" — the archive has **gitleaks 8.16.0**; 
 
 CONFLICT: "`gh issue create --web`" — archive `gh 2.46.0`; `--web` needs a browser and (for repo targets) works without login but cannot prefill long bodies reliably — RECOMMEND: build a `https://github.com/<repo>/issues/new?title=…&body=…` URL with the title and a short body plus "paste the attached report" and put the (redacted) report path in the clipboard; use `gh issue create --web -R <repo> --title … --body …` when `gh` exists, else `xdg-open` on the URL (this is not the picker recursion: it is a fixed github.com URL, but if the picker is the default it will still show the picker; fine). The URL is built by Ostrich, shown to the user in the report first, never posted.
 
-CONFLICT: "default agent in `~/.config/ostrich/agent`" vs plan 02 "all settings in the options schema" — RECOMMEND: add option `crash.agent` (type `choice`, values from detection) whose storage is that file (`target.file`), so Settings can change it.
+Not a conflict any more: the default agent stays in `~/.config/ostrich-os/agent` (one word per file, scriptable); the Crash help page reads and writes it, and its wording lives in `copy.toml` like every other row.
 
 ## Architecture
 
@@ -59,8 +61,8 @@ No resident polling: A1 is a blocking `journalctl -f` (event-driven), A2 is a `.
 
 - **A1 (systemd-coredump):** parse JSON fields `COREDUMP_EXE`, `COREDUMP_COMM`, `COREDUMP_PID`, `COREDUMP_SIGNAL_NAME`, `COREDUMP_UID`, `COREDUMP_TIMESTAMP`. Only the current user's crashes (`COREDUMP_UID == $UID`) are notified, but gnome-shell is the user's. System-service crashes (UID 0 / system units) are only reported if the user opts into "Also report system services" (default off).
 - **A2 (apport):** the path unit fires on `/var/crash/*.crash`; the handler reads only the header keys needed (`ExecutablePath`, `Package`, `Signal`, `Date`, `ProcCmdline` redacted) from the `.crash` file (it is an RFC-822-ish file with a binary core blob; **parse the headers only, never load the CoreDump field**). Files not owned by the user (`stat -c %u`) are ignored (apport writes them root-owned with `0640`; if the user cannot read it, notify without details and offer `ubuntu-bug`).
-- **gnome-shell crash / session logout:** gnome-shell's death ends the Wayland session, so the watcher itself dies. The crash is therefore found at the **next login** by source B (not live): the A1/A2 source plus the stored journal still contain the entry, so B also queries `coredumpctl list --since=<last-seen>` / `/var/crash` for crashes since the last recorded `~/.local/state/ostrich/crash-last-seen` timestamp. Single code path: `ostrich crash scan --since`, run by B and by A on start, deduped by event key.
-- Dedup/rate-limit: key = `(exe, signal)`; at most one notification per key per **10 min** (state in `~/.local/state/ostrich/crash-ratelimit.json`, written atomically); suppressed events are counted and reported on the next one ("3 more in the last 10 minutes"). Muted exes (`ostrich crash mute <exe>` → `~/.config/ostrich/crash-muted`, one absolute path per line, `unmute` and `list` verbs) are skipped but still listed in `ostrich crash list`.
+- **gnome-shell crash / session logout:** gnome-shell's death ends the Wayland session, so the watcher itself dies. The crash is therefore found at the **next login** by source B (not live): the A1/A2 source plus the stored journal still contain the entry, so B also queries `coredumpctl list --since=<last-seen>` / `/var/crash` for crashes since the last recorded `~/.local/state/ostrich-os/crash-last-seen` timestamp. Single code path: `ostrich crash scan --since`, run by B and by A on start, deduped by event key.
+- Dedup/rate-limit: key = `(exe, signal)`; at most one notification per key per **10 min** (state in `~/.local/state/ostrich-os/crash-ratelimit.json`, written atomically); suppressed events are counted and reported on the next one ("3 more in the last 10 minutes"). Muted exes (`ostrich crash mute <exe>` → `~/.config/ostrich-os/crash-muted`, one absolute path per line, `unmute` and `list` verbs) are skipped but still listed in `ostrich crash list`.
 
 ### (b) Whole-system crash, freeze, panic — heuristic
 
@@ -88,11 +90,11 @@ Only `panic`, `freeze` and `unclean` notify. `unclean` uses softer copy: "The co
 
 ## Notification
 
-`GNotification` via a small `ostrich-crash` GApplication (id `ostrich.crash`, `.desktop` file for attribution). Title: "<App name> stopped unexpectedly" (app name from the `.desktop` matching the exe, else the exe basename); body: "Ostrich can look into why." Buttons: **Diagnose with Claude** (agent display name) and **Ignore**. If no agent is installed, the button is "Open report". Priority `normal`; `urgent` only for panics. Suppressed in Do Not Disturb and focus mode (reuse the check from the drawer host), but the event is queued and shown when DND ends.
+`GNotification` via a small `ostrich-crash` GApplication (id `ostrich_os.crash`, D-Bus path `/ostrich_os/crash`, `.desktop` file for attribution). Title: "<App name> stopped unexpectedly" (app name from the `.desktop` matching the exe, else the exe basename); body: "Ostrich can look into why." Buttons: **Diagnose with Claude** (agent display name) and **Ignore**. If no agent is installed, the button is "Open report". Priority `normal`; `urgent` only for panics. Suppressed in Do Not Disturb and focus mode (reuse the check from the drawer host), but the event is queued and shown when DND ends.
 
 ## Report
 
-Built by `ostrich crash report <event-id> [--out DIR]` into `$XDG_STATE_HOME/ostrich/crash/<id>/report.md` (mode 0600, the dir 0700). Never includes the raw core.
+Built by `ostrich crash report <event-id> [--out DIR]` into `$XDG_STATE_HOME/ostrich-os/crash/<id>/report.md` (mode 0600, the dir 0700). Never includes the raw core.
 
 | Section | Source |
 |---|---|
@@ -118,11 +120,11 @@ Tests: fixtures with planted secrets/PII must come out clean (`tests/crash-redac
 
 ### Consent
 
-First use of Diagnose shows an `AdwAlertDialog`: "Send this report to <Provider>?" Provider and what it receives are named from the agent definition (`claude` → Anthropic, `codex` → OpenAI, `gemini` → Google, `opencode` → whichever model provider is configured (the screen says "the provider you configured in opencode", read from its config if possible; otherwise it says it cannot tell)). Body: "The report has your username, hostname, emails and IP addresses removed. It may still contain names of files and programs you use." Buttons: **Show report** (opens it first; secondary), **Send** (primary), **Cancel**. Consent is stored per agent in `~/.config/ostrich/crash-consent.json` with the report format version; a new format version asks again. No agent is ever started without it. The debuginfod fetch has its own checkbox on the same screen.
+First use of Diagnose shows an `AdwAlertDialog`: "Send this report to <Provider>?" Provider and what it receives are named from the agent definition (`claude` → Anthropic, `codex` → OpenAI, `gemini` → Google, `opencode` → whichever model provider is configured (the screen says "the provider you configured in opencode", read from its config if possible; otherwise it says it cannot tell)). Body: "The report has your username, hostname, emails and IP addresses removed. It may still contain names of files and programs you use." Buttons: **Show report** (opens it first; secondary), **Send** (primary), **Cancel**. Consent is stored per agent in `~/.config/ostrich-os/crash-consent.json` with the report format version; a new format version asks again. No agent is ever started without it. The debuginfod fetch has its own checkbox on the same screen.
 
 ## Agents
 
-Defined as data in `/usr/share/ostrich/agents.d/<id>.toml` (and user overrides in `~/.config/ostrich/agents.d/`):
+Defined as data in `/usr/share/ostrich-os/agents.d/<id>.toml` (and user overrides in `~/.config/ostrich-os/agents.d/`):
 
 ```toml
 id = "claude"
@@ -146,10 +148,10 @@ Because opencode reads `~/.claude/skills` and `~/.agents/skills`, and Codex and 
 
 The launch prompt is a fixed string with the report **path** only (never the report body on the command line, which would be visible in `ps`): *"Use the diagnose-crash skill on the crash report at /path/report.md. Do not run sudo, edit files or install anything without asking me first."* Launch in the user's terminal: `xdg-terminal-exec <cmd…>` (archive 0.14.0, already used by the repo's `xdg-terminals.list`/Ghostty setup); fallback `gnome-terminal --`, then `x-terminal-emulator -e`. No agent → `xdg-open report.md` (default text editor) with a header comment "How to use this report" (paste into your assistant; what it contains).
 
-### Skills shipped (`share/ostrich/skills/`)
+### Skills shipped (`share/ostrich-os/skills/`)
 
 - `diagnose-crash/SKILL.md` — **read-only**. Steps: read the report; classify the component (Ostrich-owned: path under `~/.local/libexec/ostrich`, `/usr/libexec/ostrich`, `*@ostrich` extension, `ostrich-*` binary; Ubuntu package: `dpkg -S` owner with Ubuntu maintainer; third-party: no owner / flatpak / snap / AppImage / unpackaged; hardware-driver: `nvidia`, `amdgpu`, `i915`, `NVRM`, firmware); explain in plain words; propose a fix as text; offer the contribute route. Allowed tools: read-only (`Read`, `Grep`, `Bash` for read-only commands such as `dpkg -S`, `apt-cache policy`, `journalctl`, `coredumpctl info`). Explicit rules in the skill: never `sudo`, never write, edit or install without the user saying yes in this session, never upload the report anywhere, never run the crashing program. Front matter limits tools where the agent supports it (`allowed-tools` for Claude Code).
-- `ostrich/SKILL.md` — system layout (paths from plan 01), where options live (`/usr/share/ostrich/options.json`), how to change a setting (`ostrich settings get|set <option-id>`, which applies the option's target; **requires the CLI from plan 02, which does not exist yet**), the rule "never hand-edit chezmoi-managed files (`chezmoi managed`); change the source with `chezmoi edit` or use the options CLI", how to run `ostrich uninstall`/`update`, and the test-in-VM rule for contributors. Read-only by default.
+- `ostrich/SKILL.md` — system layout (paths from plan 01), how settings work (each extension's gschema, changed with `ostrich config get|set EXT KEY VALUE`, previewed with `ostrich config describe EXT KEY` once plan 02 adds it, exported with `ostrich config export`), the rule "never hand-edit chezmoi-managed files (`chezmoi managed`); change the source with `chezmoi edit`, or use `ostrich config export`/`import`", how to run `ostrich uninstall`/`update`, and the test-in-VM rule for contributors. Read-only by default.
 
 ### Contribute
 
@@ -157,11 +159,11 @@ Report footer and the skill both end with: Ostrich-owned → URL for the Ostrich
 
 ## Settings page ("Crashes")
 
-Switch "Offer help after a crash" (on by default; off stops both watchers), agent combo (detected agents only, plus "Open report in editor"), list of muted programs with Unmute, "Forget consent" button, and (hidden until proven) "Use systemd-coredump" with its reboot-free-but-reversible description. Copy lives in `options.json` (plan 02).
+Switch "Offer help after a crash" (on by default; off stops both watchers), agent combo (detected agents only, plus "Open report in editor"), list of muted programs with Unmute, "Forget consent" button, and (hidden until proven) "Use systemd-coredump" with its reboot-free-but-reversible description. Copy lives in `copy.toml` (plan 02). The tour offers this page too (placement is the council's call, plan 02).
 
 ## Files to touch
 
-`tools/crash/` (new crate `ostrich-crash`: `watch.rs`, `scan.rs`, `classify.rs`, `report.rs`, `redact.rs`, `notify.rs`), `tools/ostrich/src/main.rs` (`ostrich crash {list,mute,unmute,diagnose,report,scan}`), `modules/crash/install.sh` (+`status`,`revert`): units `ostrich-crash-watch.service`, `ostrich-crash-apport.{path,service}`, `ostrich-crash-boot.service`, `ostrich-crash.desktop`, `share/ostrich/skills/{diagnose-crash,ostrich}/`, `share/ostrich/agents.d/*.toml`, `share/ostrich/options.json`, `tests/fixtures/crash/*`, `tests/crash-redact.bats`, `tests/crash-classify.bats`, `tests/vm/crash-test.sh`, `docs/DESIGN.md`.
+`tools/crash/` (new crate `ostrich-crash`: `watch.rs`, `scan.rs`, `classify.rs`, `report.rs`, `redact.rs`, `notify.rs`), `tools/ostrich/src/main.rs` (`ostrich crash {list,mute,unmute,diagnose,report,scan}`), `modules/crash/install.sh` (+`status`,`revert`): units `ostrich-crash-watch.service`, `ostrich-crash-apport.{path,service}`, `ostrich-crash-boot.service`, `ostrich_os.crash.desktop` (id per plan 01), `share/ostrich-os/skills/{diagnose-crash,ostrich}/`, `share/ostrich-os/agents.d/*.toml`, `tests/fixtures/crash/*`, `tests/crash-redact.bats`, `tests/crash-classify.bats`, `tests/vm/crash-test.sh`, `tools/welcome/data/copy.toml` and the Crash help page in `tools/welcome`, `docs/DESIGN.md`.
 
 ## Done criteria
 

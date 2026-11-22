@@ -25,7 +25,7 @@ Page list is `tools/welcome/src/lib.rs` (`ALL`); hardware pages are hidden by `H
 | 1 | What's included (`welcome`) | — | "Where things are" group (this page also holds the extension on/off helper `set_extension_enabled()`, which edits `org.gnome.shell enabled-extensions`) | No module |
 | 2 | Theme (`theme`) | — | `color-scheme` "Appearance"; colour-scheme cards (`schemes.rs`, written by `ostrich theme scheme`); accent; "New scheme…" editor | `palette` tool writes `~/.config/gtk-{3,4}.0/gtk.css`, Ghostty theme, per-extension stylesheets in `~/.config/ubuntu-ostrich/scheme/` |
 | 3 | Top bar (`top-bar`) | — | 7 pinned readouts (`cpu.usage`, `mem.usage`, `temp.average`, `temp.package`, `gpu.state`, `net.down`, `net.up`), `hide-zeros`, `section-rows`, `animation-speed`, `folder-colour`, `accent-follows-wallpaper`, `today-panel`, `show-events`, `now-playing-pill`, `quick-settings-corner`, `clock-menu-quiet`, `quick-settings-style` | monitor + tweaks extensions (GSettings only) |
-| 4 | Dock (`dock`) | — | `autohide`, `intellihide`, `click-action`, `indicator`, `previews`, `badges`, `show-apps-at-start`, `icon-size`, `background` | dock extension |
+| 4 | Dock (`dock`) | — | `autohide`, `intellihide`, `click-action`, `indicator`, `previews`, `badges`, `show-apps-at-start`, `icon-size`, `background`, `background-opacity` (10 rows; the earlier count of 9 missed the opacity spin row, visible in the headless screenshot in `02-tour-and-settings.md`) | dock extension |
 | 5 | Workspaces and tiling (`windows`) | — | 12 rows (`dynamic-workspaces`, `num-workspaces`, `smart-names`, `show-empty`, `indicator-style`, `show-icons`, `active-style`, `drag-tiling`, `fill-popup`, `raise-together`, `window-gap`, `focus-hint`) | workspaces + tiling extensions |
 | 6 | Blur (`blur`) | — | per-surface Blur/Solid rows with sigma/brightness spin rows, `high-contrast`, `lock-screen`, `static-on-battery-saver` | blur extension |
 | 7 | Notifications (`notifications`) | — | `show-banners` | GNOME `org.gnome.desktop.notifications` |
@@ -41,12 +41,12 @@ Page list is `tools/welcome/src/lib.rs` (`ALL`); hardware pages are hidden by `H
 ### Mismatches and gaps to fix
 
 1. **Labels versus behaviour.** The audit found no option that does the opposite of its label. It found these wording problems:
-   - **Too long (> 5 words, against plan 02):** "Top-right corner opens quick settings", "Open a site by hovering over its icon", "Bring back what was open inside the apps", "Accent colour follows the wallpaper" (5, borderline), "Do Not Disturb and Focus in the clock menu", "Site icons in the top bar (the rest are in its ⌄ menu)".
+   - **Too long (> 5 words, against the owner's target):** "Top-right corner opens quick settings", "Open a site by hovering over its icon", "Bring back what was open inside the apps", "Accent colour follows the wallpaper" (5, borderline), "Do Not Disturb and Focus in the clock menu", "Site icons in the top bar (the rest are in its ⌄ menu)".
    - **Unclear titles:** "Monitor menu size" (`section-rows`), "Wide sites: width (% of the screen)" and "Quick settings" (`quick-settings-style`) do not say what changes.
    - **Misleading state coupling:** `show-banners` is labelled "Show banners" with the summary "Off is the same as Do Not Disturb". That is accurate, but the page title is "Notifications" and it is the only row, so users read it as a notifications page; DND itself is elsewhere (clock menu).
    - **Unit in the title:** "Hover delay (milliseconds)", "Switch to power saver at (%)". HIG puts units in the control, not the title.
-   - **Spelling:** the repo uses British "colour". GNOME HIG and libadwaita docs use American English. Decide once (plan 05 flags it).
-2. **Pages above ≤7 options** (plan 02 rule): Top bar 18, Windows 12, Dock 9, Drawer 7 + lists, Power. These need grouping into sub-pages or collapsible groups.
+   - **Spelling:** the repo uses British "colour". GNOME HIG and libadwaita docs use American English. Decide once (see the design-skill gap list in `02-tour-and-settings.md`).
+2. **Pages above ≤7 options** (owner's target, `02-tour-and-settings.md`): Top bar 18, Windows 12, Dock 10, Drawer 7 + lists, Power. These need grouping into sub-pages or collapsible groups.
 3. **Modules with no revert path.** Every module is idempotent and backs up first (`lib/backup.sh` restore point), but **none has a per-module revert.** Revert is global only: `install.sh --uninstall` (`lib/uninstall.sh`) restores the whole restore point. Per module:
 
    | Module | Idempotent | Revert |
@@ -60,8 +60,9 @@ Page list is `tools/welcome/src/lib.rs` (`ALL`); hardware pages are hidden by `H
    | hardware/touchscreen | yes | udev rule + state file removal only via uninstall |
    | hardware/dell | no-op | n/a |
 
-   Plan 02's "per-option apply re-runs only that module; modules must be revertible" therefore needs new work (`revert` verb per module). See `02-setup-and-settings.md`.
-4. No machine-readable list of options exists. Labels live in Rust string literals (`tools/welcome/src/main.rs`) and in `docs/DESIGN.md`/`DEFAULTS.md` prose.
+   The earlier plan's idea of per-option module re-runs is dropped (see `02-tour-and-settings.md`): nearly every option is a GSettings key, not a module. If a module revert is wanted later, the table above is the work list.
+4. No single copy source exists. Wording lives in Rust string literals (`tools/welcome/src/main.rs`), each extension's gschema `<summary>`, `docs/DESIGN.md`/`DEFAULTS.md`/`FEATURES.md` prose and `ostrich config help`. Plan 02 proposes `tools/welcome/data/copy.toml`.
+5. **The installer needs no pre-install answers.** The only question `install.sh` asks is Keep/Clean for other extensions (`choose_mode`, install.sh:249), and it has flags. So no options file or choices file is needed (plan 02).
 
 ## A2. `rg -i "ubuntu.?ostrich"` — 699 matching lines, grouped
 
@@ -81,7 +82,9 @@ Counted with `rg -i "ubuntu.?ostrich"` excluding `node_modules`, `graphify-out`,
 | udev / state | `/etc/udev/rules.d/90-ubuntu-ostrich-touchscreen.rules`, `/var/lib/ubuntu-ostrich/touchscreen.state`, `/run/ubuntu-ostrich` | `modules/hardware/touchscreen` | **P** (root) |
 | gsettings schema IDs | `org.gnome.shell.extensions.ubuntu-ostrich.{blur,dock,drawer,focus,monitor,tiling,tweaks,workspaces}` (8 gschema.xml; `…-dev.critique` is test-only) | `modules/gnome/extensions/*/schemas/` | **P** (every user's dconf under `/org/gnome/shell/extensions/ubuntu-ostrich/<ext>/`) |
 | Extension UUIDs | `<name>@ubuntu-ostrich` × 11 (`blur dock drawer focus holder-monitor monitor search-new-window tiling tray tweaks workspaces`) in `metadata.json`, `~/.local/share/gnome-shell/extensions/<uuid>`, `org.gnome.shell enabled-extensions`, zip name `<uuid>.shell-extension.zip` | `modules/gnome/extensions/*/metadata.json`, `lib/*`, `docs/DESIGN.md` | **P** |
-| D-Bus / app IDs | GApplication `ubuntu-ostrich.drawer`, path `/ubuntu_ostrich/drawer`, per-site `ubuntu-ostrich.drawer.<service>` (notification attribution, generated `.desktop` files), `ubuntu-ostrich.store.desktop`, `ubuntu-ostrich.setup.desktop`, `ubuntu-ostrich.drawer.desktop` | `tools/drawer-host`, `tools/store-gtk`, `tools/welcome` | **P** (desktop files in `~/.local/share/applications/`; notification permissions keyed by app ID in GNOME) |
+| D-Bus / app IDs | GApplication `ubuntu_ostrich.drawer` (**underscore**, since 2026-10-31 for the portal's dash rule; `tools/drawer-host/src/main.rs:45`), path `/ubuntu_ostrich/drawer`, per-site `ubuntu_ostrich.drawer.<service>` (`service_app_id`, main.rs:128; notification attribution and generated `.desktop` files in `~/.local/share/applications/`), `ubuntu_ostrich.{store,setup,drawer}.desktop`. `docs/DESIGN.md` still shows the dash form (see A6) | `tools/drawer-host`, `tools/store-gtk`, `tools/welcome`, `modules/tools/install.sh:146`, `lib/uninstall.sh:195` | **P** (desktop files; GNOME's per-app notification children are keyed by these ids) |
+| GNOME per-app notification settings | children of `org.gnome.desktop.notifications.application` whose `application-id` is `ubuntu_ostrich.drawer.<service>.desktop` etc. | GNOME's dconf, not ours | **P** (a new app id starts a new, empty child; plan 01 migrates them) |
+| Earlier slugs | `cleanest-ubuntu-setup`, `ostrich-ubuntu` (renamed 2026-10-20 and 10-21): the installer disables extensions under those UUID suffixes (`modules/gnome/install.sh:32`) and `tests/modules.bats:141-142` checks it; no directory or settings migration exists for them | `docs/DECISIONS.md` 2026-10-20/21 | only on pre-0.4.0 private builds (owner's machines, VM snapshots) |
 | Autostart | `ostrich-setup.desktop` (autostart), `ostrich-firstboot.desktop` (image) | `modules/tools`, `image/firstboot` | **P** until wizard done |
 | chezmoi source | `home/dot_config/ubuntu-ostrich/`, `home/run_onchange_after_ostrich-settings.sh.tmpl` (path `~/.config/ubuntu-ostrich/settings.dconf`) | `home/` | **P** (chezmoi state records source paths) |
 | Image / ISO | `/opt/ubuntu-ostrich`, `/usr/local/sbin/ubuntu-ostrich-portable-esp`, `/opt/ubuntu-ostrich/release` | `image/` | P on built images only |
@@ -127,8 +130,7 @@ $ grep -rn core_pattern /usr/lib/sysctl.d /etc/sysctl.d
 So stock Ubuntu ships **no `kernel.core_pattern` in sysctl.d**. The handler sets it at runtime: `apport-core-dump-handler` contains only `/usr/lib/systemd/system/apport.service` and `/etc/init.d/apport` (no sysctl file). Confirmed in a second run with the package installed: `grep -rn core_pattern /usr/lib/sysctl.d /etc/sysctl.d /usr/lib/systemd` found nothing, so the pattern is written by the service at boot, not by sysctl.d.
 
 ```
-$ apt-cache policy python3-gi gir1.2-gtk-4.0 gir1.2-adw-1 libnotify-bin jq gh gdb debuginfod xdg-terminal-exec gitleaks   # Candidate lines
-python3-gi          3.56.2-1
+$ apt-cache policy gir1.2-gtk-4.0 gir1.2-adw-1 libnotify-bin jq gh gdb debuginfod xdg-terminal-exec gitleaks   # Candidate lines
 gir1.2-gtk-4.0      4.22.4+ds-0ubuntu0.2
 gir1.2-adw-1        1.9.1-0ubuntu0.2
 libnotify-bin       0.8.8-1
@@ -140,7 +142,7 @@ xdg-terminal-exec   0.14.0-1ubuntu0.1
 gitleaks            8.16.0-1build2    (old: CLI differs from 8.19+, see plan 04)
 ```
 
-All ten are installable from the archive, so no third-party download is needed. Python in the container: 3.14.4.
+All nine are installable from the archive, so no third-party download is needed (the tools are Rust; GTK 4.22 and libadwaita 1.9 match `tools/welcome`'s dependencies).
 
 ```
 $ notify-send --version
@@ -201,3 +203,14 @@ This is the apport ≥ 2.28 integration (Launchpad #2048136, Fix Released: "supp
 | Web | one "OstrichOS" Google Sites page (self-published; "simple, fast system for business and education"; unclear if Linux): https://sites.google.com/view/ostrichos |
 
 **Collisions:** one minor, no registry or distro collision. `OstrichDB` is a different product with a nearby name. A formal trademark search (USPTO/EUIPO/WIPO) was **not** done and is recommended before wide release.
+
+## A6. Drawer doc drift (docs disagree with each other or with the code)
+
+Found while auditing the drawer for plan 03. Each has a proposed fix; none is applied here (docs-only task, and the owner chooses the hover value).
+
+| # | Drift | Where | Which is right | Proposed fix |
+|---|---|---|---|---|
+| 1 | **Loaded dot.** `docs/FEATURES.md` DRW-1 and `docs/DESIGN.md:100` say the icon "has a dot while loaded"; `docs/DECISIONS.md` 2026-11-19 says the white "loaded" dot is gone and an unloaded icon is grey, nothing else. (`docs/DECISIONS.md` line 84, 2026-10-22, also says "loaded dot": superseded history.) | FEATURES.md:173, DESIGN.md:100 | DECISIONS 2026-11-19 (later, the owner's call; `CONTEXT.md` agrees) | Reword DRW-1 to "greyed while unloaded; no dot" and DESIGN.md:100 the same. Add a drawer-test assertion that no loaded-dot actor exists (the test comment at `tests/vm/drawer-test.sh:687` mentions a different "dot"; check it is not this). |
+| 2 | **Hover delay.** `docs/DESIGN.md:101`, FEATURES DRW-2 and DECISIONS 2026-10-22 say hover opens after **300 ms**; the gschema default of `hover-delay-ms` is **500** (`modules/gnome/extensions/drawer/schemas/…drawer.gschema.xml`, range 100-2000) and `docs/council/2026-10-24-round-2-and-whole-os.md:138` already says to correct "stale 0.3 s" to 500 ms. The fold-back delay is 500 ms in code (`HOVER_CLOSE_MS`, `barlogic.js:6`), matching the docs. | DESIGN.md:101, FEATURES.md:174, DECISIONS 2026-10-22 | The gschema (the code, and a council note that says 500) | Pick **500** in the docs (owner confirms); update DESIGN.md:101 and DRW-2 to "hover 500 ms (setting `hover-delay-ms`)"; leave the dated DECISIONS entry and append a note instead of editing history. If the owner prefers 300, change the gschema default and the test instead. |
+| 3 | **Per-site sizes.** DECISIONS 2026-11-19 removed per-site narrow/wide shapes and saved sizes from the shell ("the host still reads them from drawer.toml and ignores them"), but the host still defines `set-size((suu))` (`tools/drawer-host/src/main.rs:16,1762`), `shape`/`width` in `drawer.toml` (`config.rs:13-14,34-36,79`), and `docs/DESIGN.md:97,121` still list "shape, saved size" and `set-size`. | main.rs, config.rs, DESIGN.md:97,121 | The decision (the shell ignores them) | Remove `set-size` and per-site shape/size from the host after confirming nothing calls them (`git grep set-size` finds only the host; the extension has none); keep parsing old `drawer.toml` keys tolerantly (ignore unknown), and drop them from DESIGN.md. A separate small task in the README build order. |
+| 4 | **Dash form of the app id.** `docs/DESIGN.md` (drawer section, notifications and D-Bus lines, around :112 and :121) still names `ubuntu-ostrich.drawer`, `ubuntu-ostrich.drawer.<service>` and "GApplication actions on `ubuntu-ostrich.drawer`", while the code uses `ubuntu_ostrich.drawer` since 2026-10-31 (main.rs:45) and the path `/ubuntu_ostrich/drawer`. The same dash/underscore trap is exactly what the portal crash was. | DESIGN.md | The code | Fix the doc now (it will be rewritten for `ostrich_os` by the rename anyway; do the doc fix inside that task so it is edited once). |

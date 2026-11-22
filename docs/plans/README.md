@@ -1,120 +1,104 @@
-# Plans: Ostrich OS rename, setup wizard, browser picker, crash agent, design skill
+# Plans: Ostrich OS rename, drawer integration, browser picker, crash agent, tour redesign
 
-Docs only. Written 2026-11-21 from `CLAUDE.md`, `docs/DESIGN.md`, `docs/DECISIONS.md`, `CONTEXT.md` and a read of the code at `wip-ui` (dcac648). Nothing outside `docs/` was changed. `docs/INVENTORY.md` was not read (it is private and was not needed for any plan).
+Docs only. First written 2026-11-21 from `CLAUDE.md`, `docs/DESIGN.md`, `docs/DECISIONS.md`, `CONTEXT.md` and a read of the code at `wip-ui`; **amended the same day** by the owner to match repo reality (Rust tools, the existing tour and council, the id rules, the drawer integration). Nothing outside `docs/` is changed by this work. `docs/INVENTORY.md` was not read (private, not needed).
 
 | File | What |
 |---|---|
-| `00-audit.md` | What exists today, every "ubuntu-ostrich" identifier (persisted ones marked), container evidence, Omarchy and name checks |
-| `01-rename.md` | Rename to Ostrich OS, trademark clauses, migration, URL test plan |
-| `02-setup-and-settings.md` | `options.json` schema, wizard, `--choices`, elevation, Settings |
-| `03-browser-picker.md` | `ostrich-browser` |
-| `04-crash-agent.md` | Crash detection → report → agent, skills |
-| `05-design-skill.md` | `DESIGN-SYSTEM.md`, design skill, headless screenshot loop (proved) |
-| `evidence/` | Raw container output, the hello-window script and run script |
+| `00-audit.md` | What exists, every old-name identifier (persisted ones marked), container evidence (A3), Omarchy and name checks, **drawer doc drift (A6)** |
+| `01-rename.md` | Ostrich OS: `ostrich-os` vs `ostrich_os` ids, one migration table for three slugs, drawer logins and per-site notification settings, trademark clauses, wget URL test |
+| `02-tour-and-settings.md` | Redesign plan for `tools/welcome` (the tour and Ostrich Settings): `copy.toml`, one council session (to approve before it runs), design-skill gaps |
+| `03-browser-picker.md` | `tools/browser-picker` / `ostrich-browser`, every drawer call site, shared `site-match` crate, `open` drawer action, activation token |
+| `04-crash-agent.md` | Crash watcher, report, redaction, agents, skills |
+| `evidence/` | Raw container output (A3), the headless screenshot script. `docs/screenshots/ostrich-setup-dock-headless.png` is its proof |
 
-## Read this first: the findings that change the specs
+There is **no** `05` file: the design skill and the council already exist; real gaps in the skill are listed in `02-tour-and-settings.md`.
 
-1. **The wizard and Settings are one existing Rust app** (`ostrich-setup`, 2.8k lines, GTK4 + libadwaita), not a prompt, and the spec asks for Python. Settings applies changes live through GSettings, with no module and no options file. The installer's only prompt is "keep or clean other extensions" (Bash `read`).
-2. **No module has a revert** except the global `--uninstall` restore point. The spec's per-option apply and revert needs that built.
-3. **Renaming is mostly not the CLI** (`ostrich` already exists). The risk is persisted IDs: dconf paths, extension UUIDs, the drawer's logins directory, root-owned polkit/helper/unit files, and the update URL baked into installed 0.5.0 binaries (they reach the new release only through GitHub's redirect, so never recreate a repo at the old name).
-4. **systemd-coredump replaces the apport kernel handler** (it `Conflicts` with it). apport still gets crashes through its drop-in, but that is not proven end to end, so the option stays hidden until a VM test passes.
-5. **Browser picker:** Firefox has no reliable flag for "open in the other profile's running instance"; it needs a VM matrix before any flags ship. Super+B is free in the repo, but the GNOME 50 custom-keybinding path is unconfirmed.
-6. **Headless screenshots work** (Xvfb, no compositor) with two defects in the first proof (cut-off window, missing icon); fixes are in plan 05.
+## Findings that matter
 
-## All CONFLICT lines (29 in the plan files, then 4 task-level notes)
+1. **`install.sh` needs no pre-install answers** (its only question is Keep/Clean, which has flags), so there is no `options.json`, `jq` or `choices.json`. One copy file instead: `tools/welcome/data/copy.toml`.
+2. **Renaming is ids, not the CLI.** `ostrich` is already the CLI. `ostrich-os` for paths, UUIDs and schemas; `ostrich_os` (no dash before the last part) for app, `.desktop` and D-Bus ids because of the portal crash. The risks are drawer logins (cookies under `~/.local/share/ubuntu-ostrich/drawer/`), per-site notification settings (keyed by app id), the `favorite-apps` drawer entries, root-owned helper files, and old installs reaching the new release only through GitHub's redirect.
+3. **Once the picker is the default browser, six drawer call sites open it**, and two of them (the "didn't load → Open in browser" button and the DRM-site launcher) pass the site's *own* URL and would loop. `drawer_offer ⇒ stays_in_drawer` over a shared crate is the no-loop proof.
+4. **The drawer passes no launch context anywhere**, so GNOME shows "… is ready" instead of focusing the picker; the fix and a VM test with a negative control are planned.
+5. **Drawer docs disagree with the code in four places** (A6): loaded dot, 300 vs 500 ms hover, per-site sizes the host still carries, and the dash-form app id in `DESIGN.md`.
+6. **Headless screenshots work for the real app** in `ubuntu:26.04` (light, 100 % text); dark and 200 % text do not and stay VM-only.
+7. **systemd-coredump replaces the apport kernel handler** (it `Conflicts` with it); apport still gets crashes through its drop-in, but that is not proven end to end, so the option stays hidden until a VM test passes.
 
-Each is a place where the spec and the repo (or a checked fact) disagree. The full text, with the reasoning, is in the file named. The spec text itself was left as written.
+## All CONFLICT lines (20 in the plan files, then task-level notes)
+
+Where the owner's spec or amendment and the repo (or a checked fact) disagree. Full text and reasoning are in the named file.
 
 ### 01-rename.md
-1. **State dir missing from the spec** (`~/.local/state/ubuntu-ostrich`) → add `~/.local/state/ostrich/`.
-2. **CLI is already `ostrich`** → no binary rename; only paths, IDs, UUIDs and URLs move.
-3. **"OS" name vs an installer on stock Ubuntu, and the ISO builder** → keep the name if wanted, but modified-Ubuntu ISOs need Canonical approval regardless of name; publish none.
-4. **ISO/VM test paths** are dev-only → rename them in the same commit, no migration.
-5. **"Re-enable extensions under new UUIDs"** cannot load in the running Wayland session → write the new UUIDs to `enabled-extensions`, then log out.
+1. **Dock/`favorite-apps` entries hold the drawer's old app id** and would lose the icon → migrate any entry equal to an old drawer/Store/setup id in the same step.
+2. **"Re-enable extensions under new UUIDs"** can't finish in the running Wayland session → write the new UUIDs to `enabled-extensions`, then ask for a log-out.
+3. **Per-app notification child naming and keys not verified** → read them from a VM first, record the rule, then implement.
+4. **"OS" in the name vs an installer on stock Ubuntu, and the ISO builder** → publish no ISO until Canonical's terms are cleared.
 
-### 02-setup-and-settings.md
-6. **Python + PyGObject** vs the existing Rust app and `DESIGN.md` → keep Rust for the app, make the JSON schema the shared piece. **Owner decision.**
-7. **Wizard before installer** vs today's installer-then-wizard with live GSettings → two option kinds (`install`, `setting`) in one schema; the one-liner installs the base, then opens the wizard.
-8. **`module` per option / per-option apply** vs most settings having no module and no revert → a `target` object (module, gsettings, or file) and a `revert` verb on every module.
-9. **Title ≤5 words, ≤7 options per page, title + one sentence** vs current pages (Top bar 18 rows etc.) → copy pass and page splits.
-10. **AdwPreferences UI** vs the current sidebar + custom rows → keep it, render stock rows from the schema, list custom pages in the schema.
-11. **"Never run sudo" project rule** vs the installer's own elevation design → no change; polkit helper first, one `sudo` only where no polkit agent exists.
+### 02-tour-and-settings.md
+5. **`/council --panel` accepts only full/design/system**, none of which is the five-seat panel → add `--panel tour` (newcomer, everyday, simplicity, design, access; judge, researcher, curator always) to `.claude/commands/council.md` and `CLAUDE.md` before the session.
+
+Also noted there (not a conflict now): if the council makes "Minimal" mean *fewer things installed*, the installer would need a pre-install answer, which would contradict "drop `choices.json`". Keep Minimal = fewer things switched on.
 
 ### 03-browser-picker.md
-12. **Super+B** is free in the repo; GNOME 50 custom-keybinding path unconfirmed → verify in the VM; prefer an extension keybinding; append to existing custom keybindings.
-13. **Python cold start** vs the measured-budget principle → build in Rust unless Python measures ≤400 ms cold.
-14. **Firefox `-P name` into the correct running instance** → no single reliable flag; four-case VM matrix; ship only observed flags.
-15. **Snap Firefox** profile paths and confinement → use `-P` names for snap Firefox; test.
-16. **`xdg-settings` only covers http/https** → also `xdg-mime default` for `text/html`; read both back for Settings.
-17. **"URL never lost" vs "Esc cancels"** → Esc is a deliberate cancel; the rule applies to errors.
+6. **Tour/wizard drawer calls carry no token either** → out of scope (they run from the wizard's focused window); only the six drawer sites are in scope.
+7. **Spec's `ostrich-browser.desktop`** vs the `ostrich_os.<name>` id rule → `ostrich_os.browser.desktop`, `Exec=ostrich-browser %U`.
+8. **"Offered only when ≥2 profiles"** vs drawer sites as targets → ≥2 profiles **or** ≥1 drawer site; with one target and no drawer match the picker never shows.
+9. **Super+B** is free in the repo; the GNOME 50 custom-keybinding path is unconfirmed → verify in the VM; prefer an extension keybinding.
+10. **"Measure cold and warm" sets no numbers** → cold ≤400 ms, warm ≤80 ms in the VM.
+11. **Firefox flags** for the right running instance → four-case VM matrix; ship only observed behaviour.
+12. **Snap Firefox profile paths and confinement** → `-P` names only; test.
+13. **`xdg-settings` covers only http/https** → also `xdg-mime default` for `text/html`; save the previous default for revert.
+14. **"URL never lost" vs "Esc cancels"** → Esc is a deliberate cancel; the rule is about errors.
 
 ### 04-crash-agent.md
-18. **Journal follower vs apport path unit** → read `core_pattern` and start the matching source; dedupe when both fire.
-19. **Use systemd-coredump option** not proven → hidden and disabled until a VM test passes (crash file and `coredumpctl` entry and apport dialog).
-20. **`notify-send --action`** supported by the binary but the repo records it fails on GNOME 50 (unverified upstream) → send via GNotification from an app with its own ID.
-21. **Gemini CLI** may be replaced by Antigravity CLI (one unverified source) → keep detection, agents as data files, recheck before release.
-22. **gitleaks 8.16.0 in the archive** has an older CLI → version-detect; built-in redaction is primary; never claim a scan that did not run.
-23. **`gh issue create --web`** (gh 2.46.0) can't reliably prefill long bodies → prefilled URL plus report path; nothing posted.
-24. **Agent file vs "all copy in options.json"** → a `crash.agent` option whose storage is that file.
+15. **Journal follower vs apport path unit** → read `core_pattern` and start the matching source; dedupe.
+16. **"Use systemd-coredump" option not proven** → hidden until a VM test passes.
+17. **`notify-send --action`** works in the binary but the repo says GNOME 50 drops actions (unverified upstream) → GNotification from an app with its own ID.
+18. **Gemini CLI** may be replaced by Antigravity CLI (one unverified source) → agents as data files; recheck before release.
+19. **gitleaks 8.16.0 in the archive** has an older CLI → version-detect; built-in redaction is primary.
+20. **`gh issue create --web`** (gh 2.46.0) can't reliably prefill long bodies → prefilled URL plus report path; nothing posted.
 
-### 05-design-skill.md
-25. **Skill already exists** at that path → extend it, never overwrite.
-26. **"No custom CSS beyond accent"** vs shell extensions and the scheme system → scope the rule to GTK/libadwaita app windows.
-27. **British vs American spelling** → owner picks once; default keep British.
-28. **≤7 options per page vs 18-row pages** → "≤7 per group", the rest collapsed or on sub-pages.
-29. **Broadway needs a browser to screenshot** → Xvfb + x11 + software rendering (proved).
-
-### README / task
-30. **"`git diff --stat` shows only docs/ changed"** cannot show new files, which are untracked until added → use `git status --short` and `git diff --stat --cached` after `git add docs/`.
-31. **`spikes/agent/` appeared in the working tree during the work, not made by these plans** (script and results from another session) → left untouched and excluded from the commit.
-32. **Plan 02 and 04 want a `ostrich settings get|set` CLI** that does not exist (`tools/ostrich/src/` has `config.rs`, `env.rs`, `main.rs`) → build it in step 6 below before the `ostrich` skill claims it.
-33. **Plan 04 sends crash reports to a third-party model provider** while `DESIGN.md` says "no telemetry/network calls" for extensions → fine for tools (nothing leaves without the consent screen); state it in `DECISIONS.md`.
+### Task-level notes
+- **"`git diff --stat` shows only docs/"** cannot list new files until they are added; use `git status --short` and `git diff --cached --stat`.
+- **`spikes/agent/`** appeared in the working tree during the first pass and is not part of these plans; it was left alone and is not in either commit.
+- **A5 name check** and **A4 Omarchy** results from the first pass stand unchanged.
 
 ## Build order
 
-One module per task. Each task ends with: shellcheck, shfmt, bats, `gitleaks git --redact` (the pre-commit hook), and a commit. Test in Docker `ubuntu:26.04` or the VM; **never on the live machine**. Version bump and a release only after the whole step passes `tests/vm/release-suite.sh`.
-
-Order: design skill → rename → schema → wizard/Settings → picker → crash agent. The brief said "rename first" **and** "design skill before any UI". They are compatible because the rename has no UI; only the copy it renames. So: **0. design skill (docs and scripts only, no UI), then 1. rename**, then everything else. If the owner wants the rename literally first, do the rename first; step 0 touches no file that step 1 touches except the skill's own name mentions.
+One module per task. Each ends with shellcheck, shfmt, bats, `cargo test`/`clippy` where Rust is touched, `gitleaks` (the pre-commit hook), and a commit. Tests run in Docker `ubuntu:26.04` or the VM, **never on the live machine**. The order is the owner's:
 
 | # | Task | Files to touch | Done when | Test |
 |---|---|---|---|---|
-| 0 | **Design system and loop** (plan 05) | `docs/DESIGN-SYSTEM.md`, `.claude/skills/ostrich-design/SKILL.md` (extend), `references/{copy,headless}.md`, `tests/ui/{shot.sh,Dockerfile}`, `tests/options-lint.sh` (copy checks only), CI job | Plan 05 done criteria 1–5 | Docker: `tests/ui` screenshots of hello window, dark, 2×, full size; token-lint still passes |
-| 1 | **Rename + migration** (plan 01) | every file in plan 01's list; `lib/migrate.sh`; `tests/migrate.bats`; `tests/vm/rename-test.sh`; `README.md` notice; `docs/DECISIONS.md` | Plan 01 test plan all green; `rg -i "ubuntu.?ostrich"` only allowed leftovers; redirect `curl -IL` outputs recorded; **release 0.6.0 = rename only** | bats; Docker smoke twice; VM upgrade from 0.5.0 via old URL; then GitHub repo rename by the owner and the three `curl -IL` checks |
-| 2 | **Schema + lint** (plan 02) | `share/ostrich/options.json`, `lib/options.sh`, `tests/options-lint.sh`, `tests/options.bats`, `tests/fixtures/choices/*`, `schema/hidden.json` | Lint passes; every user-visible key covered or listed; copy-review pass committed (`old → new` list); no code behaviour changes yet | bats in Docker |
-| 3 | **Module contract: `status` and `revert`** (plan 02) | `lib/module.sh`, `modules/*/install.sh`, `modules/hardware/*` | install → revert → install round trips leave identical state for every module | Docker for non-hardware modules; VM for hardware fixtures (hybrid GPU, touchscreen) |
-| 4 | **Installer `--choices`, `--json-progress`, `--only`, `--revert`, whiptail from schema** (plan 02) | `install.sh`, `lib/options.sh`, `lib/prompts.sh`, `tests/install.bats` | Plan 02 done criteria 2; unattended install from each fixture | Docker: dry-run + real run twice; whiptail via `script` |
-| 5 | **Elevation helper actions** (plan 02) | `tools/system-helper/src/`, `modules/hardware/org.ostrich.system-helper.policy`, `lib/helper.sh`, `tests/vm/polkit-test.sh` | Root steps run only through helper actions that read the root-owned schema; one password per full install | VM polkit test; fuzz: a hand-edited `choices.json` with a fake package id is refused |
-| 6 | **`ostrich settings get/set` CLI** (needed by plans 02/04) | `tools/ostrich/src/main.rs` (+ new `settings.rs`) | CLI reads/writes every schema option, same validation as the lint | `cargo test`; Docker |
-| 7 | **Wizard + Settings from the schema** (plan 02; needs step 0) | `tools/welcome/src/{lib.rs,main.rs}` (schema-driven rows, first-run flow, page splits), `share/ostrich/options.json` | Plan 02 done criteria 4–6; all pages ≤7 options per group; screenshots (light, dark) saved in `docs/screenshots/` | VM: keyboard-only run-through; plan 05 loop; `tests/vm/ui-test.sh`; `tests/look-check.sh --vm` |
-| 8 | **Browser picker: discovery + rules + launch core** (plan 03) | `tools/browser-picker/{discover,rules,launch}.rs`, `tests/fixtures/browsers/*`, `tests/browser-picker.bats` | Fixture matrix of plan 03 criterion 1, 3, 8 in Docker | `cargo test`; Docker |
-| 9 | **Browser picker: spike for Firefox flags and profile groups** (plan 03) | `docs/spikes/browser-picker.md` (VM notes) | Four-case Firefox matrix result recorded; profile-group sqlite schema dumped; Super+B path verified on GNOME 50 | VM only (real Firefox snap + deb) |
-| 10 | **Browser picker UI + module + Settings page** (plan 03; needs steps 0, 7, 9) | `ui.rs`, `main.rs`, `modules/browser-picker/`, desktop + D-Bus service files, Settings Browser page, option in schema | Plan 03 done criteria 2, 4–7; cold ≤400 ms, warm ≤80 ms recorded in `docs/BASELINE.md` | VM `tests/vm/browser-test.sh` |
-| 11 | **Crash: classifier, report builder, redaction** (plan 04) | `tools/crash/{classify,report,redact}.rs`, `tests/fixtures/crash/*`, `tests/crash-{classify,redact}.bats` | Fixture secrets/PII never survive; classifier scenarios pass | `cargo test`; Docker |
-| 12 | **Crash: sources, notification, rate limit, mute** (plan 04) | `tools/crash/{watch,scan,notify}.rs`, units, `tools/ostrich/src/main.rs` (`crash` verbs), `modules/crash/` | Plan 04 criteria 1, 2, 8, 9 | VM: real crashes under apport; `kill -SEGV gnome-shell` |
-| 13 | **Crash: boot-time class (b)** (plan 04) | `ostrich-crash-boot.service`, scan code, `tests/vm/crash-test.sh` | Scenarios (i)–(vii) classify as listed | VM with QEMU resets, sysrq; fixture journals in Docker |
-| 14 | **Crash: agents, consent, skills** (plan 04; needs step 6) | `share/ostrich/agents.d/*`, `share/ostrich/skills/{diagnose-crash,ostrich}`, consent dialog, Settings Crashes page | Plan 04 criteria 5–7 | VM with a fake agent script that records argv; one real-agent run with a throwaway account |
-| 15 | **Crash: systemd-coredump option** (plan 04; optional, last) | module option, hidden by default | VM test: crash file, `coredumpctl` entry, apport dialog all present; only then un-hide | VM |
-| 16 | **Release 0.7.0** | `VERSION`, `tools/Cargo.toml`, `docs/RELEASING.md`, `CONTEXT.md` | `tests/vm/release-suite.sh` all PASS, CI green, README one-liner works on a fresh Ubuntu in the VM | VM release suite |
+| 1 | **Rename + migration** (plan 01), one release with nothing else (0.6.0) | everything in plan 01's table and code list; `lib/migrate.sh`; `tests/{migrate.bats,appid-lint.sh}`; `tests/vm/rename-test.sh`; README trademark notice; `docs/DECISIONS.md`, `docs/RELEASING.md` (never recreate the old repo name) | Migration bats green (three slugs, mixed, twice); app-id lint green; **VM proof that a signed-in stand-in site stays signed in** (and the negative control fails); per-site notification setting survives; dock keeps the drawer icon; wget old-URL chain ends `200` at `ostrich-os`; `rg` leftovers only allowed ones | bats + Docker smoke; VM upgrade from 0.5.0 via the old URL; owner runs the post-rename wget checks |
+| 2 | **Drawer doc drift** (A6) | `docs/FEATURES.md` (DRW-1, DRW-2), `docs/DESIGN.md` (drawer section: dot, hover, sizes, ids), `docs/DECISIONS.md` (a dated note, no history edits); owner confirms 500 vs 300 ms | The four drifts are gone; `rg "loaded dot|300 ms|set-size|ubuntu-ostrich.drawer" docs/` hits only dated history; drawer-test asserts the chosen hover default and no dot | Docs review; `tests/vm/drawer-test.sh` |
+| 3 | **Shared same-site crate** (plan 03) | new `tools/site-match/` (moved `host_of`, `site_of`, `same_site`, `SIGN_IN_HOSTS`, `stays_in_drawer`, new `drawer_offer`), `tools/drawer-host/{Cargo.toml,src/config.rs,src/main.rs}`, `tools/Cargo.toml`; also remove the unused per-site `set-size`/shape code (A6 #3) | Drawer's existing tests pass unchanged against the crate; **property test: `drawer_offer ⇒ stays_in_drawer`**; drawer-test unchanged | `cargo test`, `clippy -D warnings`, Docker; `tests/vm/drawer-test.sh` (63 checks) |
+| 4 | **Browser picker** (plan 03): discovery, rules, launch, UI, module, Settings page | new `tools/browser-picker/`, `modules/browser-picker/`, desktop + D-Bus service files, `tools/welcome` Browser page, `tests/fixtures/browsers/`, `tests/browser-picker.bats`, `tests/vm/browser-test.sh`; first the two spikes (Firefox flag matrix and profile-group schema; Super+B on GNOME 50) | Plan 03 done criteria 2–5, 8–10 | `cargo test` + fixtures in Docker; VM with real browsers; timings in `docs/BASELINE.md` |
+| 5 | **Drawer ↔ picker integration** (plan 03) | `tools/drawer-host` (`open((ss))` action, `--open` CLI, `open_external` with the launch context at all six sites, `--no-drawer`/`--from-drawer` handling), picker `drawer.rs`, `tests/vm/{picker-drawer-test,picker-focus-test}.sh`, `docs/FEATURES.md` (DRW-13) | Plan 03 done criteria 6–7: no loop (negative control fails), picker takes focus, no "is ready" notification, "Open in Drawer" works and rejects off-host URLs | VM only |
+| 6 | **Crash watcher** (plan 04): classifier, report, redaction, sources, notification, rate limit, mute, boot-time class | new `tools/crash/`, `tools/ostrich/src/main.rs` (`ostrich crash …`), `modules/crash/`, units, `tests/fixtures/crash/*`, `tests/crash-{classify,redact}.bats`, `tests/vm/crash-test.sh` | Plan 04 done criteria 1–4, 8, 9 | `cargo test` + Docker for classifier/redaction; VM for real crashes under apport, `kill -SEGV gnome-shell`, QEMU resets |
+| 7 | **Crash skill + agent page in the tour** (plan 04; the page's placement is provisional until step 8) | `share/ostrich-os/{agents.d,skills/diagnose-crash,skills/ostrich}`, consent dialog, `tools/welcome` Crash help page, `copy.toml` entries | Plan 04 done criteria 5–7: consent first, per-agent skill install and revert, read-only skill verified with a fake agent and one real run on a throwaway account | VM with a fake agent that records argv |
+| 8 | **Tour/Settings council** (plan 02), then its build | Council: add `--panel tour`, `tests/vm/evidence.sh` tour/Settings screenshots at 100 %/200 % text, `ostrich-setup --list-pages`; **owner approves before it runs**. Build after approval: `tools/welcome/data/copy.toml`, `tools/welcome/src/{lib.rs,main.rs}`, `tools/ostrich/src/config.rs` (`describe`, `docs`), generated `docs/DEFAULTS.md`, design-skill gap fixes | Plan 02 done criteria 1–6 (the five council targets, copy tests, 200 % text clean) | council verdict with `tests.md`; `cargo test -p welcome`; VM screenshots light/dark at 100 %/200 % |
 
-Dependencies: 2→3→4→5→7; 0→7→10→14 (UI needs the design loop); 1→everything (names); 6→14 (the `ostrich` skill).
+Dependencies: 1 before everything (names and ids); 3 before 4 and 5; 4 before 5; 6 before 7; 7 and the picker's tour offer feed 8 (the council decides where those pages sit). Steps 2 and 3 can run in either order after 1.
 
 ## Decisions needed from the owner
 
-1. Keep the app in **Rust** (recommended) or rewrite in Python (plan 02, 03).
-2. British or American spelling (plan 05).
-3. Whether the rename ships alone as 0.6.0 (recommended) and whether the design skill (step 0) comes before it.
-4. Whether to keep "Ostrich **OS**" given the installer-not-distro reality and the ISO builder (plan 01).
-5. A formal trademark search for "Ostrich OS" before wide release (not done).
+1. Hover delay: 500 ms (the code, and a council note) or 300 ms (the older docs) (A6 #2).
+2. Whether the rename ships alone as 0.6.0 (recommended).
+3. British or American spelling (design skill gap list, plan 02).
+4. Keep "Ostrich **OS**" given the installer-not-distro reality and the ISO builder (plan 01), and a formal trademark search before wide release (not done).
+5. Approval of the council session in plan 02 (agenda, five seats plus judge, evidence list) before anything runs.
 6. Drop or keep `gemini` as an agent (plan 04).
 
 ## What was not verified
 
-Everything below is marked in the plan text; none of it was run on a real kernel, VM or the live machine.
+Marked in the plan text; none of it was run on a real kernel, VM or the live machine.
 
-- Which `core_pattern` wins at runtime (derived from sysctl.d file order in a container whose sysctl is read-only), and that apport gets crashes after `systemd-coredump` is installed.
-- That `raw.githubusercontent.com` follows a repo rename for the old installer URL (must be tested after the rename with `curl -IL`).
-- Exact Canonical trademark wording (fragments came from a page summary; re-read the page before the README text is final).
-- Firefox profile-group sqlite filename and schema, snap Firefox flags, GNOME 50 custom-keybinding path.
+- Which `core_pattern` wins at runtime (derived from sysctl.d order in a container with a read-only sysctl), and that apport gets crashes after `systemd-coredump` is installed.
+- That `raw.githubusercontent.com` follows a repo rename for the old installer URL (test after the rename, with wget).
+- GNOME's per-app notification child naming and key set, and the GNOME 50 custom-keybinding path.
+- Exact Canonical trademark wording (fragments from a page summary; re-read the page before the README text is final).
+- Firefox profile-group sqlite filename and schema, snap Firefox flags.
+- That a `GdkAppLaunchContext` from the drawer yields a token the shell accepts in every one of the six cases (the VM test with a negative control is the check).
 - Whether `notify-send --action` works on GNOME 50 (the repo says no; upstream gives no reason).
 - Opencode `--prompt` and Codex `codex "<prompt>"` invocations.
-- Name search for "Ostrich OS" covered GitHub, PyPI, npm, crates.io, Flathub, Snap Store and the web, not trademark registers.
+- Headless dark and 200 % text: tried several ways in the container, none worked; VM only.
+- The name search covered GitHub, PyPI, npm, crates.io, Flathub, the Snap Store and the web, not trademark registers.
