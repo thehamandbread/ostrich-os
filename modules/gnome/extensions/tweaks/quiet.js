@@ -13,8 +13,8 @@ import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import {shellField} from './_lib/patches.js';
 import {Signals} from './_lib/signals.js';
 
-const FOCUS = 'focus@ubuntu-ostrich';
-const FOCUS_SCHEMA = 'org.gnome.shell.extensions.ubuntu-ostrich.focus';
+const FOCUS = 'focus@ostrich-os';
+const FOCUS_SCHEMA = 'org.gnome.shell.extensions.ostrich-os.focus';
 const EXTENSION_ACTIVE = 1; // ExtensionState.ACTIVE
 
 const focusRunning = () => Main.extensionManager.lookup(FOCUS)?.state === EXTENSION_ACTIVE;

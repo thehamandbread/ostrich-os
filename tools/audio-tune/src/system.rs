@@ -15,12 +15,12 @@ fn config_home() -> PathBuf {
 }
 
 pub fn conf_path() -> PathBuf {
-    config_home().join("pipewire/pipewire.conf.d/90-ubuntu-ostrich-speakers.conf")
+    config_home().join("pipewire/pipewire.conf.d/90-ostrich-os-speakers.conf")
 }
 
 /// The listening test's result: "low mid high" gains in dB.
 pub fn custom_path() -> PathBuf {
-    config_home().join("ubuntu-ostrich/speakers-custom")
+    config_home().join("ostrich-os/speakers-custom")
 }
 
 pub fn parse_custom(text: &str) -> Option<[f64; 3]> {

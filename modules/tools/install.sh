@@ -4,7 +4,7 @@
 #
 # From a checkout with a build in tools/target/release, those binaries are used. Otherwise the
 # release for VERSION is downloaded and checked against its SHA256SUMS. `ostrich` goes to
-# ~/.local/bin and the tools it runs to ~/.local/libexec/ubuntu-ostrich. The system helper is staged
+# ~/.local/bin and the tools it runs to ~/.local/libexec/ostrich-os. The system helper is staged
 # in dist/ and installed as root here: the Store needs it on every machine (sandbox profiles for apps
 # from GitHub); the hardware modules reinstall it only if it changed. The drawer starts hidden at login, so messaging services
 # can notify. The wizard is in the app grid and opens at the next login until it's finished.
@@ -18,18 +18,18 @@ module_init "$@"
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 DIST="${DIST:-$REPO/dist}"
 VERSION="$(cat "$REPO/VERSION")"
-RELEASE_URL="${RELEASE_URL:-https://github.com/thehamandbread/ubuntu-ostrich/releases/download/v$VERSION}"
+RELEASE_URL="${RELEASE_URL:-https://github.com/thehamandbread/ostrich-os/releases/download/v$VERSION}"
 BUILD_DIR="${BUILD_DIR:-$REPO/tools/target/release}"
 BIN_DIR="${BIN_DIR:-$HOME/.local/bin}"
-LIBEXEC_DIR="${LIBEXEC_DIR:-$HOME/.local/libexec/ubuntu-ostrich}"
+LIBEXEC_DIR="${LIBEXEC_DIR:-$HOME/.local/libexec/ostrich-os}"
 AUTOSTART_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/autostart"
 LIBEXEC_TOOLS=(ostrich-drawer ostrich-setup ostrich-store ostrich-store-gtk ostrich-theme ostrich-speakers)
 APPS_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/applications"
 ICONS_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/icons/hicolor"
-STORE_ID=ubuntu-ostrich.store.desktop
-WELCOME_DONE="${XDG_CONFIG_HOME:-$HOME/.config}/ubuntu-ostrich/welcome-done"
+STORE_ID=ostrich_os.store.desktop
+WELCOME_DONE="${XDG_CONFIG_HOME:-$HOME/.config}/ostrich-os/welcome-done"
 HELPER=ostrich-system-helper
-TARBALL="ubuntu-ostrich-tools-v$VERSION-amd64.tar.gz"
+TARBALL="ostrich-os-tools-v$VERSION-amd64.tar.gz"
 
 # shellcheck source=lib/tools-build.sh
 source "$LIB_DIR/tools-build.sh"
@@ -90,7 +90,7 @@ have_helper_build && install_system_helper
 # for the light one. Both go to $SETS_DIR; the one for the current style goes into the icon theme as
 # ostrich-NAME in scalable/apps, and ostrich-icon-style swaps them when the style changes. The 16 px
 # ostrich-NAME-symbolic (the same in both sets) go to symbolic/apps.
-SETS_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/ubuntu-ostrich/icons"
+SETS_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/ostrich-os/icons"
 case $(gsettings get org.gnome.desktop.interface color-scheme 2>/dev/null || true) in
 *prefer-dark*) STYLE_DIR="$REPO/modules/tools/icons" ;;
 *) STYLE_DIR="$REPO/modules/tools/icons-light" ;;
@@ -114,7 +114,7 @@ cat >"$autostart" <<DESKTOP
 [Desktop Entry]
 Type=Application
 Name=Drawer
-Comment=Ubuntu Ostrich web-app drawer (starts hidden; Super+Alt+D shows it)
+Comment=Ostrich OS web-app drawer (starts hidden; Super+Alt+D shows it)
 Exec=$LIBEXEC_DIR/ostrich-drawer --hidden
 Icon=ostrich-drawer
 NoDisplay=true
@@ -143,26 +143,19 @@ Icon=ostrich-drawer
 NoDisplay=true
 X-GNOME-UsesNotifications=true
 DESKTOP
-install_file "$autostart" "$APPS_DIR/ubuntu_ostrich.drawer.desktop"
-# Up to 0.1.4 the drawer was ubuntu-ostrich.drawer (an id the desktop portal crashes on): its
-# launcher and per-site entries go.
-for f in "$APPS_DIR"/ubuntu-ostrich.drawer*.desktop; do
-	[[ -e $f ]] || continue
-	changed "remove the old drawer entry $f"
-	run_cmd rm -f -- "$f"
-done
+install_file "$autostart" "$APPS_DIR/ostrich_os.drawer.desktop"
 
 cat >"$autostart" <<DESKTOP
 [Desktop Entry]
 Type=Application
 Name=Ostrich Settings
-Comment=Every Ubuntu Ostrich setting: theme, dock, drawer, blur, workspaces, power, speakers and more
+Comment=Every Ostrich OS setting: theme, dock, drawer, blur, workspaces, power, speakers and more
 Exec=$LIBEXEC_DIR/ostrich-setup
 Icon=ostrich-settings
 Categories=Settings;
 DESKTOP
 # Named after the app id, so GNOME ties the window (and its notices) to this entry.
-install_file "$autostart" "$APPS_DIR/ubuntu-ostrich.setup.desktop"
+install_file "$autostart" "$APPS_DIR/ostrich_os.setup.desktop"
 # Opens at the next login until it's finished (it removes this entry itself).
 if [[ ! -e $WELCOME_DONE ]]; then
 	install_file "$autostart" "$AUTOSTART_DIR/ostrich-setup.desktop"
@@ -308,7 +301,7 @@ apt_install "${MEDIA_PACKAGES[@]}"
 # decoded with GStreamer (Ubuntu's own) and cut to a 20-second excerpt. Without one (offline, a
 # checksum mismatch) the tuner uses pink noise instead. Nothing is downloaded twice.
 CLIPS_TSV="${CLIPS_TSV:-$REPO/tools/audio-tune/data/clips.tsv}"
-CLIP_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/ubuntu-ostrich/audio"
+CLIP_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/ostrich-os/audio"
 install_clips() {
 	local id name _kind url sha _start _secs licence credit tmp
 	if ! command -v gst-launch-1.0 >/dev/null 2>&1 || ! command -v curl >/dev/null 2>&1; then

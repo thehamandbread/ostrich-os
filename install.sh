@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# install.sh: bootstrap entry point for Ubuntu Ostrich.
+# install.sh: bootstrap entry point for Ostrich OS.
 #
 #   wget -qO- <url>/install.sh | bash             (fetches the repo, then runs from it;
 #                                                  wget because a fresh Ubuntu has no curl or git)
@@ -8,11 +8,11 @@
 #   ostrich uninstall (= install.sh --uninstall)  (put everything back as the restore point recorded)
 set -euo pipefail
 
-readonly PROJECT="ubuntu-ostrich"
+readonly PROJECT="ostrich-os"
 readonly TARGET_ID="ubuntu"
 readonly TARGET_VERSION="26.04"
-REPO_URL="${REPO_URL:-https://github.com/thehamandbread/ubuntu-ostrich.git}"
-REPO_SLUG="${REPO_SLUG:-thehamandbread/ubuntu-ostrich}"
+REPO_URL="${REPO_URL:-https://github.com/thehamandbread/ostrich-os.git}"
+REPO_SLUG="${REPO_SLUG:-thehamandbread/ostrich-os}"
 # A tag or branch to fetch. Unset: `main` for a first install, the latest release for --update
 # (the tools and extension zips are published per release, so main can be ahead of them).
 REPO_REF="${REPO_REF:-}"
@@ -40,7 +40,7 @@ usage() {
 	cat <<EOF
 Usage: install.sh [options]
 
-Set up Ubuntu Ostrich on Ubuntu ${TARGET_VERSION}. Safe to re-run.
+Set up Ostrich OS on Ubuntu ${TARGET_VERSION}. Safe to re-run.
 
 Options:
   -n, --dry-run   Show what would be done without changing anything
@@ -50,7 +50,7 @@ Options:
       --clean     Switch off every other extension and reset its settings (undoable)
       --uninstall Put everything back as it was before the first install
         -y, --yes           don't ask first
-        --keep-new-settings only undo Ubuntu Ostrich's own settings
+        --keep-new-settings only undo Ostrich OS's own settings
         --remove-packages   also remove the packages it added
   -h, --help      Show this help
 
@@ -211,6 +211,8 @@ main() {
 	source "$repo/lib/restore.sh"
 	# shellcheck source=lib/tools-build.sh
 	source "$repo/lib/tools-build.sh"
+	# shellcheck source=lib/migrate.sh
+	source "$repo/lib/migrate.sh"
 
 	check_not_root
 	log_init
@@ -230,11 +232,47 @@ main() {
 	((DRY_RUN)) && info "Dry run: nothing will be changed"
 	choose_mode
 	check_tools_build "${BUILD_DIR:-$repo/tools/target/release}" "$repo" # before anything changes
+	# May exec; never call it inside $(...), which would capture the whole install.
+	relocate_repo "$repo"
 	take_restore_point
+	# Moves an install made under an earlier name (lib/migrate.sh), in this shell so STATE_DIR,
+	# LOG_FILE, RESTORE_DIR and BACKUP_DIR follow the state directory. Our running apps stop first;
+	# the drawer is asked, never killed, and while it runs its data stays where it is.
+	migrate_stop_apps
+	migrate_run
+	local moved=$MIG_CHANGES
 	remember_source "$repo"
 	export INSTALL_MODE
 	run_modules "$repo"
+	# The new launchers and extensions are in: now the per-site notification settings, then what
+	# the old names left behind. Root-owned old files go on a later run, once you have logged
+	# out and the old extensions are no longer loaded.
+	migrate_notifications
+	migrate_finish
+	if ((moved == 0)) && [[ -e $STATE_DIR/migrated-from ]]; then migrate_root; fi
+	if ((MIG_DRAWER_SKIPPED)); then
+		info "The drawer was running, so its data (your web logins) was not moved yet. Log out and back in, then run \`ostrich update\`."
+	fi
+	if ((MIG_RELOGIN)); then
+		info "Log out and back in to finish: the extensions have new names, which GNOME Shell only finds at login."
+	fi
 	info "Done"
+}
+
+# Running from an earlier name's copy of the source (an update started by an old install): that
+# directory is about to be moved, so carry on from the new one (exec), or return if not needed.
+relocate_repo() {
+	local repo=$1 s data=${XDG_DATA_HOME:-$HOME/.local/share}
+	for s in "${MIGRATE_OLD_SLUGS[@]}"; do
+		[[ $(realpath "$repo") == "$data/$s/src" ]] || continue
+		((DRY_RUN)) && return 0
+		info "continuing from $SRC_DIR: the source copy at $repo belongs to an earlier name"
+		rm -rf "$SRC_DIR"
+		mkdir -p "$(dirname "$SRC_DIR")"
+		cp -a "$repo" "$SRC_DIR"
+		exec bash "$SRC_DIR/install.sh" "${ARGS[@]}"
+	done
+	return 0
 }
 
 # Where this install came from, so `ostrich update` and `ostrich uninstall` find it when it's a
@@ -252,7 +290,7 @@ choose_mode() {
 	local ext_home="${XDG_DATA_HOME:-$HOME/.local/share}/gnome-shell/extensions" d
 	local -a others=()
 	for d in "$ext_home"/*/; do
-		[[ -d $d && $(basename "$d") != *@ubuntu-ostrich ]] && others+=("$(basename "$d")")
+		[[ -d $d && $(basename "$d") != *@ostrich-os ]] && others+=("$(basename "$d")")
 	done
 	((${#others[@]} > 0)) || return 0
 	if ((DRY_RUN)) || [[ ! -t 0 ]]; then
@@ -260,7 +298,7 @@ choose_mode() {
 		return 0
 	fi
 	printf '\n  You have %s other GNOME extension(s): %s\n\n' "${#others[@]}" "${others[*]}" >&2
-	printf '    1) Keep them (recommended). Ubuntu Ostrich switches off only the ones it replaces\n' >&2
+	printf '    1) Keep them (recommended). Ostrich OS switches off only the ones it replaces\n' >&2
 	printf '       (dock, tray, blur, tiling, system monitor, workspace bar...) and carries their settings over.\n' >&2
 	printf '    2) Clean start. Switch off all of them and reset their settings.\n\n' >&2
 	printf '  Either way nothing is deleted, and "ostrich uninstall" puts everything back.\n\n' >&2

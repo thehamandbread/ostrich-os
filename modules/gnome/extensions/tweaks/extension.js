@@ -26,7 +26,7 @@ import {PowerRow} from './powerrow.js';
 import {Quiet} from './quiet.js';
 import {BluetoothDevices} from './btdevices.js';
 
-const HELPER = '/usr/libexec/ubuntu-ostrich/system-helper';
+const HELPER = '/usr/libexec/ostrich-os/system-helper';
 const WALLPAPER_SETTLE_MS = 2000; // the wallpaper's light and dark URIs change one after the other
 
 // Ubuntu's Yaru icon themes come in pairs (Yaru-sage, Yaru-sage-dark), and nothing switches them when
@@ -178,7 +178,7 @@ export default class TweaksExtension extends Extension {
         const dark = this._interface.get_string('color-scheme') === 'prefer-dark';
         let scheme = null;
         try {
-            const [, bytes] = GLib.file_get_contents(GLib.build_filenamev([GLib.get_user_config_dir(), 'ubuntu-ostrich', 'scheme', 'current']));
+            const [, bytes] = GLib.file_get_contents(GLib.build_filenamev([GLib.get_user_config_dir(), 'ostrich-os', 'scheme', 'current']));
             scheme = new TextDecoder().decode(bytes).trim();
         } catch {
             // no scheme applied
@@ -249,7 +249,7 @@ export default class TweaksExtension extends Extension {
         const on = this._settings.get_boolean('today-panel');
         if (on && !this._today) {
             this._today = new Today(this._settings, argv => {
-                const ours = GLib.build_filenamev([GLib.get_home_dir(), '.local', 'libexec', 'ubuntu-ostrich', argv[0]]);
+                const ours = GLib.build_filenamev([GLib.get_home_dir(), '.local', 'libexec', 'ostrich-os', argv[0]]);
                 const cmd = GLib.file_test(ours, GLib.FileTest.IS_EXECUTABLE) ? ours : argv[0];
                 try {
                     Gio.Subprocess.new([cmd, ...argv.slice(1)], Gio.SubprocessFlags.NONE);
@@ -276,7 +276,7 @@ export default class TweaksExtension extends Extension {
             const palette = readPalette();
             const fromWallpaper = palette && (palette.candidates ?? []).includes(palette.accent);
             if (fromWallpaper) {
-                const theme = GLib.build_filenamev([GLib.get_home_dir(), '.local', 'libexec', 'ubuntu-ostrich', 'ostrich-theme']);
+                const theme = GLib.build_filenamev([GLib.get_home_dir(), '.local', 'libexec', 'ostrich-os', 'ostrich-theme']);
                 if (GLib.file_test(theme, GLib.FileTest.IS_EXECUTABLE))
                     run([theme, 'apply', '1']);
             }

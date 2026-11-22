@@ -386,7 +386,7 @@ pub struct Paths {
 impl Paths {
     pub fn new(config_home: &Path) -> Paths {
         Paths {
-            config: config_home.join("ubuntu-ostrich/welcome-done"),
+            config: config_home.join("ostrich-os/welcome-done"),
             autostart: config_home.join("autostart/ostrich-setup.desktop"),
         }
     }

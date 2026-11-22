@@ -1,6 +1,6 @@
 # Music and speech for tuning the speakers by ear (ostrich speakers clips). Public domain, from
 # Wikimedia Commons; downloaded at install time, checked against the SHA-256 here, decoded with
-# GStreamer, and cut to a 20-second excerpt in ~/.local/share/ubuntu-ostrich/audio/<id>.wav.
+# GStreamer, and cut to a 20-second excerpt in ~/.local/share/ostrich-os/audio/<id>.wav.
 # Nothing here is committed audio: only where to get it.
 #
 # id	name	kind	url	sha256	start_s	seconds	licence	credit

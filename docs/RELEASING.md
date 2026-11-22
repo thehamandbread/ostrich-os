@@ -13,6 +13,6 @@ It refuses to publish unless CI passed on that commit. CI can't run the VM tests
 4. `bats tests/`, `tests/js-test.sh`, `tests/lint-js.sh`, shellcheck and shfmt (as in CLAUDE.md).
 5. Tag and push the tag. Then install the release once from the one-line command in the README.
 6. Check the update path on a machine with the previous release: the Store's Updates tab lists
-   "Ubuntu Ostrich" with the new tag (the Store reads GitHub's latest release and compares it with
+   "Ostrich OS" with the new tag (the Store reads GitHub's latest release and compares it with
    its own version), and its Update button runs `REPO_REF=<tag> ostrich update` in a terminal.
    `ostrich update` with no tag fetches the latest release (`install.sh` `resolve_ref`), not `main`.

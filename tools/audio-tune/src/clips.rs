@@ -59,7 +59,7 @@ pub fn dir() -> PathBuf {
         .unwrap_or_else(|| {
             PathBuf::from(std::env::var_os("HOME").unwrap_or_default()).join(".local/share")
         });
-    data.join("ubuntu-ostrich/audio")
+    data.join("ostrich-os/audio")
 }
 
 /// The installed excerpt, if the installer got it.

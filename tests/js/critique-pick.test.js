@@ -9,23 +9,23 @@ function check(name, cond) {
 }
 
 let d = describe([{type: 'St_Icon'}, {type: 'Gjs_ui_dash_DashIcon', app: 'Firefox'}, {type: 'St_Bin', name: 'ost-dock'}]);
-check('a dock icon', d.label === 'Dock › Firefox' && d.owner === 'dock@ubuntu-ostrich');
+check('a dock icon', d.label === 'Dock › Firefox' && d.owner === 'dock@ostrich-os');
 d = describe([{type: 'St_Icon'}, {type: 'X', styleClass: 'show-apps'}, {type: 'St_Bin', name: 'ost-dock'}]);
 check('the dock\'s app grid button', d.label === 'Dock › app grid button');
-d = describe([{type: 'St_Icon'}, {type: 'Gjs_SiteButton', role: 'drawer@ubuntu-ostrich-claude'}]);
-check('a drawer icon', d.label === 'Ostrich Drawer › claude icon' && d.owner === 'drawer@ubuntu-ostrich');
-check('the drawer\'s + and ⌄', describe([{role: 'drawer@ubuntu-ostrich--add'}]).label === 'Ostrich Drawer › + (add a site)' &&
-    describe([{role: 'drawer@ubuntu-ostrich--more'}]).label === 'Ostrich Drawer › ⌄ menu');
-d = describe([{type: 'St_Label', text: 'mail'}, {type: 'St_Button', styleClass: 'ost-ws-button'}, {role: 'workspaces@ubuntu-ostrich'}]);
-check('a workspace pill', d.label === 'Workspace bar › mail' && d.owner === 'workspaces@ubuntu-ostrich');
+d = describe([{type: 'St_Icon'}, {type: 'Gjs_SiteButton', role: 'drawer@ostrich-os-claude'}]);
+check('a drawer icon', d.label === 'Ostrich Drawer › claude icon' && d.owner === 'drawer@ostrich-os');
+check('the drawer\'s + and ⌄', describe([{role: 'drawer@ostrich-os--add'}]).label === 'Ostrich Drawer › + (add a site)' &&
+    describe([{role: 'drawer@ostrich-os--more'}]).label === 'Ostrich Drawer › ⌄ menu');
+d = describe([{type: 'St_Label', text: 'mail'}, {type: 'St_Button', styleClass: 'ost-ws-button'}, {role: 'workspaces@ostrich-os'}]);
+check('a workspace pill', d.label === 'Workspace bar › mail' && d.owner === 'workspaces@ostrich-os');
 check('GNOME\'s own menus', describe([{styleClass: 'quick-settings'}]).label === 'Quick settings menu' &&
     describe([{styleClass: 'popup-menu-content'}]).label === 'Menu' && describe([{role: 'dateMenu'}]).label === 'Clock and calendar');
 d = describe([{type: 'MetaSurfaceActorWayland'}], {appId: 'org.gnome.Nautilus.desktop', appName: 'Files', title: 'Home'});
 check('a window', d.label === 'Window: Files — Home' && d.owner === 'org.gnome.Nautilus.desktop');
-d = describe([{type: 'MetaSurfaceActorWayland'}], {appId: 'ubuntu_ostrich.drawer', site: 'Claude'});
-check('the drawer window', d.label === 'Ostrich Drawer window (Claude)' && d.owner === 'drawer@ubuntu-ostrich');
+d = describe([{type: 'MetaSurfaceActorWayland'}], {appId: 'ostrich_os.drawer', site: 'Claude'});
+check('the drawer window', d.label === 'Ostrich Drawer window (Claude)' && d.owner === 'drawer@ostrich-os');
 check('unknown: its type', describe([{type: 'ClutterActor'}]).label === 'ClutterActor' && describe([]).label === 'the desktop');
-check('blur backdrops belong to blur', ownerOf([{name: 'ost-blur-backdrop'}]) === 'blur@ubuntu-ostrich');
+check('blur backdrops belong to blur', ownerOf([{name: 'ost-blur-backdrop'}]) === 'blur@ostrich-os');
 
 check('slugs', slug('Dock icons are TOO far apart!!') === 'dock-icons-are-too-far-apart' && slug('???') === 'note');
 check('crop kept on screen', JSON.stringify(cropRect({x: 5, y: 5, width: 10, height: 10}, 20, {width: 100, height: 100})) === '{"x":0,"y":0,"width":35,"height":35}');

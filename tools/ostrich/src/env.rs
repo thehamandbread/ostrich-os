@@ -1,10 +1,10 @@
 //! `ostrich env`: environments (saved desktops), driven through the shell's
-//! org.ubuntuostrich.Environments D-Bus interface (the focus extension) with `gdbus`.
+//! ostrich_os.Environments D-Bus interface (the focus extension) with `gdbus`.
 
 use std::process::Command;
 
-const DEST: &str = "org.ubuntuostrich.Environments";
-const PATH: &str = "/org/ubuntuostrich/Environments";
+const DEST: &str = "ostrich_os.Environments";
+const PATH: &str = "/ostrich_os/Environments";
 
 pub const USAGE: &str = "Usage: ostrich workspace <command>   (or: ostrich env)
 
@@ -20,7 +20,7 @@ pub const USAGE: &str = "Usage: ostrich workspace <command>   (or: ostrich env)
   drawer NAME clear              use the normal drawer sites in it
 
 A saved workspace can also turn on focus with only its apps, a power mode and Do Not Disturb:
-edit ~/.config/ubuntu-ostrich/environments/NAME.json, or use Ostrich Settings.
+edit ~/.config/ostrich-os/environments/NAME.json, or use Ostrich Settings.
 Drawer site ids are the ones `ostrich drawer --list` prints.
 ";
 

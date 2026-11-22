@@ -1,0 +1,8 @@
+# Targets an earlier name managed; chezmoi removes them. Only the files it wrote: a directory kept
+# by lib/migrate.sh after a conflict holds the user's own data and is left alone.
+.config/ubuntu-ostrich/bashrc.sh
+.config/ubuntu-ostrich/settings.dconf
+.config/ostrich-ubuntu/bashrc.sh
+.config/ostrich-ubuntu/settings.dconf
+.config/cleanest-ubuntu-setup/bashrc.sh
+.config/cleanest-ubuntu-setup/settings.dconf

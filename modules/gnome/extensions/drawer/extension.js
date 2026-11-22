@@ -35,8 +35,8 @@ import {DrawerBar} from './bar.js';
 import {AppSlot} from './appslot.js';
 import {drawerSize, placeUnder, inside, hoverStep, hoverDelay, stepSite, pinnedWith, pinnedWithout} from './barlogic.js';
 
-const APP_ID = 'ubuntu_ostrich.drawer';
-const APP_PATH = '/ubuntu_ostrich/drawer'; // GApplication turns '.' and '-' into '/' and '_'
+const APP_ID = 'ostrich_os.drawer';
+const APP_PATH = '/ostrich_os/drawer'; // GApplication turns '.' and '-' into '/' and '_'
 // Opening grows the drawer down out of its icon: a little scale and lift, and a fade.
 const FROM = {scale_x: 0.96, scale_y: 0.9, opacity: 0, translation_y: -16};
 const TO = {scale_x: 1, scale_y: 1, opacity: 255, translation_y: 0};
@@ -54,7 +54,7 @@ function isDrawer(win) {
 }
 
 function libexec(cmd) {
-    const ours = GLib.build_filenamev([GLib.get_home_dir(), '.local', 'libexec', 'ubuntu-ostrich', cmd]);
+    const ours = GLib.build_filenamev([GLib.get_home_dir(), '.local', 'libexec', 'ostrich-os', cmd]);
     return GLib.file_test(ours, GLib.FileTest.IS_EXECUTABLE) ? ours : GLib.find_program_in_path(cmd) ?? ours;
 }
 

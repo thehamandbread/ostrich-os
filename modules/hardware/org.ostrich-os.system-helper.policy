@@ -8,8 +8,8 @@
      else falls to pkexec's own default, which asks for an administrator. To change a default, add a
      rule in /etc/polkit-1/rules.d/ (docs/DEFAULTS.md). -->
 <policyconfig>
-  <vendor>Ubuntu Ostrich</vendor>
-  <action id="org.ubuntu-ostrich.system-helper.power">
+  <vendor>Ostrich OS</vendor>
+  <action id="org.ostrich-os.system-helper.power">
     <description>Apply a power mode's hardware settings</description>
     <message>Authentication is required to change power settings</message>
     <defaults>
@@ -17,10 +17,10 @@
       <allow_inactive>auth_admin</allow_inactive>
       <allow_active>yes</allow_active>
     </defaults>
-    <annotate key="org.freedesktop.policykit.exec.path">/usr/libexec/ubuntu-ostrich/system-helper</annotate>
+    <annotate key="org.freedesktop.policykit.exec.path">/usr/libexec/ostrich-os/system-helper</annotate>
     <annotate key="org.freedesktop.policykit.exec.argv1">power</annotate>
   </action>
-  <action id="org.ubuntu-ostrich.system-helper.touchscreen">
+  <action id="org.ostrich-os.system-helper.touchscreen">
     <description>Turn the touchscreen on or off</description>
     <message>Authentication is required to turn the touchscreen on or off</message>
     <defaults>
@@ -28,10 +28,10 @@
       <allow_inactive>auth_admin</allow_inactive>
       <allow_active>yes</allow_active>
     </defaults>
-    <annotate key="org.freedesktop.policykit.exec.path">/usr/libexec/ubuntu-ostrich/system-helper</annotate>
+    <annotate key="org.freedesktop.policykit.exec.path">/usr/libexec/ostrich-os/system-helper</annotate>
     <annotate key="org.freedesktop.policykit.exec.argv1">touchscreen</annotate>
   </action>
-  <action id="org.ubuntu-ostrich.system-helper.graphics">
+  <action id="org.ostrich-os.system-helper.graphics">
     <description>Change the graphics mode</description>
     <message>Change the graphics mode. You'll need to log out afterwards.</message>
     <defaults>
@@ -39,10 +39,10 @@
       <allow_inactive>auth_admin</allow_inactive>
       <allow_active>auth_admin_keep</allow_active>
     </defaults>
-    <annotate key="org.freedesktop.policykit.exec.path">/usr/libexec/ubuntu-ostrich/system-helper</annotate>
+    <annotate key="org.freedesktop.policykit.exec.path">/usr/libexec/ostrich-os/system-helper</annotate>
     <annotate key="org.freedesktop.policykit.exec.argv1">graphics</annotate>
   </action>
-  <action id="org.ubuntu-ostrich.system-helper.apparmor">
+  <action id="org.ostrich-os.system-helper.apparmor">
     <description>Let an app from GitHub use its sandbox</description>
     <message>Let an app you installed from GitHub use its security sandbox (an AppArmor rule).</message>
     <defaults>
@@ -50,7 +50,7 @@
       <allow_inactive>auth_admin</allow_inactive>
       <allow_active>auth_admin_keep</allow_active>
     </defaults>
-    <annotate key="org.freedesktop.policykit.exec.path">/usr/libexec/ubuntu-ostrich/system-helper</annotate>
+    <annotate key="org.freedesktop.policykit.exec.path">/usr/libexec/ostrich-os/system-helper</annotate>
     <annotate key="org.freedesktop.policykit.exec.argv1">apparmor</annotate>
   </action>
 </policyconfig>

@@ -21,8 +21,8 @@ impl Default for Paths {
         Paths {
             sys: PathBuf::from("/sys"),
             udev_data: PathBuf::from("/run/udev/data"),
-            state: PathBuf::from("/var/lib/ubuntu-ostrich/touchscreen.state"),
-            rule: PathBuf::from("/etc/udev/rules.d/90-ubuntu-ostrich-touchscreen.rules"),
+            state: PathBuf::from("/var/lib/ostrich-os/touchscreen.state"),
+            rule: PathBuf::from("/etc/udev/rules.d/90-ostrich-os-touchscreen.rules"),
         }
     }
 }
@@ -160,7 +160,7 @@ pub fn off(p: &Paths, persist: bool) -> Result<String, String> {
     }
     fs::write(&p.state, state).map_err(|e| format!("{}: {e}", p.state.display()))?;
     if persist {
-        let header = "# Written by ubuntu-ostrich system-helper: keeps the touchscreen off. Remove with `touchscreen on`.\n";
+        let header = "# Written by ostrich-os system-helper: keeps the touchscreen off. Remove with `touchscreen on`.\n";
         fs::write(&p.rule, format!("{header}{rules}"))
             .map_err(|e| format!("{}: {e}", p.rule.display()))?;
     }

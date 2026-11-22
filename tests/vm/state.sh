@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Prints what Ubuntu Ostrich could have changed, for a before/after comparison (runs in the VM).
+# Prints what Ostrich OS could have changed, for a before/after comparison (runs in the VM).
 uid=$(id -u)
 export XDG_RUNTIME_DIR=/run/user/$uid DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/$uid/bus
 echo "== dconf"
@@ -15,10 +15,10 @@ echo "== extensions"
 ls ~/.local/share/gnome-shell/extensions 2>/dev/null
 echo "== files"
 for p in ~/.bashrc ~/.gitconfig ~/.config/xdg-terminals.list ~/.config/ghostty ~/.config/gtk-3.0 ~/.config/gtk-4.0 ~/.config/autostart \
-	~/.config/chezmoi ~/.config/ubuntu-ostrich ~/.config/systemd/user ~/.config/pipewire ~/.local/bin ~/.local/libexec \
+	~/.config/chezmoi ~/.config/ostrich-os ~/.config/systemd/user ~/.config/pipewire ~/.local/bin ~/.local/libexec \
 	~/.local/share/gnome-shell/extensions ~/.local/share/applications ~/.local/share/icons/hicolor \
-	~/.local/share/backgrounds ~/.local/share/ubuntu-ostrich ~/.config/mimeapps.list; do
+	~/.local/share/backgrounds ~/.local/share/ostrich-os ~/.config/mimeapps.list; do
 	[ -e "$p" ] && find "$p" -type f -not -path '*/gschemas.compiled' -print0 | sort -z | xargs -0 -r md5sum
 done
 echo "== system"
-ls /usr/libexec/ubuntu-ostrich /usr/share/polkit-1/actions/*ubuntu-ostrich* /etc/systemd/system/ubuntu-ostrich* /etc/modprobe.d/*ubuntu-ostrich* /etc/udev/rules.d/*ubuntu-ostrich* 2>/dev/null || true # none: fine
+ls /usr/libexec/ostrich-os /usr/share/polkit-1/actions/*ostrich-os* /etc/systemd/system/ostrich-os* /etc/modprobe.d/*ostrich-os* /etc/udev/rules.d/*ostrich-os* 2>/dev/null || true # none: fine

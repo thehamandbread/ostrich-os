@@ -10,7 +10,7 @@ set -euo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/../../../lib/module.sh"
 module_init "$@"
 
-UNIT=ubuntu-ostrich-power.service
+UNIT=ostrich-os-power.service
 UNIT_DEST="${UNIT_DEST:-/etc/systemd/system/$UNIT}"
 
 has_knobs() {
@@ -34,9 +34,9 @@ install_system_helper
 unit=$(mktemp)
 trap 'rm -f "$unit"' EXIT
 cat >"$unit" <<UNIT
-# Ubuntu Ostrich: re-apply the power mode's extra knobs at boot.
+# Ostrich OS: re-apply the power mode's extra knobs at boot.
 [Unit]
-Description=Re-apply Ubuntu Ostrich power mode
+Description=Re-apply Ostrich OS power mode
 After=power-profiles-daemon.service
 Wants=power-profiles-daemon.service
 

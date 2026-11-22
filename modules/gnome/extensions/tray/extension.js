@@ -290,7 +290,7 @@ class Tray {
         const box = button.container.get_parent();
         const kids = box.get_children();
         const drawer = Object.entries(Main.panel.statusArea)
-            .filter(([role]) => role.startsWith('drawer@ubuntu-ostrich-'))
+            .filter(([role]) => role.startsWith('drawer@ostrich-os-'))
             .map(([, b]) => b.container)
             .filter(c => c.get_parent() === box)
             .sort((a, b) => kids.indexOf(a) - kids.indexOf(b))[0];

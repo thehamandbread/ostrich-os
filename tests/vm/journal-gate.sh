@@ -5,7 +5,7 @@
 #   source "$HERE/journal-gate.sh"; journal_gate     (needs the suite's $VM, `ok` and `bad`)
 #
 # "Ours": a warning our code raised. That is a message naming one of our extensions or widgets
-# (ost-…, Gjs_<ext>_ubuntu-ostrich) or starting with one of our log prefixes ("monitor: …"), or a
+# (ost-…, Gjs_<ext>_ostrich-os) or starting with one of our log prefixes ("monitor: …"), or a
 # stack trace whose top frame (#0) is in our code. A trace that only passes through our code (GNOME
 # 50's app grid destroying a folder twice after focus's app filter changes) is GNOME's own. JS ERRORs
 # count wherever they come from. Each suite starts a fresh boot, so the whole boot is checked.
@@ -15,7 +15,7 @@ JOURNAL_PREFIXES='monitor|blur|dock|drawer|focus|environments|tweaks|now playing
 
 journal_ours() {
 	"$VM" ssh "journalctl --user -b -o cat /usr/bin/gnome-shell" 2>/dev/null |
-		grep -E "JS ERROR|^#0 .*(ubuntu-ostrich|ubuntu_ostrich)|^[^#].*(ubuntu-ostrich|ubuntu_ostrich)|\\bost-[a-z]|non-existent keybinding|^($JOURNAL_PREFIXES): " || true
+		grep -E "JS ERROR|^#0 .*(ostrich-os|ostrich_os)|^[^#].*(ostrich-os|ostrich_os)|\\bost-[a-z]|non-existent keybinding|^($JOURNAL_PREFIXES): " || true
 }
 
 journal_gate() {

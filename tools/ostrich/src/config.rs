@@ -1,4 +1,4 @@
-//! `ostrich config`: every Ubuntu Ostrich setting from the terminal, and a settings file for the
+//! `ostrich config`: every Ostrich OS setting from the terminal, and a settings file for the
 //! dotfiles. Values go through `gsettings` with each extension's own schema (so they're checked
 //! against its types and ranges); export and import use `dconf` on our one path.
 //!
@@ -10,7 +10,7 @@ use std::io::Write;
 use std::path::PathBuf;
 use std::process::{Command, Stdio};
 
-pub const BASE: &str = "/org/gnome/shell/extensions/ubuntu-ostrich/";
+pub const BASE: &str = "/org/gnome/shell/extensions/ostrich-os/";
 
 pub const USAGE: &str = "Usage: ostrich config <command>
 
@@ -25,7 +25,7 @@ pub const USAGE: &str = "Usage: ostrich config <command>
 
 EXT is an extension's short name: blur, dock, drawer, focus, monitor, tiling, tweaks, workspaces.
 To keep your settings in your dotfiles:
-  ostrich config export \"$(chezmoi source-path)/dot_config/ubuntu-ostrich/settings.dconf\"
+  ostrich config export \"$(chezmoi source-path)/dot_config/ostrich-os/settings.dconf\"
 ";
 
 fn extensions_dir() -> PathBuf {
@@ -42,16 +42,13 @@ fn schema(ext: &str) -> Result<(PathBuf, String), String> {
     if !valid_name(ext) {
         return Err(format!("`{ext}` isn't an extension name"));
     }
-    let dir = extensions_dir().join(format!("{ext}@ubuntu-ostrich/schemas"));
+    let dir = extensions_dir().join(format!("{ext}@ostrich-os/schemas"));
     if !dir.is_dir() {
         return Err(format!(
             "there's no `{ext}` extension installed (see `ostrich config list`)"
         ));
     }
-    Ok((
-        dir,
-        format!("org.gnome.shell.extensions.ubuntu-ostrich.{ext}"),
-    ))
+    Ok((dir, format!("org.gnome.shell.extensions.ostrich-os.{ext}")))
 }
 
 /// Our installed extensions that have settings, by short name.
@@ -62,7 +59,7 @@ fn installed() -> Vec<String> {
         .flatten()
         .filter_map(|e| {
             let name = e.file_name().to_string_lossy().into_owned();
-            let short = name.strip_suffix("@ubuntu-ostrich")?.to_string();
+            let short = name.strip_suffix("@ostrich-os")?.to_string();
             e.path().join("schemas").is_dir().then_some(short)
         })
         .collect();
@@ -178,7 +175,7 @@ pub fn run(args: &[String]) -> Result<String, String> {
         ["import", file] => import(file),
         [verb @ ("disable" | "enable"), ext] => {
             schema(ext)?;
-            output(Command::new("gnome-extensions").args([*verb, &format!("{ext}@ubuntu-ostrich")]))
+            output(Command::new("gnome-extensions").args([*verb, &format!("{ext}@ostrich-os")]))
                 .map(|_| format!("{ext}: {verb}d\n"))
         }
         _ => Err(format!("that isn't a config command.\n\n{USAGE}")),
@@ -197,7 +194,7 @@ fn list(ext: &str) -> Result<String, String> {
 fn export() -> Result<String, String> {
     let (kept, dropped) = filter_dump(&dump()?);
     let mut s = String::from(
-        "# Ubuntu Ostrich settings: only what differs from the defaults.\n\
+        "# Ostrich OS settings: only what differs from the defaults.\n\
          # Apply with: ostrich config import FILE  (or keep it in your dotfiles; see `ostrich config help`)\n",
     );
     if !dropped.is_empty() {

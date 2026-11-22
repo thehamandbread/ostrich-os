@@ -158,7 +158,7 @@ PY
 # The system helper's polkit policy: well-formed, one action per command, and only power and the
 # touchscreen promptless (DESIGN.md, Safety); a GitHub app's sandbox profile asks.
 @test "polkit policy: graphics and apparmor ask, power and touchscreen don't" {
-	run python3 -I - "$BATS_TEST_DIRNAME/../modules/hardware/org.ubuntu-ostrich.system-helper.policy" <<'PY'
+	run python3 -I - "$BATS_TEST_DIRNAME/../modules/hardware/org.ostrich-os.system-helper.policy" <<'PY'
 import sys, xml.etree.ElementTree as ET
 actions = {}
 for a in ET.parse(sys.argv[1]).getroot().iter("action"):

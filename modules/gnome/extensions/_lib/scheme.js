@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 // _lib/scheme.js: the user's colour scheme for one extension. `ostrich theme scheme apply` writes
-// ~/.config/ubuntu-ostrich/scheme/NAME.css from the same template as the extension's stylesheet.css,
+// ~/.config/ostrich-os/scheme/NAME.css from the same template as the extension's stylesheet.css,
 // so it is a whole replacement: it's loaded in place of the extension's own stylesheet (St ranks a
 // later custom stylesheet below an earlier one, so loading it on top would lose), and reloaded when
 // it changes (no logout). No file: the built-in colours. GNOME carries loaded stylesheets over when
@@ -15,7 +15,7 @@ const theme = () => St.ThemeContext.get_for_stage(global.stage).get_theme();
 
 export class SchemeStyle {
     constructor(extension) {
-        const dir = GLib.build_filenamev([GLib.get_user_config_dir(), 'ubuntu-ostrich', 'scheme']);
+        const dir = GLib.build_filenamev([GLib.get_user_config_dir(), 'ostrich-os', 'scheme']);
         // The folder is watched, not the file: the tool replaces the file by renaming a new one in.
         GLib.mkdir_with_parents(dir, 0o700);
         this._dir = Gio.File.new_for_path(dir);

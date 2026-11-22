@@ -1,10 +1,10 @@
 {
-  "uuid": "blur@ubuntu-ostrich",
+  "uuid": "blur@ostrich-os",
   "name": "Blur",
   "description": "Live blur behind the top bar, dock and drop-down menus, a static blur behind the overview, blur behind app folders, and a blurred or solid lock screen, each switchable between blur and solid. Re-blurs only when what's behind changes, not when the bar itself redraws.",
   "shell-version": ["50"],
   "session-modes": ["user", "unlock-dialog"],
-  "settings-schema": "org.gnome.shell.extensions.ubuntu-ostrich.blur",
-  "url": "https://github.com/thehamandbread/ubuntu-ostrich",
+  "settings-schema": "org.gnome.shell.extensions.ostrich-os.blur",
+  "url": "https://github.com/thehamandbread/ostrich-os",
   "version": 1
 }

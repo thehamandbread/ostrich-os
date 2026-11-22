@@ -15,8 +15,8 @@
 set -euo pipefail
 
 SYS="${SYS:-/sys}"
-STATE="${STATE:-/var/lib/ubuntu-ostrich/touchscreen.state}"
-RULE="${RULE:-/etc/udev/rules.d/90-ubuntu-ostrich-touchscreen.rules}"
+STATE="${STATE:-/var/lib/ostrich-os/touchscreen.state}"
+RULE="${RULE:-/etc/udev/rules.d/90-ostrich-os-touchscreen.rules}"
 
 die() {
 	echo "touchscreen: $*" >&2

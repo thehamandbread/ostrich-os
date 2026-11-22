@@ -1,4 +1,4 @@
-//! ostrich speakers: speaker tuning with PipeWire's own filter-chain (Ubuntu Ostrich).
+//! ostrich speakers: speaker tuning with PipeWire's own filter-chain (Ostrich OS).
 //!
 //!   ostrich speakers list                         presets
 //!   ostrich speakers show <preset>                response at a few frequencies, and the preamp
@@ -11,7 +11,7 @@
 //!   ostrich speakers clips                       the music and speech clips, and whether each is installed
 //!   ostrich speakers clip-cut <id> <decoded.wav> keep the clip's excerpt (the installer runs this)
 //!
-//! `apply` writes ~/.config/pipewire/pipewire.conf.d/90-ubuntu-ostrich-speakers.conf and
+//! `apply` writes ~/.config/pipewire/pipewire.conf.d/90-ostrich-os-speakers.conf and
 //! restarts PipeWire so it takes effect; `off` removes it. The GUI and the A/B listening test sit on
 //! the same library (see abtest.rs).
 

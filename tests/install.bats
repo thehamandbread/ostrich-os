@@ -36,7 +36,7 @@ setup() {
 	run "$INSTALL" --dry-run
 	[ "$status" -eq 0 ]
 	[[ $output == *"dry-run=1"* ]]
-	grep -q "OS check passed" "$XDG_STATE_HOME/ubuntu-ostrich/install.log"
+	grep -q "OS check passed" "$XDG_STATE_HOME/ostrich-os/install.log"
 }
 
 @test "refuses to run on another OS" {
@@ -82,7 +82,7 @@ setup() {
 	run bash -c 'bash < "$0" -s -- --dry-run' "$INSTALL"
 	[ "$status" -eq 0 ]
 	[[ $output == *"Fetching"* ]]
-	[ -f "$XDG_DATA_HOME/ubuntu-ostrich/src/lib/module.sh" ]
+	[ -f "$XDG_DATA_HOME/ostrich-os/src/lib/module.sh" ]
 }
 
 @test "--dry-run from wget asks for git and curl instead of installing them" {

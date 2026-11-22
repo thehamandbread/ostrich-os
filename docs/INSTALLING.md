@@ -25,7 +25,7 @@ these steps add a second safety net and tell you what to check. From the readine
    ```
 2. From a checkout rather than the one-line install, use a complete build of this commit:
    `tests/vm/build-tools.sh --check` builds it in the test VM, then
-   `export BUILD_DIR=~/.local/share/ubuntu-ostrich/vm/tools-bin`. The installer stops before
+   `export BUILD_DIR=~/.local/share/ostrich-os/vm/tools-bin`. The installer stops before
    changing anything if the build is partial or older than `tools/`.
 3. `./install.sh --dry-run` and read it: it names the tools it will use ("using the tools built
    in …", never "would be downloaded" for a checkout), the restore point, and the hardware modules
@@ -35,10 +35,10 @@ these steps add a second safety net and tell you what to check. From the readine
 
 4. Install on AC power: `./install.sh`. It asks for your password itself.
 5. Before logging out:
-   - `wc -c ~/.local/state/ubuntu-ostrich/restore/original/dconf.ini` is more than 0 (tens of KB
+   - `wc -c ~/.local/state/ostrich-os/restore/original/dconf.ini` is more than 0 (tens of KB
      on a lived-in machine). If it is 0, stop and uninstall.
    - `ostrich --version` is the version you built.
-   - Every `@ubuntu-ostrich` extension is ACTIVE (`gnome-extensions info NAME`); the ones it
+   - Every `@ostrich-os` extension is ACTIVE (`gnome-extensions info NAME`); the ones it
      replaced are off, not deleted.
    - `./install.sh --dry-run` again lists no changes.
 6. After logging back in, only real hardware can show these:
@@ -60,7 +60,7 @@ It prints where it kept a copy of your drawer sites and saved desktops. Don't pa
 
 ## On a USB drive you carry between PCs
 
-This puts a whole Ubuntu Ostrich system on a USB drive: your account, apps and settings live on
+This puts a whole Ostrich OS system on a USB drive: your account, apps and settings live on
 the drive, and it boots on any 64-bit PC from the boot menu. The PC's own disk is never written to,
 and booting the drive adds no boot entry to the PC's firmware. (A *live* USB keeps nothing when you
 unplug it; this is a real install.) Use a USB SSD (128 GB or more); a stick works, but slowly.
@@ -71,7 +71,7 @@ unplug it; this is a real install.) Use a USB SSD (128 GB or more); a stick work
    `sudo setfacl` line to run once so it can write to the drive. Type `ERASE` to go on.
 4. In the installer window: **Erase disk** (the drive is the only disk listed), encryption
    recommended (the passphrase is asked at every boot), your account. After the restart, log in
-   once: a terminal finishes the Ubuntu Ostrich setup. Shut down, then unplug.
+   once: a terminal finishes the Ostrich OS setup. Shut down, then unplug.
 5. On the other PC: power it off, plug the drive in, power on and press the one-time boot key
    (Dell: F12 at the logo), pick the drive under UEFI. Secure Boot can stay on. Don't change BIOS
    settings on someone else's PC (it can ask for their BitLocker recovery key).
@@ -79,3 +79,10 @@ unplug it; this is a real install.) Use a USB SSD (128 GB or more); a stick work
    detect that PC.
 7. Always shut down before unplugging. `image/to-usb.sh --boot /dev/sdX` boots the drive in a
    window on this machine.
+
+## Coming from Ubuntu Ostrich (0.5.0 and earlier)
+
+The project was renamed Ostrich OS in 0.6.0. Run the same one-line command (or `ostrich update`): the installer moves your settings, web logins, restore points and per-site notification choices to the new names, and says when to log out. Two things to know:
+
+- **The drawer keeps your web logins.** If the drawer is running when you update, it is asked to quit; if it will not, its data stays where it is until you log out and run `ostrich update` again. Nothing is deleted before it has been copied and checked.
+- **Settings you keep in your own dotfiles repo** (`ostrich config export …/dot_config/ubuntu-ostrich/settings.dconf`) stay where they are: move that file to `dot_config/ostrich-os/settings.dconf` yourself.

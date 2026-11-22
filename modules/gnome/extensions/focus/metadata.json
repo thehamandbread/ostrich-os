@@ -1,12 +1,12 @@
 {
-  "uuid": "focus@ubuntu-ostrich",
+  "uuid": "focus@ostrich-os",
   "name": "Focus & Environments",
   "description": "Focus mode (quick settings or Super+Alt+F): Do Not Disturb, the drawer muted and hidden, the dock, tray, monitor and workspace bar hidden, and optionally every app except the ones you allow. Environments: save a desktop (its apps and window places) and reopen it on a fresh workspace with one click. Everything comes back exactly as it was.",
   "shell-version": [
     "50"
   ],
   "session-modes": ["user", "unlock-dialog"],
-  "settings-schema": "org.gnome.shell.extensions.ubuntu-ostrich.focus",
-  "url": "https://github.com/thehamandbread/ubuntu-ostrich",
+  "settings-schema": "org.gnome.shell.extensions.ostrich-os.focus",
+  "url": "https://github.com/thehamandbread/ostrich-os",
   "version": 1
 }

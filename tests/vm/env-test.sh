@@ -3,7 +3,7 @@
 #
 #   env-test.sh [--snapshot NAME] [--out DIR]
 #
-# Needs a snapshot with Ubuntu Ostrich installed (default: post-fresh, saved by
+# Needs a snapshot with Ostrich OS installed (default: post-fresh, saved by
 # `e2e.sh --pipe post-fresh`). Opens Files and Text Editor, saves them as a workspace ("environment"
 # in the code), closes them, opens it again and checks both windows come back in their places on a
 # new workspace named after it; opens Calculator there too, then closes it (`ostrich workspace`):
@@ -17,7 +17,7 @@ HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$HERE/journal-gate.sh"
 ROOT="$(cd "$HERE/../.." && pwd)"
 VM="$HERE/vm.sh"
-PROJECT="ubuntu-ostrich"
+PROJECT="ostrich-os"
 VM_DIR="${VM_DIR:-${XDG_DATA_HOME:-$HOME/.local/share}/$PROJECT/vm}"
 SNAPSHOT=post-fresh
 OUT="$VM_DIR/env-test"
@@ -47,7 +47,7 @@ run() { "$VM" ssh "$SESSION $*"; }
 # shellcheck disable=SC2016 # expands in the VM
 OSTRICH='$HOME/.local/bin/ostrich'
 # shellcheck disable=SC2016 # expands in the VM
-FOCUS='gsettings --schemadir $HOME/.local/share/gnome-shell/extensions/focus@ubuntu-ostrich/schemas set org.gnome.shell.extensions.ubuntu-ostrich.focus allowed-apps'
+FOCUS='gsettings --schemadir $HOME/.local/share/gnome-shell/extensions/focus@ostrich-os/schemas set org.gnome.shell.extensions.ostrich-os.focus allowed-apps'
 # is MESSAGE COMMAND...: ok or FAIL depending on COMMAND.
 is() {
 	local msg=$1
@@ -60,7 +60,7 @@ FILES=org.gnome.Nautilus.desktop
 EDITOR=org.gnome.TextEditor.desktop
 # The State JSON, as one "app workspace x y w h minimized" line per window, plus "active N" / "open ...".
 state() {
-	run "gdbus call --session --dest org.ubuntuostrich.Environments --object-path /org/ubuntuostrich/Environments --method org.ubuntuostrich.Environments.State" |
+	run "gdbus call --session --dest ostrich_os.Environments --object-path /ostrich_os/Environments --method ostrich_os.Environments.State" |
 		python3 -I -c '
 import ast, json, sys
 s = json.loads(ast.literal_eval(sys.stdin.read().strip())[0])
@@ -86,7 +86,7 @@ step "start from $SNAPSHOT"
 sleep 10
 "$ROOT/modules/gnome/extensions/build.sh" focus dock blur >/dev/null
 for e in focus dock blur; do
-	"$VM" copy "$ROOT/dist/$e@ubuntu-ostrich.shell-extension.zip" "/tmp/$e.zip"
+	"$VM" copy "$ROOT/dist/$e@ostrich-os.shell-extension.zip" "/tmp/$e.zip"
 	run "gnome-extensions install --force /tmp/$e.zip"
 done
 # This checkout's ostrich command too (`ostrich workspace`), from the VM tools build if there is one.
@@ -108,7 +108,7 @@ before=$(state)
 indent "$before"
 out=$(run "$OSTRICH env save Test env" 2>&1) || true
 if [[ $out == *"saved"* ]]; then ok "$out"; else bad "save: $out"; fi
-apps=$(run "python3 -c 'import json,os; print(len(json.load(open(os.path.expanduser(\"~/.config/ubuntu-ostrich/environments/test-env.json\")))[\"apps\"]))'" 2>&1 || true)
+apps=$(run "python3 -c 'import json,os; print(len(json.load(open(os.path.expanduser(\"~/.config/ostrich-os/environments/test-env.json\")))[\"apps\"]))'" 2>&1 || true)
 if [[ $apps == 2 ]]; then ok "file has 2 apps"; else bad "file apps: $apps"; fi
 list=$(run "$OSTRICH env list" 2>&1 || true)
 if [[ $list == *"Test env"*"2 app(s)"* ]]; then ok "listed"; else bad "list: $list"; fi
@@ -163,7 +163,7 @@ count_closed=$(sed -n 's/^count //p' <<<"$closed")
 if ((count_closed < count_open)); then ok "the workspace went ($count_open -> $count_closed)"; else bad "workspaces: $count_open -> $count_closed"; fi
 n=$(names)
 if [[ $n != *"'Test env'"* ]]; then ok "its name went ($n)"; else bad "the name stayed: $n"; fi
-saved=$(run "python3 -c 'import json,os; print(\" \".join(a[\"app\"] for a in json.load(open(os.path.expanduser(\"~/.config/ubuntu-ostrich/environments/test-env.json\")))[\"apps\"]))'" 2>&1 || true)
+saved=$(run "python3 -c 'import json,os; print(\" \".join(a[\"app\"] for a in json.load(open(os.path.expanduser(\"~/.config/ostrich-os/environments/test-env.json\")))[\"apps\"]))'" 2>&1 || true)
 if [[ $saved == *"$CALC"* ]]; then ok "closing saved where it was left: $saved"; else bad "the saved layout wasn't updated: $saved"; fi
 
 step "a saved workspace closed by hand takes its name with it"
@@ -178,7 +178,7 @@ if [[ $n != *"'Test env'"* ]]; then ok "no workspace kept its name ($n)"; else b
 
 step "what was inside the apps: Files folders, a terminal folder, a browser's pages (owner, 2026-11-20)"
 # shellcheck disable=SC2016 # expands in the VM
-STATE_FILE='$HOME/.config/ubuntu-ostrich/environments/state-test.json'
+STATE_FILE='$HOME/.config/ostrich-os/environments/state-test.json'
 # The saved windows of one app, as one line each: "open: URI URI" or "cwd: PATH" or "-".
 saved_windows() { # app
 	run "python3 -c '
@@ -238,7 +238,7 @@ is "the Files windows show the same folders again" test "$(sort <<<"$files_again
 step "a version 1 file and a hand-edited one"
 run "python3 - <<'PYEND'
 import json, os
-d = os.path.expanduser('~/.config/ubuntu-ostrich/environments')
+d = os.path.expanduser('~/.config/ostrich-os/environments')
 win = {'monitor': 0, 'x': 10, 'y': 40, 'width': 800, 'height': 600, 'maximized': False}
 json.dump({'version': 1, 'name': 'Old one', 'apps': [{'app': '$FILES', 'windows': [win]}]}, open(d + '/old-one.json', 'w'))
 evil = dict(win, open=['javascript:alert(1)', 'file:///usr/share', 'about:config'], cwd='relative/path')

@@ -1,4 +1,4 @@
-# Parity with the extensions Ubuntu Ostrich replaces
+# Parity with the extensions Ostrich OS replaces
 
 Each of our extensions replaces a popular one. The bar: match the original's look and every feature
 the user used (docs/INVENTORY.md), add its most-used features, then beat it. Status: ✅ done, ⏳ planned,

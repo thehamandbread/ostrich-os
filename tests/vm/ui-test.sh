@@ -13,7 +13,7 @@ HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$HERE/journal-gate.sh"
 ROOT="$(cd "$HERE/../.." && pwd)"
 VM="$HERE/vm.sh"
-PROJECT="ubuntu-ostrich"
+PROJECT="ostrich-os"
 VM_DIR="${VM_DIR:-${XDG_DATA_HOME:-$HOME/.local/share}/$PROJECT/vm}"
 SNAPSHOT=stock
 OUT="$VM_DIR/ui-test"
@@ -90,8 +90,8 @@ shot 01-desktop
 
 step "dock: hidden at start, shown by pushing the bottom edge, hidden after leaving"
 # Plain auto-hide for this check (by default it only hides when a window is in the way).
-gs set org.gnome.shell.extensions.ubuntu-ostrich.dock intellihide false 2>/dev/null ||
-	"$VM" ssh 'gsettings --schemadir ~/.local/share/gnome-shell/extensions/dock@ubuntu-ostrich/schemas set org.gnome.shell.extensions.ubuntu-ostrich.dock intellihide false'
+gs set org.gnome.shell.extensions.ostrich-os.dock intellihide false 2>/dev/null ||
+	"$VM" ssh 'gsettings --schemadir ~/.local/share/gnome-shell/extensions/dock@ostrich-os/schemas set org.gnome.shell.extensions.ostrich-os.dock intellihide false'
 # The "before" shot once it has hidden: 01-desktop was taken while it was still shown (an empty
 # desktop has no window in the way), which made "shown" look unchanged and "hidden" look changed.
 "$VM" move 960 400
@@ -206,8 +206,8 @@ shot 14-tiling-restored
 echo "  (check 11-14: popup listing Files; two halves; top-left quarter; text editor back to its size)"
 
 step "tiling: disabling it gives GNOME its settings back (as they were before it took them)"
-saved=$("$VM" ssh 'dconf read /org/gnome/shell/extensions/ubuntu-ostrich/tiling/overridden-settings')
-"$VM" ssh 'gnome-extensions disable tiling@ubuntu-ostrich'
+saved=$("$VM" ssh 'dconf read /org/gnome/shell/extensions/ostrich-os/tiling/overridden-settings')
+"$VM" ssh 'gnome-extensions disable tiling@ostrich-os'
 sleep 1
 diffs=$(
 	"$VM" ssh "python3 - $(printf '%q' "$saved")" <<'PY'
@@ -221,7 +221,7 @@ for ident, want in json.loads(ast.literal_eval(sys.argv[1])).items():
 PY
 )
 if [[ -n $saved && -z $diffs ]]; then ok "every overridden setting restored"; else bad "not restored: ${diffs:-nothing was saved}"; fi
-"$VM" ssh 'gnome-extensions enable tiling@ubuntu-ostrich'
+"$VM" ssh 'gnome-extensions enable tiling@ostrich-os'
 
 step "clock menu: one size, everything inside it, at normal and large text, with a media player"
 # The right column once spilled past the menu's edge (council verdict 2026-10-24, T5 and M2). The
@@ -269,8 +269,8 @@ gs set org.gnome.desktop.notifications show-banners true
 
 step "clock menu: the calendar events card follows its switch, with Today off too (note 20261101-224757)"
 # shellcheck disable=SC2016 # expands in the VM
-TW='gsettings --schemadir $HOME/.local/share/gnome-shell/extensions/tweaks@ubuntu-ostrich/schemas'
-TWS=org.gnome.shell.extensions.ubuntu-ostrich.tweaks
+TW='gsettings --schemadir $HOME/.local/share/gnome-shell/extensions/tweaks@ostrich-os/schemas'
+TWS=org.gnome.shell.extensions.ostrich-os.tweaks
 "$VM" ssh "$TW set $TWS today-panel false"
 for events in true false; do
 	"$VM" ssh "$TW set $TWS show-events $events"

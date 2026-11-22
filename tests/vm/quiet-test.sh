@@ -12,7 +12,7 @@ HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=tests/vm/journal-gate.sh
 source "$HERE/journal-gate.sh"
 VM="$HERE/vm.sh"
-VM_DIR="${VM_DIR:-${XDG_DATA_HOME:-$HOME/.local/share}/ubuntu-ostrich/vm}"
+VM_DIR="${VM_DIR:-${XDG_DATA_HOME:-$HOME/.local/share}/ostrich-os/vm}"
 OUT="$VM_DIR/quiet-test"
 SNAPSHOT=try-me
 CLOCK_XY="${CLOCK_XY:-960 15}"
@@ -40,9 +40,9 @@ bad() {
 # shellcheck disable=SC2016 # expands in the VM
 SESSION='export XDG_RUNTIME_DIR=/run/user/$(id -u) DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/$(id -u)/bus WAYLAND_DISPLAY=wayland-0;'
 run() { "$VM" ssh "$SESSION $*"; }
-FOCUS_GS="gsettings --schemadir \$HOME/.local/share/gnome-shell/extensions/focus@ubuntu-ostrich/schemas"
+FOCUS_GS="gsettings --schemadir \$HOME/.local/share/gnome-shell/extensions/focus@ostrich-os/schemas"
 banners() { run "gsettings get org.gnome.desktop.notifications show-banners"; }
-focus_on() { run "$FOCUS_GS get org.gnome.shell.extensions.ubuntu-ostrich.focus focus-on"; }
+focus_on() { run "$FOCUS_GS get org.gnome.shell.extensions.ostrich-os.focus focus-on"; }
 shot() { "$VM" screenshot "$OUT/$1.png" >/dev/null; }
 open_menu() {
 	"$VM" key esc >/dev/null
@@ -107,10 +107,10 @@ if differs "$(mean "$OUT/focus-on-menu.png" "$FOCUS_BOX")" "$off_focus"; then ok
 sleep 2
 if [[ $(focus_on) == false ]]; then ok "a second click turned focus off"; else bad "a second click left focus on"; fi
 if [[ $(banners) == true ]]; then ok "banners are back"; else bad "banners were not given back"; fi
-run "$FOCUS_GS set org.gnome.shell.extensions.ubuntu-ostrich.focus focus-on true"
+run "$FOCUS_GS set org.gnome.shell.extensions.ostrich-os.focus focus-on true"
 sleep 2
 if [[ $(banners) == false ]]; then ok "setting focus-on from outside turned focus on (banners muted)"; else bad "focus-on from outside did nothing"; fi
-run "$FOCUS_GS set org.gnome.shell.extensions.ubuntu-ostrich.focus focus-on false"
+run "$FOCUS_GS set org.gnome.shell.extensions.ostrich-os.focus focus-on false"
 sleep 2
 if [[ $(banners) == true ]]; then ok "and off again"; else bad "focus-on false from outside left banners muted"; fi
 

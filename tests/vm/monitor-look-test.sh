@@ -31,7 +31,7 @@ HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=tests/vm/journal-gate.sh
 source "$HERE/journal-gate.sh"
 VM="$HERE/vm.sh"
-VM_DIR="${VM_DIR:-${XDG_DATA_HOME:-$HOME/.local/share}/ubuntu-ostrich/vm}"
+VM_DIR="${VM_DIR:-${XDG_DATA_HOME:-$HOME/.local/share}/ostrich-os/vm}"
 OUT="$VM_DIR/monitor-look-test"
 SNAPSHOT=try-me
 MONITOR_X="${MONITOR_X:-265}"
@@ -248,7 +248,7 @@ for ((i = STOPS - 2; i <= STOPS; i++)); do
 	label_seen "footer button, keyboard focus (Tab stop $i)" "$(changed "$OUT/prefer-dark-$ROWS.png" "$OUT/prefer-dark-$i.png" "$FOOTER_LABEL_BOX")"
 done
 label_seen "footer button, pointer resting (the label moves to it)" "$(changed "$OUT/prefer-dark-$STOPS.png" "$OUT/label-footer-hover.png" "$FOOTER_HOVER_BOX")"
-run "dconf write /org/gnome/shell/extensions/ubuntu-ostrich/drawer/open-on-hover false"
+run "dconf write /org/gnome/shell/extensions/ostrich-os/drawer/open-on-hover false"
 sleep 2
 "$VM" move 960 700
 sleep 1
@@ -268,7 +268,7 @@ gone "footer button, popup closed" "$(changed "$OUT/width-closed.png" "$OUT/labe
 sleep 2
 "$VM" screenshot "$OUT/label-drawer-left.png" >/dev/null
 gone "drawer icon, pointer left" "$(changed "$OUT/label-drawer-away.png" "$OUT/label-drawer-left.png" "$DRAWER_LABEL_BOX")"
-run "dconf write /org/gnome/shell/extensions/ubuntu-ostrich/drawer/open-on-hover true"
+run "dconf write /org/gnome/shell/extensions/ostrich-os/drawer/open-on-hover true"
 
 echo "== section cap (section-rows)"
 # The popup with Processor open, against the closed popup: an open section may add the setting's rows
@@ -284,7 +284,7 @@ print(box[3] - box[1] if box else 0)
 PYEND
 }
 for rows in 6 12; do
-	run "dconf write /org/gnome/shell/extensions/ubuntu-ostrich/monitor/section-rows 'uint32 $rows'"
+	run "dconf write /org/gnome/shell/extensions/ostrich-os/monitor/section-rows 'uint32 $rows'"
 	sleep 2
 	"$VM" move 960 700
 	"$VM" click "$MONITOR_X" 15
@@ -337,7 +337,7 @@ h_again=$(cap_height "$OUT/closed-reopened.png")
 "$VM" key esc
 sleep 1
 if ((h_again <= h_first + 10)); then ok "Processor left open, reopened: all closed again ($h_first -> $h_again px)"; else bad "Processor stayed open on reopening ($h_first -> $h_again px)"; fi
-run "gnome-extensions disable monitor@ubuntu-ostrich; sleep 1; gnome-extensions enable monitor@ubuntu-ostrich"
+run "gnome-extensions disable monitor@ostrich-os; sleep 1; gnome-extensions enable monitor@ostrich-os"
 sleep 3
 "$VM" click "$MONITOR_X" 15
 sleep 3

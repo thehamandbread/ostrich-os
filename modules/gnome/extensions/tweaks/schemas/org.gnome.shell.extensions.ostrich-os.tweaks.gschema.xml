@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- SPDX-License-Identifier: GPL-2.0-or-later -->
 <schemalist>
-  <schema id="org.gnome.shell.extensions.ubuntu-ostrich.tweaks"
-          path="/org/gnome/shell/extensions/ubuntu-ostrich/tweaks/">
+  <schema id="org.gnome.shell.extensions.ostrich-os.tweaks"
+          path="/org/gnome/shell/extensions/ostrich-os/tweaks/">
     <key name="today-panel" type="b">
       <default>true</default>
       <summary>Clock menu: Today (a card for this computer, world clocks, weather) in place of the month grid</summary>

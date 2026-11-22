@@ -33,12 +33,12 @@ import {Signals} from './_lib/signals.js';
 import {EnvironmentManager} from './envmanager.js';
 import {isAllowed} from './environments.js';
 
-const OURS = '@ubuntu-ostrich';
+const OURS = '@ostrich-os';
 // Top-bar roles hidden in focus mode: monitor, workspaces, every tray item and drawer icon.
 const HIDDEN_ROLE_PREFIXES = [`monitor${OURS}`, `workspaces${OURS}`, `tray${OURS}-`, `drawer${OURS}-`];
 const DOCK_ACTOR = 'ost-dock';
-const DRAWER_APP = 'ubuntu_ostrich.drawer';
-const DRAWER_PATH = '/ubuntu_ostrich/drawer'; // GApplication turns '-' into '_'
+const DRAWER_APP = 'ostrich_os.drawer';
+const DRAWER_PATH = '/ostrich_os/drawer'; // GApplication turns '-' into '_'
 
 // Mutes the drawer's notifications through its app.mute action. Never starts the drawer.
 function muteDrawer(on) {

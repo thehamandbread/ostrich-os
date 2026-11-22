@@ -29,7 +29,7 @@ Gio._promisify(Shell.Screenshot.prototype, 'screenshot', 'screenshot_finish');
 Gio._promisify(Gio.Subprocess.prototype, 'communicate_utf8_async', 'communicate_utf8_finish');
 
 const KINDS = [['bug', 'Bug'], ['looks-wrong', 'Looks wrong'], ['idea', 'Idea']];
-const OURS = '@ubuntu-ostrich';
+const OURS = '@ostrich-os';
 
 async function run(argv) {
     try {
@@ -346,7 +346,7 @@ export default class CritiqueExtension extends Extension {
         const owners = [...new Set([...ui.boxes.map(b => b.owner), describe(ui.pointer.chain, ui.pointer.window).owner]
             .filter(o => o?.endsWith(OURS)))];
         const shell = new Gio.Settings({schema_id: 'org.gnome.shell'});
-        const srcDir = GLib.build_filenamev([GLib.get_user_data_dir(), 'ubuntu-ostrich', 'src']);
+        const srcDir = GLib.build_filenamev([GLib.get_user_data_dir(), 'ostrich-os', 'src']);
         const note = {
             id,
             time: ui.time.format_iso8601(),
@@ -370,11 +370,11 @@ export default class CritiqueExtension extends Extension {
             screen,
         };
         writeText(`${dir}/note.json`, `${JSON.stringify(note, null, 2)}\n`);
-        // The last two minutes, kept to what matters: GNOME Shell, Ubuntu Ostrich, and crashes.
+        // The last two minutes, kept to what matters: GNOME Shell, Ostrich OS, and crashes.
         const relevant = /gnome-shell|ostrich|JS ERROR|JS WARNING|segfault|dumped core|Gjs-CRITICAL|WebKit/i;
         const keep = text => text.split('\n').filter(l => relevant.test(l)).join('\n') || '(nothing)';
         const errors = [
-            '== GNOME Shell and Ubuntu Ostrich (user journal, last 2 minutes, warnings and worse)',
+            '== GNOME Shell and Ostrich OS (user journal, last 2 minutes, warnings and worse)',
             keep(await run(['journalctl', '--user', '-b', '--since', '-2min', '-p', 'warning', '-o', 'short-iso', '--no-pager'])),
             '',
             '== crashes (system journal, last 2 minutes)',

@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- SPDX-License-Identifier: GPL-2.0-or-later -->
 <schemalist>
-  <schema id="org.gnome.shell.extensions.ubuntu-ostrich.monitor"
-          path="/org/gnome/shell/extensions/ubuntu-ostrich/monitor/">
+  <schema id="org.gnome.shell.extensions.ostrich-os.monitor"
+          path="/org/gnome/shell/extensions/ostrich-os/monitor/">
     <key name="panel-items" type="as">
       <default>['cpu.usage', 'mem.usage', 'temp.average', 'gpu.state']</default>
       <summary>Values pinned to the top bar, in order (row ids from the popup: cpu.usage, net.down, fan.dell-smm-processor-fan, ...)</summary>

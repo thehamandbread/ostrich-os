@@ -7,28 +7,28 @@
 //                                                  text: a label's text; app: an app's name
 // `win` is the window under the box, if no shell UI was picked: {appId, appName, title}.
 
-const OURS = '@ubuntu-ostrich';
+const OURS = '@ostrich-os';
 
 const ROLES = [
-    [/^drawer@ubuntu-ostrich--add$/, () => ['Ostrich Drawer', '+ (add a site)']],
-    [/^drawer@ubuntu-ostrich--more$/, () => ['Ostrich Drawer', '⌄ menu']],
-    [/^drawer@ubuntu-ostrich-(.+)$/, m => ['Ostrich Drawer', `${m[1]} icon`]],
-    [/^workspaces@ubuntu-ostrich$/, () => ['Workspace bar']],
-    [/^monitor@ubuntu-ostrich$/, () => ['System monitor']],
-    [/^tray@ubuntu-ostrich-(.+)$/, m => ['Tray', m[1]]],
+    [/^drawer@ostrich-os--add$/, () => ['Ostrich Drawer', '+ (add a site)']],
+    [/^drawer@ostrich-os--more$/, () => ['Ostrich Drawer', '⌄ menu']],
+    [/^drawer@ostrich-os-(.+)$/, m => ['Ostrich Drawer', `${m[1]} icon`]],
+    [/^workspaces@ostrich-os$/, () => ['Workspace bar']],
+    [/^monitor@ostrich-os$/, () => ['System monitor']],
+    [/^tray@ostrich-os-(.+)$/, m => ['Tray', m[1]]],
     [/^quickSettings$/, () => ['Quick settings']],
     [/^dateMenu$/, () => ['Clock and calendar']],
     [/^activities$/, () => ['Activities button']],
 ];
 
-// The extension a role or actor name belongs to ("dock@ubuntu-ostrich"), or null.
+// The extension a role or actor name belongs to ("dock@ostrich-os"), or null.
 export function ownerOf(chain) {
     for (const a of chain) {
         if (a.name === 'ost-dock')
             return `dock${OURS}`;
         if (a.name?.startsWith('ost-blur'))
             return `blur${OURS}`;
-        const m = /^([a-z-]+)@ubuntu-ostrich/.exec(a.role ?? '');
+        const m = /^([a-z-]+)@ostrich-os/.exec(a.role ?? '');
         if (m)
             return `${m[1]}${OURS}`;
         if ((a.styleClass ?? '').includes('ost-ws-'))
@@ -76,7 +76,7 @@ export function describe(chain, win = null) {
     } else if (chain.some(a => ['Gjs_ui_overviewControls_ControlsManager', 'Gjs_ui_workspace_Workspace'].includes(a.type))) {
         parts.push('Overview');
     } else if (win) {
-        if (win.appId?.startsWith('ubuntu_ostrich.drawer'))
+        if (win.appId?.startsWith('ostrich_os.drawer'))
             return {label: `Ostrich Drawer window${win.site ? ` (${win.site})` : ''}`, owner: `drawer${OURS}`};
         return {label: `Window: ${win.appName || win.appId || 'unknown app'} — ${win.title ?? ''}`.trim(), owner: win.appId ?? null};
     } else {

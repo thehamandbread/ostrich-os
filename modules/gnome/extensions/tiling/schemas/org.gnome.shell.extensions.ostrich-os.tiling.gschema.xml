@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- SPDX-License-Identifier: GPL-2.0-or-later -->
 <schemalist>
-  <schema id="org.gnome.shell.extensions.ubuntu-ostrich.tiling"
-          path="/org/gnome/shell/extensions/ubuntu-ostrich/tiling/">
+  <schema id="org.gnome.shell.extensions.ostrich-os.tiling"
+          path="/org/gnome/shell/extensions/ostrich-os/tiling/">
     <key name="tile-left" type="as"><default><![CDATA[['<Super>Left']]]></default><summary>Tile left (from a right quarter: the matching left quarter)</summary></key>
     <key name="tile-right" type="as"><default><![CDATA[['<Super>Right']]]></default><summary>Tile right (from a left quarter: the matching right quarter)</summary></key>
     <key name="tile-up" type="as"><default><![CDATA[['<Super>Up']]]></default><summary>Maximize, or from a half: its top quarter</summary></key>

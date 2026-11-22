@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- SPDX-License-Identifier: GPL-2.0-or-later -->
 <schemalist>
-  <schema id="org.gnome.shell.extensions.ubuntu-ostrich.workspaces"
-          path="/org/gnome/shell/extensions/ubuntu-ostrich/workspaces/">
+  <schema id="org.gnome.shell.extensions.ostrich-os.workspaces"
+          path="/org/gnome/shell/extensions/ostrich-os/workspaces/">
     <key name="smart-names" type="b"><default>true</default><summary>Give a workspace the name last used for the apps on it</summary></key>
     <key name="names-map" type="s"><default>'{}'</default><summary>Smart-name associations: JSON {wmClass: [names]} (same format as space-bar's workspace-names-map)</summary></key>
     <key name="active-style" type="s">

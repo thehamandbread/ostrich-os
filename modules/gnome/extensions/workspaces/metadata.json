@@ -1,9 +1,9 @@
 {
-  "uuid": "workspaces@ubuntu-ostrich",
+  "uuid": "workspaces@ostrich-os",
   "name": "Workspaces",
   "description": "A workspace bar in place of the Activities button: click to switch, scroll to move, right-click to rename. Smart names give a workspace the name you last used for the apps on it.",
   "shell-version": ["50"],
-  "settings-schema": "org.gnome.shell.extensions.ubuntu-ostrich.workspaces",
-  "url": "https://github.com/thehamandbread/ubuntu-ostrich",
+  "settings-schema": "org.gnome.shell.extensions.ostrich-os.workspaces",
+  "url": "https://github.com/thehamandbread/ostrich-os",
   "version": 1
 }

@@ -18,7 +18,7 @@ source "$LIB_DIR/pkg.sh"
 # shellcheck source=lib/helper.sh
 source "$LIB_DIR/helper.sh"
 
-STATE_DIR="${STATE_DIR:-${XDG_STATE_HOME:-$HOME/.local/state}/ubuntu-ostrich}"
+STATE_DIR="${STATE_DIR:-${XDG_STATE_HOME:-$HOME/.local/state}/ostrich-os}"
 LOG_FILE="${LOG_FILE:-$STATE_DIR/install.log}"
 
 module_init() {

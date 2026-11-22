@@ -22,7 +22,7 @@ HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$HERE/journal-gate.sh"
 ROOT="$(cd "$HERE/../.." && pwd)"
 VM="$HERE/vm.sh"
-VM_DIR="${VM_DIR:-${XDG_DATA_HOME:-$HOME/.local/share}/ubuntu-ostrich/vm}"
+VM_DIR="${VM_DIR:-${XDG_DATA_HOME:-$HOME/.local/share}/ostrich-os/vm}"
 OUT="$VM_DIR/nowplaying-test"
 SNAPSHOT=post-fresh
 MEASURE=0
@@ -48,8 +48,8 @@ step() { printf '== %s\n' "$*"; }
 # shellcheck disable=SC2016 # expands in the VM
 SESSION='export XDG_RUNTIME_DIR=/run/user/$(id -u) DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/$(id -u)/bus WAYLAND_DISPLAY=wayland-0;'
 run() { "$VM" ssh "$SESSION $*"; }
-SCHEMA=org.gnome.shell.extensions.ubuntu-ostrich.tweaks
-TS="gsettings --schemadir ~/.local/share/gnome-shell/extensions/tweaks@ubuntu-ostrich/schemas"
+SCHEMA=org.gnome.shell.extensions.ostrich-os.tweaks
+TS="gsettings --schemadir ~/.local/share/gnome-shell/extensions/tweaks@ostrich-os/schemas"
 player() { run "setsid -f python3 /tmp/mock-mpris.py $1 '$2' >/dev/null 2>&1 </dev/null"; }
 quit_player() { run "pkill -f '[m]ock-mpris.py' || true"; }
 status() {
@@ -75,9 +75,9 @@ step "install this checkout's tweaks and blur (the media card's style) on $SNAPS
 "$VM" stop >/dev/null 2>&1 || true
 "$VM" snapshot restore "$SNAPSHOT"
 "$VM" start
-"$VM" copy "$ROOT/dist/tweaks@ubuntu-ostrich.shell-extension.zip" /tmp/tweaks.zip
-"$VM" copy "$ROOT/dist/blur@ubuntu-ostrich.shell-extension.zip" /tmp/blur.zip
-"$VM" copy "$ROOT/dist/dock@ubuntu-ostrich.shell-extension.zip" /tmp/dock.zip
+"$VM" copy "$ROOT/dist/tweaks@ostrich-os.shell-extension.zip" /tmp/tweaks.zip
+"$VM" copy "$ROOT/dist/blur@ostrich-os.shell-extension.zip" /tmp/blur.zip
+"$VM" copy "$ROOT/dist/dock@ostrich-os.shell-extension.zip" /tmp/dock.zip
 run "gnome-extensions install --force /tmp/tweaks.zip; gnome-extensions install --force /tmp/blur.zip; gnome-extensions install --force /tmp/dock.zip"
 sleep 30 # past the start-up window in which a power-off can make GNOME switch extensions off
 "$VM" stop

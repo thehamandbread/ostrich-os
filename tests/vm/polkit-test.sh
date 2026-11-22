@@ -12,7 +12,7 @@ set -euo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="$(cd "$HERE/../.." && pwd)"
 VM="$HERE/vm.sh"
-VM_DIR="${VM_DIR:-${XDG_DATA_HOME:-$HOME/.local/share}/ubuntu-ostrich/vm}"
+VM_DIR="${VM_DIR:-${XDG_DATA_HOME:-$HOME/.local/share}/ostrich-os/vm}"
 SNAPSHOT=post-fresh
 OUT="$VM_DIR/polkit-test"
 while (($# > 0)); do
@@ -27,8 +27,8 @@ while (($# > 0)); do
 	shift
 done
 mkdir -p "$OUT"
-HELPER=/usr/libexec/ubuntu-ostrich/system-helper
-POLICY=org.ubuntu-ostrich.system-helper.policy
+HELPER=/usr/libexec/ostrich-os/system-helper
+POLICY=org.ostrich-os.system-helper.policy
 
 failures=0
 ok() { printf '  ok: %s\n' "$*"; }
@@ -58,7 +58,7 @@ sleep 40
 	echo "the helper isn't installed in $SNAPSHOT" >&2
 	exit 1
 }
-run "pkaction | grep ubuntu-ostrich" | sed 's/^/    /'
+run "pkaction | grep ostrich-os" | sed 's/^/    /'
 
 step "no prompt: power and the touchscreen"
 rc=$(in_session "pkexec $HELPER power apply balanced" 20)

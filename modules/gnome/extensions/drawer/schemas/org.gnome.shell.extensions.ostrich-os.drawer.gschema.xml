@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- SPDX-License-Identifier: GPL-2.0-or-later -->
 <schemalist>
-  <schema id="org.gnome.shell.extensions.ubuntu-ostrich.drawer"
-          path="/org/gnome/shell/extensions/ubuntu-ostrich/drawer/">
+  <schema id="org.gnome.shell.extensions.ostrich_os.drawer"
+          path="/org/gnome/shell/extensions/ostrich-os/drawer/">
     <key name="toggle-drawer" type="as"><default><![CDATA[['<Super><Alt>d']]]></default><summary>Keyboard shortcut to show or hide the drawer</summary></key>
     <key name="next-site" type="as"><default><![CDATA[['<Super><Alt>Tab']]]></default><summary>Keyboard shortcut to open the next site in the drawer's top-bar order (opens the drawer if it is folded)</summary></key>
     <key name="previous-site" type="as"><default><![CDATA[['<Shift><Super><Alt>Tab']]]></default><summary>Keyboard shortcut to open the previous site in the drawer's top-bar order</summary></key>

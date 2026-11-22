@@ -1,11 +1,11 @@
-# Ubuntu Ostrich app icons
+# Ostrich OS app icons
 
 One scheme for every app we ship: a flat rounded square with one plain glyph. Two looks, one per
 colour style (owner, 2026-11-06): the dark style has a pale tile tinted in the app's hue with the glyph
 in the strong hue (`template.svg`, `dark.toml`, written to `modules/tools/icons/`); the light style has a
 dark tile with the glyph in a bright hue and a thin rim, because the dock is dark in both styles
 (`template-light.svg`, `light.toml`, written to `modules/tools/icons-light/`). The installer puts both in
-`~/.local/share/ubuntu-ostrich/icons/` and `modules/tools/ostrich-icon-style` copies the right one into
+`~/.local/share/ostrich-os/icons/` and `modules/tools/ostrich-icon-style` copies the right one into
 the icon theme when the style changes. Shape and hue tell the apps apart.
 
 | App | Glyph |

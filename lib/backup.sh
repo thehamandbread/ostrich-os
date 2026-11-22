@@ -3,8 +3,8 @@
 #
 # Backups go to $BACKUP_DIR (one timestamped directory per installer run), mirroring the original path.
 
-RESTORE_DIR="${RESTORE_DIR:-${STATE_DIR:-${XDG_STATE_HOME:-$HOME/.local/state}/ubuntu-ostrich}/restore/original}"
-BACKUP_DIR="${BACKUP_DIR:-${STATE_DIR:-${XDG_STATE_HOME:-$HOME/.local/state}/ubuntu-ostrich}/backups/$(date '+%Y%m%dT%H%M%S')}"
+RESTORE_DIR="${RESTORE_DIR:-${STATE_DIR:-${XDG_STATE_HOME:-$HOME/.local/state}/ostrich-os}/restore/original}"
+BACKUP_DIR="${BACKUP_DIR:-${STATE_DIR:-${XDG_STATE_HOME:-$HOME/.local/state}/ostrich-os}/backups/$(date '+%Y%m%dT%H%M%S')}"
 
 # Restore-point bookkeeping (lib/restore.sh): only once a restore point exists, never in a dry run.
 # record_line <list> <line>: append unless already listed.

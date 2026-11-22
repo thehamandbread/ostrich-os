@@ -2,7 +2,7 @@
 description: Read the critiques flagged in the test VM (Super+Alt+C) and plan the fixes
 ---
 
-The user has been testing Ubuntu Ostrich in the VM and flagging problems with the critique tool
+The user has been testing Ostrich OS in the VM and flagging problems with the critique tool
 (Super+Alt+C: a box around the problem and a note). The notes are in the host inbox that the VM
 writes into directly.
 

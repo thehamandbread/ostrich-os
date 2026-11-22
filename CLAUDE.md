@@ -59,7 +59,7 @@ tests/vm/polkit-test.sh              # the helper's polkit actions: which ask fo
 tests/vm/dconf-test.sh               # settings survive dump/reset/load; ostrich config end to end
 tests/vm/lab.sh book SEAT            # a throwaway copy of try-me for council seats (2 slots; see its header)
 # /council [--panel ...] AGENDA      the design council: 12 advocates debate, a judge rules (docs/council/)
-docker build -f tests/Dockerfile -t ubuntu-ostrich-test . && docker run --rm ubuntu-ostrich-test
+docker build -f tests/Dockerfile -t ostrich-os-test . && docker run --rm ostrich-os-test
 gitleaks git --redact          # full-history secret scan
 git config core.hooksPath .githooks   # once per clone, enables the pre-commit hook
 ```

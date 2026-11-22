@@ -3,7 +3,7 @@
 //   - can an extension place the drawer-host window under the top bar and size it?
 //   - can it slide it down/up, keep it above, on all workspaces, and focused for typing?
 //   - can it keep it out of Alt+Tab?
-// Driven over D-Bus for testing: org.ubuntuostrich.DrawerSpike.Toggle() / State().
+// Driven over D-Bus for testing: ostrich_os.DrawerSpike.Toggle() / State().
 
 import Clutter from 'gi://Clutter';
 import Gio from 'gi://Gio';
@@ -12,8 +12,8 @@ import Meta from 'gi://Meta';
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import {Extension} from 'resource:///org/gnome/shell/extensions/extension.js';
 
-const APP_ID = 'ubuntu-ostrich.drawer';
-const IFACE = `<node><interface name="org.ubuntuostrich.DrawerSpike">
+const APP_ID = 'ostrich_os.drawer';
+const IFACE = `<node><interface name="ostrich_os.DrawerSpike">
   <method name="Toggle"/>
   <method name="State"><arg type="s" direction="out"/></method>
 </interface></node>`;
@@ -26,9 +26,9 @@ export default class DrawerSpike extends Extension {
     enable() {
         this._shown = false;
         this._dbus = Gio.DBusExportedObject.wrapJSObject(IFACE, this);
-        this._dbus.export(Gio.DBus.session, '/org/ubuntuostrich/DrawerSpike');
+        this._dbus.export(Gio.DBus.session, '/ostrich_os/DrawerSpike');
         this._nameId = Gio.bus_own_name_on_connection(Gio.DBus.session,
-            'org.ubuntuostrich.DrawerSpike', Gio.BusNameOwnerFlags.NONE, null, null);
+            'ostrich_os.DrawerSpike', Gio.BusNameOwnerFlags.NONE, null, null);
 
         // Keep the drawer out of Alt+Tab (same approach as holder-monitor: every switcher
         // goes through display.get_tab_list).

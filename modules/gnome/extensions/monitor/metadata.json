@@ -1,9 +1,9 @@
 {
-  "uuid": "monitor@ubuntu-ostrich",
+  "uuid": "monitor@ostrich-os",
   "name": "Monitor",
   "description": "CPU, memory, temperature and GPU in the top bar, with details in a popup. Reads /proc and sysfs only, slows down on battery, stops while the screen is locked, and never wakes an NVIDIA GPU that is asleep.",
   "shell-version": ["50"],
-  "settings-schema": "org.gnome.shell.extensions.ubuntu-ostrich.monitor",
-  "url": "https://github.com/thehamandbread/ubuntu-ostrich",
+  "settings-schema": "org.gnome.shell.extensions.ostrich-os.monitor",
+  "url": "https://github.com/thehamandbread/ostrich-os",
   "version": 1
 }

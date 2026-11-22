@@ -14,16 +14,16 @@
 #   critique.sh ask ID QUESTION     mark "need more info", with the question for the user
 #   critique.sh selftest            a critique driven end to end in the VM (stock + the tool)
 #
-# A test tool only: it is never part of Ubuntu Ostrich or installed on a real machine.
+# A test tool only: it is never part of Ostrich OS or installed on a real machine.
 set -euo pipefail
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 VM="$HERE/vm.sh"
-PROJECT="ubuntu-ostrich"
+PROJECT="ostrich-os"
 VM_DIR="${VM_DIR:-${XDG_DATA_HOME:-$HOME/.local/share}/$PROJECT/vm}"
 INBOX="$VM_DIR/critiques"
 SRC="$HERE/critique"
-UUID="critique@ubuntu-ostrich-dev"
+UUID="critique@ostrich-os-dev"
 
 die() {
 	echo "critique: $*" >&2
@@ -209,8 +209,8 @@ cmd_selftest() {
 import json, sys
 n = json.load(open(sys.argv[1]))
 assert n["text"] == "dock-selftest", n["text"]
-assert any(b.get("owner") == "dock@ubuntu-ostrich" for b in n["boxes"]), [b.get("label") for b in n["boxes"]]
-assert "dock@ubuntu-ostrich" in n["settings"] and "icon-size" in n["settings"]["dock@ubuntu-ostrich"]
+assert any(b.get("owner") == "dock@ostrich-os" for b in n["boxes"]), [b.get("label") for b in n["boxes"]]
+assert "dock@ostrich-os" in n["settings"] and "icon-size" in n["settings"]["dock@ostrich-os"]
 assert n["versions"]["shell"].startswith("50")
 print("  ok: " + "; ".join(b["label"] for b in n["boxes"]))
 EOF

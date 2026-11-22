@@ -228,7 +228,7 @@ fn slug(name: &str) -> String {
 }
 
 fn schemes_dir() -> std::path::PathBuf {
-    glib::user_config_dir().join("ubuntu-ostrich/schemes")
+    glib::user_config_dir().join("ostrich-os/schemes")
 }
 
 /// The editor: a few colours you choose; the rest of the scheme follows from them (the glass tints
@@ -514,7 +514,7 @@ fn editor(near: &impl IsA<gtk::Widget>, base: &str, picker: Rc<Picker>) {
             return;
         }
         let text = format!(
-            "# Your Ubuntu Ostrich colour scheme (Ostrich Settings > Theme; `ostrich theme scheme`).\n{}",
+            "# Your Ostrich OS colour scheme (Ostrich Settings > Theme; `ostrich theme scheme`).\n{}",
             toml::to_string(&v).unwrap_or_default()
         );
         if std::fs::create_dir_all(schemes_dir()).and_then(|_| std::fs::write(&path, text)).is_err() {

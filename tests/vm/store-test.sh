@@ -10,7 +10,7 @@ set -uo pipefail
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 VM="$HERE/vm.sh"
-PROJECT="ubuntu-ostrich"
+PROJECT="ostrich-os"
 VM_DIR="${VM_DIR:-${XDG_DATA_HOME:-$HOME/.local/share}/$PROJECT/vm}"
 SNAPSHOT=post-fresh
 OUT="$VM_DIR/store-test"
@@ -53,14 +53,14 @@ sleep 2
 # This checkout's store, if one was built (build-tools.sh), over the installed one.
 if [[ -x $VM_DIR/tools-bin/ostrich-store-gtk ]]; then
 	"$VM" copy "$VM_DIR/tools-bin/ostrich-store-gtk" /tmp/ostrich-store-gtk
-	run "install -m755 /tmp/ostrich-store-gtk ~/.local/libexec/ubuntu-ostrich/ostrich-store-gtk"
+	run "install -m755 /tmp/ostrich-store-gtk ~/.local/libexec/ostrich-os/ostrich-store-gtk"
 fi
 
 step "the installer fetched Flathub's app list"
 if run "test -e /var/lib/flatpak/appstream/flathub/\$(uname -m)/active"; then ok "catalogue on disk"; else bad "no Flathub catalogue: the store would only offer to download it"; fi
 
 step "Explore"
-run "setsid -f ~/.local/libexec/ubuntu-ostrich/ostrich-store-gtk </dev/null >/tmp/store.log 2>&1"
+run "setsid -f ~/.local/libexec/ostrich-os/ostrich-store-gtk </dev/null >/tmp/store.log 2>&1"
 sleep 12
 shot 1-explore
 if alive; then ok "the window is up"; else bad "the store exited at start"; fi

@@ -30,7 +30,7 @@ pid=$(pgrep -u "$(id -u)" -x gnome-shell | head -1) || {
 }
 hz=$(getconf CLK_TCK)
 # An unlocked, awake desktop on both sides: a measurement runs longer than a 5-minute idle delay, and
-# a locked screen switches user extensions off (Ubuntu Ostrich locks after 5 minutes; the original
+# a locked screen switches user extensions off (Ostrich OS locks after 5 minutes; the original
 # setup never did), so one side would be measuring a lock screen. This boot only: the snapshot is
 # restored for every measurement.
 gsettings set org.gnome.desktop.session idle-delay 0 2>/dev/null || true

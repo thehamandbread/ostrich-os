@@ -1,7 +1,7 @@
 //! Colour schemes: the built-in ones (tools/icons/palette.toml and tools/icons/schemes/, compiled
-//! in) and the user's own (~/.config/ubuntu-ostrich/schemes/ID.toml, same format: `name = "value"`
+//! in) and the user's own (~/.config/ostrich-os/schemes/ID.toml, same format: `name = "value"`
 //! lines). Applying one writes each extension's stylesheet, filled from the same template its
-//! built-in stylesheet.css comes from, into ~/.config/ubuntu-ostrich/scheme/ (the extensions load it
+//! built-in stylesheet.css comes from, into ~/.config/ostrich-os/scheme/ (the extensions load it
 //! and follow changes), and sets the accent, icon theme and wallpaper the scheme names.
 
 use crate::color::{contrast, Rgb};
@@ -108,7 +108,7 @@ pub fn parse(text: &str) -> BTreeMap<String, String> {
 /// A scheme file written back: `name = "value"` lines in key order.
 pub fn to_text(values: &BTreeMap<String, String>) -> String {
     let mut out = String::from(
-        "# An Ubuntu Ostrich colour scheme (ostrich theme scheme; Ostrich Settings > Theme).\n",
+        "# An Ostrich OS colour scheme (ostrich theme scheme; Ostrich Settings > Theme).\n",
     );
     for (k, v) in values {
         out.push_str(&format!("{k} = \"{v}\"\n"));
@@ -117,7 +117,7 @@ pub fn to_text(values: &BTreeMap<String, String>) -> String {
 }
 
 pub fn user_dir(config: &Path) -> PathBuf {
-    config.join("ubuntu-ostrich/schemes")
+    config.join("ostrich-os/schemes")
 }
 
 /// Ids are file names: letters, digits and '-'.

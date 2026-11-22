@@ -18,7 +18,7 @@ HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=tests/vm/journal-gate.sh
 source "$HERE/journal-gate.sh"
 VM="$HERE/vm.sh"
-VM_DIR="${VM_DIR:-${XDG_DATA_HOME:-$HOME/.local/share}/ubuntu-ostrich/vm}"
+VM_DIR="${VM_DIR:-${XDG_DATA_HOME:-$HOME/.local/share}/ostrich-os/vm}"
 OUT="$VM_DIR/powerrow-test"
 SNAPSHOT=try-me
 QS_XY="${QS_XY:-1880 15}"
@@ -47,7 +47,7 @@ bad() {
 }
 # shellcheck disable=SC2016 # expands in the VM
 SESSION='export XDG_RUNTIME_DIR=/run/user/$(id -u) DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/$(id -u)/bus WAYLAND_DISPLAY=wayland-0;'
-style() { "$VM" ssh "$SESSION dconf write /org/gnome/shell/extensions/ubuntu-ostrich/tweaks/quick-settings-style \"'$1'\""; }
+style() { "$VM" ssh "$SESSION dconf write /org/gnome/shell/extensions/ostrich-os/tweaks/quick-settings-style \"'$1'\""; }
 shot() { "$VM" screenshot "$OUT/$1.png" >/dev/null; }
 mode() { "$VM" ssh "powerprofilesctl get"; }
 # Opens quick settings (closes it first, so the shot is of a fresh menu).

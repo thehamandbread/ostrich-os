@@ -9,13 +9,9 @@
 #   - JS:   const APP_ID / *_APP / *_APP_ID / *_PREFIX / BUS_NAME / *_BUS_NAME strings
 # A polkit action (org.ostrich-os.system-helper.*) is not an app id and is not looked at.
 # Not looked at: tests/, docs/, spikes/, lib/migrate.sh (they name the old ids on purpose), and
-# globs such as ubuntu-ostrich.drawer*.desktop (cleanup of old launchers).
+# globs such as ostrich_os.drawer*.desktop (cleanup of old launchers).
 set -euo pipefail
 REPO="${1:-$(git rev-parse --show-toplevel)}"
-
-# Known violations, reported on every run, removed when the rename (plan 01) lands. Anything not
-# in this list fails the lint. shortcut: a list in the script; delete it with the rename.
-PENDING=(ubuntu-ostrich.store ubuntu-ostrich.setup)
 
 bad_id() { # <id>: status 0 if a part other than the last holds a dash
 	local id=${1%.desktop} last
@@ -29,16 +25,7 @@ mapfile -t files < <(find "$REPO" -type f \( -name '*.rs' -o -name '*.js' -o -na
 	-not -path "$REPO/lib/migrate.sh" | sort)
 
 fail=0
-seen=""
 report() { # <id> <where>
-	local id=${1%.desktop} p
-	for p in "${PENDING[@]}"; do
-		if [[ $id == "$p" ]]; then
-			[[ $seen == *"|$id $2|"* ]] || echo "appid-lint: pending rename: $id ($2)"
-			seen+="|$id $2|"
-			return
-		fi
-	done
 	echo "appid-lint: dash before the last part: $1 ($2)" >&2
 	fail=1
 }
@@ -61,7 +48,7 @@ for f in "${files[@]}"; do
 		;;
 	esac
 	for id in "${ids[@]}"; do
-		# a glob (ubuntu-ostrich.drawer*.desktop) is cleanup of old launchers, not an id
+		# a glob (ostrich_os.drawer*.desktop) is cleanup of old launchers, not an id
 		[[ -n $id && $id != *'*'* ]] || continue
 		# a bare word with no dot is one part: its last
 		bad_id "$id" && report "$id" "$rel"

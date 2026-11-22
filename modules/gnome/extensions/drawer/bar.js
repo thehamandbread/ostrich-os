@@ -8,7 +8,7 @@
 // Left click or hover opens the site (the extension decides; see extension.js), middle click unloads
 // it, right click opens the site's menu. The group sits fixed beside quick settings, in the order
 // + ⌄ sites, then the pinned apps, with the tray's background apps to its left (owner, 2026-11-19).
-// Each icon is a status-area item with the role `drawer@ubuntu-ostrich-<id>`, so focus mode hides
+// Each icon is a status-area item with the role `drawer@ostrich-os-<id>`, so focus mode hides
 // them like the other top-bar items.
 
 import Clutter from 'gi://Clutter';
@@ -27,7 +27,7 @@ import * as PopupMenu from 'resource:///org/gnome/shell/ui/popupMenu.js';
 import {badgeText, splitBar, inside, memoryText} from './barlogic.js';
 import {HoverLabel} from './_lib/label.js';
 
-export const ROLE = 'drawer@ubuntu-ostrich-';
+export const ROLE = 'drawer@ostrich-os-';
 const MORE_ROLE = `${ROLE}-more`; // site ids never start with '-'
 const ADD_ROLE = `${ROLE}-add`;
 

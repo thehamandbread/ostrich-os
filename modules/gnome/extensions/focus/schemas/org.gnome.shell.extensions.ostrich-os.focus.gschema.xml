@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- SPDX-License-Identifier: GPL-2.0-or-later -->
 <schemalist>
-  <schema id="org.gnome.shell.extensions.ubuntu-ostrich.focus"
-          path="/org/gnome/shell/extensions/ubuntu-ostrich/focus/">
+  <schema id="org.gnome.shell.extensions.ostrich-os.focus"
+          path="/org/gnome/shell/extensions/ostrich-os/focus/">
     <key name="toggle-focus" type="as"><default><![CDATA[['<Super><Alt>f']]]></default><summary>Keyboard shortcut for focus mode</summary></key>
     <key name="restore-app-contents" type="b">
       <default>true</default>

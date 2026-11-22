@@ -29,7 +29,7 @@ import {rectFor, zoneAt, nextTile, freeTile, followEdges} from './layout.js';
 
 // seconds, as PowerAwareTimer takes them
 const DRAG_POLL = {ac: 0.05, battery: 0.1, saver: 0.1};
-const HIDDEN_APP_PREFIX = 'ubuntu_ostrich.drawer';
+const HIDDEN_APP_PREFIX = 'ostrich_os.drawer';
 
 const KEYS = {
     'tile-left': w => ['dir', 'left', w],

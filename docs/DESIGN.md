@@ -4,7 +4,7 @@ Source of truth for what this project builds and why. Decisions and their dates 
 
 Target: Ubuntu 26.04 LTS, GNOME 50 (Wayland only), amd64. Reference hardware: Dell Precision 5570, Intel Iris Xe + NVIDIA RTX A2000 (Optimus, no MUX).
 
-Project name: **Ubuntu Ostrich**. Slug `ubuntu-ostrich`, used for the config directory (`~/.config/ubuntu-ostrich/`), the state directory and the GNOME extension UUID suffix.
+Project name: **Ostrich OS**. Slug `ostrich-os`, used for the config directory (`~/.config/ostrich-os/`), the state directory and the GNOME extension UUID suffix.
 
 ## Goals
 
@@ -45,7 +45,7 @@ Tools and extensions are installed from pinned GitHub release artifacts verified
 
 ## GNOME Shell extensions
 
-UUIDs: `<name>@ubuntu-ostrich` (e.g. `monitor@ubuntu-ostrich`). All extensions share `_lib`: settings helpers, a timer helper that pauses on lock/blank/battery, a power-state reader, and a signal bus that lets focus mode hide other components (`setHidden(bool)`).
+UUIDs: `<name>@ostrich-os` (e.g. `monitor@ostrich-os`). All extensions share `_lib`: settings helpers, a timer helper that pauses on lock/blank/battery, a power-state reader, and a signal bus that lets focus mode hide other components (`setHidden(bool)`).
 
 | Extension | Replaces | Design |
 |---|---|---|
@@ -94,7 +94,7 @@ Spike result (`docs/spikes/blur.md`):
 
 **Ostrich Drawer**, a GTK4 + WebKitGTK 6.0 app (`ostrich-drawer`).
 
-- **Services:** defined in `~/.config/ubuntu-ostrich/drawer.toml` (name, URL, icon, keep-alive, pinned, shape, saved size, muted, optional user agent). Each service has its own persistent `NetworkSession`, so logins are separate.
+- **Services:** defined in `~/.config/ostrich-os/drawer.toml` (name, URL, icon, keep-alive, pinned, shape, saved size, muted, optional user agent). Each service has its own persistent `NetworkSession`, so logins are separate.
 - **Any site:** the user can add any web page as a service (a **+** in the drawer or in the wizard). The icon is the site's favicon, saved the first time the page shows one (never shipped). The address/search bar also opens any page without saving it.
 - **Recommended sites:** a built-in catalog (`tools/drawer-host/data/recommended.toml`) in four groups — messaging (Google Messages, Google Chat, WhatsApp, Messenger, Discord, Slack, Telegram, Teams), AI (Claude, ChatGPT, Gemini), mail & calendar (Gmail, Google Calendar, Outlook), media & notes (YouTube, YouTube Music, Google Keep, Notion, Todoist, Google Translate). Each is checked in the VM (`tests/vm/drawer-test.sh --sites`). DRM sites (Spotify, Netflix, Disney+, Prime Video) are listed as not yet supported and can't be added.
 - **In the top bar:** an icon per pinned site, up to 4 by default (`bar-max`); the rest, and every site, are in the ⌄ menu. Unread badge (1–9, then 9+) from the page title; the icon dims while the site is unloaded and has a dot while it's loaded. Right-click: load/unload, reload, keep loaded in the background, mute its notifications, pin/unpin, remove.
@@ -109,7 +109,7 @@ Spike result (`docs/spikes/blur.md`):
 - **Not supported yet:** DRM video (Spotify web player, Netflix, Disney+), which needs Widevine and isn't in WebKitGTK; and browser extensions. Spotify is tracked as a later task.
 - **Notifications look like the real app:**
   - each service gets its own `.desktop` file (`NoDisplay=true`) and icon;
-  - web notifications are re-sent through GTK's notification interface (`org.gtk.Notifications.AddNotification`) with the service's own app ID (`ubuntu-ostrich.drawer.<service>`), so GNOME shows "Google Chat" with its icon and lists each service separately in Settings → Notifications. (GNOME 50 drops `org.freedesktop.Notifications` calls whose `desktop-entry` hint names another app; see `docs/spikes/drawer.md`);
+  - web notifications are re-sent through GTK's notification interface (`org.gtk.Notifications.AddNotification`) with the service's own app ID (`ostrich_os.drawer.<service>`), so GNOME shows "Google Chat" with its icon and lists each service separately in Settings → Notifications. (GNOME 50 drops `org.freedesktop.Notifications` calls whose `desktop-entry` hint names another app; see `docs/spikes/drawer.md`);
   - each service's site gets notification permission up front (WebKit's initial notification permissions), because the user chose it, so the site never has to prompt;
   - clicking a notification opens the drawer on that service;
   - suppressed in DND and focus mode.
@@ -118,7 +118,7 @@ Spike result (`docs/spikes/blur.md`):
   - other tabs unload after N minutes hidden and reload on open;
   - the WebKit cache model is set to the low-memory profile;
   - in power saver, background tabs are suspended.
-- **D-Bus:** GApplication actions on `ubuntu-ostrich.drawer`, path `/ubuntu_ostrich/drawer` (`org.gtk.Actions`): `toggle`, `show(s)`, `mute(b)`; per site `load`, `unload`, `reload`, `remove`, `add`, `pin(sb)`, `keep(sb)`, `mute-site(sb)`, `set-size((suu))`; `use-set((asas))` for environments; and a read-only `state` action whose value is JSON of the sites and the window, so the extension follows changes through the `Changed` signal without polling. The drawer extension places and animates the window; focus mode calls `mute` (never starting the app).
+- **D-Bus:** GApplication actions on `ostrich_os.drawer`, path `/ostrich_os/drawer` (`org.gtk.Actions`): `toggle`, `show(s)`, `mute(b)`; per site `load`, `unload`, `reload`, `remove`, `add`, `pin(sb)`, `keep(sb)`, `mute-site(sb)`, `set-size((suu))`; `use-set((asas))` for environments; and a read-only `state` action whose value is JSON of the sites and the window, so the extension follows changes through the `Changed` signal without polling. The drawer extension places and animates the window; focus mode calls `mute` (never starting the app).
 - **User agent:** WebKit's own user agent works; Messages, Claude and YouTube render normally, so the drawer doesn't fake Chrome's. A site that turns WebKit away can get a `user_agent` in the catalog or drawer.toml.
 - **Sign-in:** Google sign-in works inside WebKit (tested with Chat and the first step of Messages).
   - Sign-in buttons open pop-ups, so the drawer gives them a related view (same session, `window.opener` kept) in a small window. When the pop-up reaches the service's own host, it closes and the page loads in the tab.
@@ -152,8 +152,8 @@ Spike result (`docs/spikes/blur.md`):
   - palette JSON for the extensions
 - Also sets the nearest built-in `accent-color` for apps that ignore CSS.
 - Text on an accent fill reads 4.5:1 or better: white on the accent darkened just enough (`accentStrong`), or black on a light accent.
-- **Colour schemes** (`ostrich theme scheme`; owner, 2026-10-31): the glass tints, text and solid colours of the extensions, the accent, Ubuntu's folder colours (Yaru) and the wallpaper, together. Built in: Classic (the colours without a scheme), Slate Glass, Ubuntu Ember, Night Glass (the council's three options), Graphite, Forest and High contrast. Your own live in `~/.config/ubuntu-ostrich/schemes/` (same `name = "value"` format as `tools/icons/palette.toml`).
-  - Applying one writes each extension's stylesheet from its `stylesheet.css.in` template into `~/.config/ubuntu-ostrich/scheme/`; the extension loads it in place of its own and follows changes, so it switches without a logout. Classic puts back the accent, folders, wallpaper and accent files from before the first scheme.
+- **Colour schemes** (`ostrich theme scheme`; owner, 2026-10-31): the glass tints, text and solid colours of the extensions, the accent, Ubuntu's folder colours (Yaru) and the wallpaper, together. Built in: Classic (the colours without a scheme), Slate Glass, Ubuntu Ember, Night Glass (the council's three options), Graphite, Forest and High contrast. Your own live in `~/.config/ostrich-os/schemes/` (same `name = "value"` format as `tools/icons/palette.toml`).
+  - Applying one writes each extension's stylesheet from its `stylesheet.css.in` template into `~/.config/ostrich-os/scheme/`; the extension loads it in place of its own and follows changes, so it switches without a logout. Classic puts back the accent, folders, wallpaper and accent files from before the first scheme.
   - A scheme that's incomplete or has a colour that isn't `#rrggbb` / `rgba()` is refused; text under 4.5:1 is warned about.
   - Picked in the wizard's and Ostrich Settings' Theme page (cards), where "New scheme…" opens an editor: accent, glass colour and strength, text colours, solid colour, wallpaper and folder colours, checked for contrast as you change them.
   - The installer doesn't apply one: the user picks in the wizard. Uninstall keeps the schemes you made.
@@ -270,7 +270,7 @@ Speakers are tuned natively with PipeWire's own `filter-chain`: builtin biquads,
   - `claude-code`: native install only.
   - `hardware/nvidia-optimus`, `hardware/dell`, `hardware/power`, `hardware/touchscreen`: detection-gated; install `system-helper` and its polkit policy (shared `lib/helper.sh`).
     - `nvidia-optimus`: nvidia-prime and switcheroo-control; runtime D3 if the driver has it off; Hybrid set once on the first run (later runs keep the user's choice). The NVIDIA driver itself is left to `sudo ubuntu-drivers install`, which the module suggests if it isn't loaded.
-    - `power`: the boot unit `ubuntu-ostrich-power.service` (after power-profiles-daemon, on graphical.target) re-applies the current mode's knobs; the monitor extension applies them on every mode change through pkexec.
+    - `power`: the boot unit `ostrich-os-power.service` (after power-profiles-daemon, on graphical.target) re-applies the current mode's knobs; the monitor extension applies them on every mode change through pkexec.
     - `dell`: nothing to install; Dell thermal modes are the platform_profile that power-profiles-daemon already drives.
 - **Dotfiles:** chezmoi, templated by hardware and by a user name/email prompt: `.bashrc`, Ghostty, gitconfig, mise, the drawer and palette configs.
 
@@ -309,7 +309,7 @@ Speakers are tuned natively with PipeWire's own `filter-chain`: builtin biquads,
   - fetching the Ubuntu 26.04 ISO (checksum and signature verified);
   - an unattended install;
   - start/stop, SSH (a VM-only key) and snapshots.
-- Images live in `~/.local/share/ubuntu-ostrich/vm/` or in `VM_DIR`, never in the repo.
+- Images live in `~/.local/share/ostrich-os/vm/` or in `VM_DIR`, never in the repo.
 - Snapshots:
   - `stock`: fresh Ubuntu.
   - `pre`: stock plus a replica of the original setup from INVENTORY, made by `replicate-current.sh` (portable parts only, no personal data).

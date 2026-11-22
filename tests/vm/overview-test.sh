@@ -19,7 +19,7 @@ HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$HERE/journal-gate.sh"
 ROOT="$(cd "$HERE/../.." && pwd)"
 VM="$HERE/vm.sh"
-PROJECT="ubuntu-ostrich"
+PROJECT="ostrich-os"
 VM_DIR="${VM_DIR:-${XDG_DATA_HOME:-$HOME/.local/share}/$PROJECT/vm}"
 SNAPSHOT=try-me
 OUT="$VM_DIR/overview-test"
@@ -80,7 +80,7 @@ step "start from $SNAPSHOT with this checkout's dock"
 "$VM" start
 sleep 10
 "$ROOT/modules/gnome/extensions/build.sh" dock >/dev/null
-"$VM" copy "$ROOT/dist/dock@ubuntu-ostrich.shell-extension.zip" /tmp/dock.zip
+"$VM" copy "$ROOT/dist/dock@ostrich-os.shell-extension.zip" /tmp/dock.zip
 run "gnome-extensions install --force /tmp/dock.zip"
 "$VM" stop
 "$VM" start

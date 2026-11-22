@@ -12,7 +12,7 @@ source "$(dirname "${BASH_SOURCE[0]}")/../../../lib/module.sh"
 module_init "$@"
 
 NVIDIA_PARAMS="${NVIDIA_PARAMS:-/proc/driver/nvidia/params}"
-MODPROBE_CONF="${MODPROBE_CONF:-/etc/modprobe.d/ubuntu-ostrich-nvidia-pm.conf}"
+MODPROBE_CONF="${MODPROBE_CONF:-/etc/modprobe.d/ostrich-os-nvidia-pm.conf}"
 HYBRID_MARK="$STATE_DIR/graphics-default-set"
 
 if ! is_hybrid_graphics; then
@@ -36,7 +36,7 @@ fi
 # Runtime D3: the driver's dynamic power management must not be off (0), or the dGPU never sleeps.
 if [[ -r $NVIDIA_PARAMS ]] && grep -q '^DynamicPowerManagement: 0$' "$NVIDIA_PARAMS"; then
 	conf=$(mktemp)
-	printf '# Ubuntu Ostrich: let the NVIDIA GPU power down when idle (runtime D3).\noptions nvidia NVreg_DynamicPowerManagement=0x02\n' >"$conf"
+	printf '# Ostrich OS: let the NVIDIA GPU power down when idle (runtime D3).\noptions nvidia NVreg_DynamicPowerManagement=0x02\n' >"$conf"
 	sudo_install "$conf" "$MODPROBE_CONF" 0644
 	rm -f "$conf"
 	info "the dGPU's idle power-down takes effect after a restart"

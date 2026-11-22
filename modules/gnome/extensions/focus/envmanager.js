@@ -12,7 +12,7 @@
 //   Close   saves where you left off (the windows on that workspace now), closes them, removes the
 //           workspace and its name, puts back the normal drawer sites, and goes back to where you were
 //
-// Driven from quick settings and over D-Bus (org.ubuntuostrich.Environments) by `ostrich env`.
+// Driven from quick settings and over D-Bus (ostrich_os.Environments) by `ostrich env`.
 // Nothing runs while no environment is opening: window signals are connected only for that, and
 // for at most 60 s.
 
@@ -28,13 +28,13 @@ import {PROFILES_BUSES} from './_lib/timers.js';
 import {captureState, launchWithState} from './appstate-live.js';
 import {idFor, capture, validate, placementQueue, takePlace, allPlaced, drawerSet, withLayout, namedAt, withoutIndex} from './environments.js';
 
-const BUS_NAME = 'org.ubuntuostrich.Environments';
-const OBJECT_PATH = '/org/ubuntuostrich/Environments';
+const BUS_NAME = 'ostrich_os.Environments';
+const OBJECT_PATH = '/ostrich_os/Environments';
 const OPEN_TIMEOUT_S = 60;
 const CLOSE_TIMEOUT_S = 30; // how long Close waits for apps to close before leaving the workspace
 const WM_PREFS = 'org.gnome.desktop.wm.preferences';
-const DRAWER_APP = 'ubuntu_ostrich.drawer';
-const DRAWER_PATH = '/ubuntu_ostrich/drawer';
+const DRAWER_APP = 'ostrich_os.drawer';
+const DRAWER_PATH = '/ostrich_os/drawer';
 
 const IFACE = `<node><interface name="${BUS_NAME}">
   <method name="List"><arg type="s" direction="out" name="json"/></method>
@@ -48,7 +48,7 @@ const IFACE = `<node><interface name="${BUS_NAME}">
 </interface></node>`;
 
 function envDir() {
-    return GLib.build_filenamev([GLib.get_user_config_dir(), 'ubuntu-ostrich', 'environments']);
+    return GLib.build_filenamev([GLib.get_user_config_dir(), 'ostrich-os', 'environments']);
 }
 
 // Every caller's id goes through here; only an id idFor() would make can name a file.
@@ -102,7 +102,7 @@ function normalWindows(workspace = null) {
         (workspace === null || w.get_workspace() === workspace) &&
         (tracker.get_window_app(w)?.get_id() ?? '').endsWith('.desktop') &&
         // not our own windows (the drawer, Ostrich Settings)
-        !tracker.get_window_app(w).get_id().startsWith('ubuntu-ostrich.'));
+        !tracker.get_window_app(w).get_id().startsWith('ostrich-os.'));
 }
 
 /** The windows as saved: where each is, and (unless switched off) what is inside it. */

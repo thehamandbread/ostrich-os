@@ -12,7 +12,7 @@ set -euo pipefail
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 VM="$HERE/vm.sh"
-VM_DIR="${VM_DIR:-${XDG_DATA_HOME:-$HOME/.local/share}/ubuntu-ostrich/vm}"
+VM_DIR="${VM_DIR:-${XDG_DATA_HOME:-$HOME/.local/share}/ostrich-os/vm}"
 SNAPSHOT=try-me
 while (($# > 0)); do
 	case $1 in
@@ -24,7 +24,7 @@ while (($# > 0)); do
 	esac
 	shift
 done
-BASE=/org/gnome/shell/extensions/ubuntu-ostrich
+BASE=/org/gnome/shell/extensions/ostrich-os
 # key=value (GVariant text), one per extension or more.
 CHANGES=(
 	"blur/panel=false"
@@ -80,7 +80,7 @@ else
 fi
 now=$(active)
 if [[ $now == "$before" ]]; then ok "all $now extensions still active"; else bad "$now of $before extensions active"; fi
-errs=$(run "journalctl --user -b -o cat /usr/bin/gnome-shell | grep -c 'JS ERROR.*ubuntu-ostrich' || true")
+errs=$(run "journalctl --user -b -o cat /usr/bin/gnome-shell | grep -c 'JS ERROR.*ostrich-os' || true")
 if [[ $errs == 0 ]]; then ok "no JS errors"; else bad "$errs JS errors from our extensions"; fi
 
 echo "== ostrich config"

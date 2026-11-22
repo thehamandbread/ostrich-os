@@ -15,7 +15,7 @@ HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=tests/vm/journal-gate.sh
 source "$HERE/journal-gate.sh"
 VM="$HERE/vm.sh"
-VM_DIR="${VM_DIR:-${XDG_DATA_HOME:-$HOME/.local/share}/ubuntu-ostrich/vm}"
+VM_DIR="${VM_DIR:-${XDG_DATA_HOME:-$HOME/.local/share}/ostrich-os/vm}"
 OUT="$VM_DIR/alert-test"
 SNAPSHOT=try-me-0.1.5b
 while (($# > 0)); do
@@ -79,7 +79,7 @@ if [[ -n $found ]]; then
 	ok "the pop-out offers End memhog (at $found)"
 else
 	bad "no pop-out with End memhog"
-	run "journalctl --user -b -o cat /usr/bin/gnome-shell | grep -iE 'monitor|alert|memory' | tail -8; grep -E 'MemTotal|MemAvailable|Swap(Total|Free)' /proc/meminfo; gsettings --schemadir \$HOME/.local/share/gnome-shell/extensions/monitor@ubuntu-ostrich/schemas get org.gnome.shell.extensions.ubuntu-ostrich.monitor memory-warning" | sed 's/^/    /'
+	run "journalctl --user -b -o cat /usr/bin/gnome-shell | grep -iE 'monitor|alert|memory' | tail -8; grep -E 'MemTotal|MemAvailable|Swap(Total|Free)' /proc/meminfo; gsettings --schemadir \$HOME/.local/share/gnome-shell/extensions/monitor@ostrich-os/schemas get org.gnome.shell.extensions.ostrich-os.monitor memory-warning" | sed 's/^/    /'
 fi
 
 if [[ -n $found ]]; then

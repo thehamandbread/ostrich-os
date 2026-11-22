@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# image/build-iso.sh: build the Ubuntu Ostrich installer image (write it to a USB stick and boot).
+# image/build-iso.sh: build the Ostrich OS installer image (write it to a USB stick and boot).
 #
 #   image/build-iso.sh [--tools DIR] [--out FILE] [--portable] [--unattended-test]
 #
@@ -7,9 +7,9 @@
 # and creates their account exactly as usual. The image adds:
 #   /ostrich/            this repo at HEAD and a release build (tools + extensions + SHA256SUMS)
 #   /autoinstall.yaml    every installer page stays interactive; after the install, late-commands
-#                        copy /ostrich to /opt/ubuntu-ostrich and add a first-login finish
-# At the first login a terminal opens ("Finishing Ubuntu Ostrich setup") and runs the same
-# installer as the one-line command, from /opt/ubuntu-ostrich (only Ubuntu packages download).
+#                        copy /ostrich to /opt/ostrich-os and add a first-login finish
+# At the first login a terminal opens ("Finishing Ostrich OS setup") and runs the same
+# installer as the one-line command, from /opt/ostrich-os (only Ubuntu packages download).
 #
 # --portable is for installing onto a USB drive with image/to-usb.sh: the drive then boots on any
 # PC from its boot menu without adding a boot entry to that PC's firmware (image/portable-esp.sh).
@@ -23,14 +23,14 @@ set -euo pipefail
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="$(cd "$HERE/.." && pwd)"
-PROJECT="ubuntu-ostrich"
+PROJECT="ostrich-os"
 VM_DIR="${VM_DIR:-${XDG_DATA_HOME:-$HOME/.local/share}/$PROJECT/vm}"
 BASE_ISO="$VM_DIR/ubuntu-26.04.1-desktop-amd64.iso"
 TOOLS="$VM_DIR/tools-bin"
-OUT="$ROOT/dist/ubuntu-ostrich-26.04-amd64.iso"
+OUT="$ROOT/dist/ostrich-os-26.04-amd64.iso"
 UNATTENDED=0
 PORTABLE=0
-REPO_HTTPS="https://github.com/thehamandbread/ubuntu-ostrich.git"
+REPO_HTTPS="https://github.com/thehamandbread/ostrich-os.git"
 
 die() {
 	echo "build-iso: $*" >&2
@@ -59,19 +59,19 @@ mkdir -p "$pay"
 branch=$(git -C "$ROOT" rev-parse --abbrev-ref HEAD)
 git clone --quiet --depth 1 --branch "$branch" "file://$ROOT" "$pay/src"
 git -C "$pay/src" remote set-url origin "$REPO_HTTPS"
-# The release the tools module installs from (RELEASE_URL=file:///opt/ubuntu-ostrich/release).
+# The release the tools module installs from (RELEASE_URL=file:///opt/ostrich-os/release).
 DIST="$work/zips" "$ROOT/modules/gnome/extensions/build.sh" >/dev/null
 "$ROOT/tools/package.sh" "$TOOLS" "$work/zips" "$pay/release" >&2
 cp -r "$HERE/firstboot" "$pay/firstboot"
 
 late='late-commands:
-  - cp -a /cdrom/ostrich /target/opt/ubuntu-ostrich
-  - chmod -R a+rX /target/opt/ubuntu-ostrich
+  - cp -a /cdrom/ostrich /target/opt/ostrich-os
+  - chmod -R a+rX /target/opt/ostrich-os
   - install -D -m 644 /cdrom/ostrich/firstboot/ostrich-firstboot.desktop /target/etc/xdg/autostart/ostrich-firstboot.desktop'
 ((PORTABLE)) && late+='
-  - install -D -m 755 /cdrom/ostrich/src/image/portable-esp.sh /target/usr/local/sbin/ubuntu-ostrich-portable-esp
-  - install -D -m 644 /cdrom/ostrich/src/image/portable-apt.conf /target/etc/apt/apt.conf.d/99ubuntu-ostrich-portable
-  - /target/usr/local/sbin/ubuntu-ostrich-portable-esp /target'
+  - install -D -m 755 /cdrom/ostrich/src/image/portable-esp.sh /target/usr/local/sbin/ostrich-os-portable-esp
+  - install -D -m 644 /cdrom/ostrich/src/image/portable-apt.conf /target/etc/apt/apt.conf.d/99ostrich-os-portable
+  - /target/usr/local/sbin/ostrich-os-portable-esp /target'
 if ((UNATTENDED)); then
 	# VM test only: the same answers tests/vm/vm.sh gives, plus the late-commands above.
 	pw=$(openssl passwd -6 -stdin <"$VM_DIR/password")

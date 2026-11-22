@@ -24,7 +24,7 @@ use store_core::github::{self, Kind};
 use store_core::search::Searcher;
 use store_core::{cache, ghinstall, ostrich_update};
 
-const APP_ID: &str = "ubuntu-ostrich.store";
+const APP_ID: &str = "ostrich_os.store";
 const REMOTE: &str = "flathub";
 const MAX_RESULTS: usize = 80;
 
@@ -539,7 +539,7 @@ fn show_app(store: &Rc<Store>, id: &str) {
         frame.append(&carousel);
         frame.append(&dots);
         body.append(&frame);
-        let dir = glib::user_cache_dir().join("ubuntu-ostrich").join("store");
+        let dir = glib::user_cache_dir().join("ostrich-os").join("store");
         for url in app.screenshots.clone() {
             let slot = gtk::Picture::builder()
                 .content_fit(gtk::ContentFit::Contain)
@@ -1115,7 +1115,7 @@ fn updates_page(store: &Rc<Store>) -> gtk::ScrolledWindow {
             .map(|(i, _)| i.clone())
             .collect();
         for id in ids {
-            // Ubuntu Ostrich itself opens a terminal and asks for the password: its own button.
+            // Ostrich OS itself opens a terminal and asks for the password: its own button.
             if id == ostrich_update::UPDATE_ID {
                 continue;
             }
@@ -1171,7 +1171,7 @@ fn updates_page(store: &Rc<Store>) -> gtk::ScrolledWindow {
                     for (id, version) in u {
                         if id == ostrich_update::UPDATE_ID {
                             let row = plain_row(
-                                "Ubuntu Ostrich",
+                                "Ostrich OS",
                                 &format!("New release {version}. Updating opens a terminal and asks for your password."),
                             );
                             let update = gtk::Button::with_label("Update");
@@ -1229,7 +1229,7 @@ fn all_updates() -> (Vec<(String, String)>, Option<String>) {
     if let Some(d) = ghinstall::Dirs::from_env() {
         u.extend(ghinstall::updates(&d));
     }
-    // Ubuntu Ostrich itself: a newer release than the one these tools came with.
+    // Ostrich OS itself: a newer release than the one these tools came with.
     if let Some(tag) = ostrich_update::available(env!("CARGO_PKG_VERSION")) {
         u.push((ostrich_update::UPDATE_ID.to_string(), tag));
     }
@@ -1269,7 +1269,7 @@ fn notify_updates() -> glib::ExitCode {
         .iter()
         .map(|(id, _)| {
             if id == ostrich_update::UPDATE_ID {
-                return "Ubuntu Ostrich";
+                return "Ostrich OS";
             }
             let id = id.strip_prefix(ghinstall::UPDATE_PREFIX).unwrap_or(id);
             id.rsplit(['/', '.']).next().unwrap_or(id)
@@ -1787,7 +1787,7 @@ fn main() -> glib::ExitCode {
     app.connect_startup(|_| {
         gtk::Window::set_default_icon_name("ostrich-store");
         // Screenshots of pages not opened for a month go, so the cache doesn't only grow.
-        let dir = glib::user_cache_dir().join("ubuntu-ostrich").join("store");
+        let dir = glib::user_cache_dir().join("ostrich-os").join("store");
         std::thread::spawn(move || cache::prune(&dir, std::time::Duration::from_secs(30 * 86400)));
     });
     app.connect_command_line(|app, cl| {

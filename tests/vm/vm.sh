@@ -2,7 +2,7 @@
 # tests/vm/vm.sh: scripted QEMU/KVM test VM (Ubuntu 26.04 desktop) for pre/post testing.
 set -euo pipefail
 
-readonly PROJECT="ubuntu-ostrich"
+readonly PROJECT="ostrich-os"
 readonly ISO_RELEASE="26.04"
 readonly ISO_NAME="ubuntu-26.04.1-desktop-amd64.iso"
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

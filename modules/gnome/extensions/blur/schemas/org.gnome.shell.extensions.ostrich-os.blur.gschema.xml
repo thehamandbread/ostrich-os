@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- SPDX-License-Identifier: GPL-2.0-or-later -->
 <schemalist>
-  <schema id="org.gnome.shell.extensions.ubuntu-ostrich.blur"
-          path="/org/gnome/shell/extensions/ubuntu-ostrich/blur/">
+  <schema id="org.gnome.shell.extensions.ostrich-os.blur"
+          path="/org/gnome/shell/extensions/ostrich-os/blur/">
     <key name="panel" type="b"><default>true</default><summary>Blur behind the top bar (off: solid)</summary></key>
     <key name="dock" type="b"><default>true</default><summary>Blur behind the dock (off: solid)</summary></key>
     <key name="menus" type="b"><default>true</default><summary>Blur behind drop-down menus and quick settings (off: solid)</summary></key>

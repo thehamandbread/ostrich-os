@@ -1,0 +1,17 @@
+# Where an earlier name (ubuntu-ostrich, ostrich-ubuntu, cleanest-ubuntu-setup, ubuntuostrich) may
+# still appear. tests/rename.bats fails on a hit anywhere else, and on an entry here with no hit.
+# A path ending in / is a directory. Everything after # is the reason.
+docs/DECISIONS.md          # dated history
+docs/INSTALLING.md         # the note for people coming from 0.5.0 and earlier
+docs/council/              # dated debates and the process that wrote them
+docs/plans/                # the rename plan, the audit, the evidence it quotes
+lib/migrate.sh             # the old-slug table: the migration's whole input
+lib/uninstall.sh           # restore points made before 0.6.0 name the old root paths and backup suffix
+modules/gnome/install.sh   # OLD_SUFFIXES: switches off our extensions under all three old names
+home/modify_dot_bashrc     # removes the line an earlier name wrote into ~/.bashrc
+home/.chezmoiremove        # the files an earlier name managed
+tests/fixtures/migrate/    # fake homes of the old installs
+tests/migrate.bats         # tests of the migration
+tests/modules.bats         # tests the old-extension switch-off
+tests/rename-allowlist.txt # this file
+tests/rename.bats          # the pattern itself

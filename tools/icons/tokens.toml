@@ -1,4 +1,4 @@
-# tools/icons/tokens.toml: Ubuntu Ostrich's sizes, in one place (the colours are in palette.toml).
+# tools/icons/tokens.toml: Ostrich OS's sizes, in one place (the colours are in palette.toml).
 # Extension stylesheets use them as [[name]] (colours are {{name}}): build.sh and the scheme tool
 # (tools/palette) fill both. Values follow GNOME Shell 50's own theme, so our surfaces sit beside
 # the shell's own (the ostrich-design skill, references/st-css.md: data/theme/gnome-shell-sass at

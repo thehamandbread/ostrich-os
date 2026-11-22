@@ -19,7 +19,7 @@ HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=tests/vm/journal-gate.sh
 source "$HERE/journal-gate.sh"
 VM="$HERE/vm.sh"
-VM_DIR="${VM_DIR:-${XDG_DATA_HOME:-$HOME/.local/share}/ubuntu-ostrich/vm}"
+VM_DIR="${VM_DIR:-${XDG_DATA_HOME:-$HOME/.local/share}/ostrich-os/vm}"
 OUT="$VM_DIR/bluetooth-test"
 SNAPSHOT=try-me-0.3.0
 QS_XY="${QS_XY:-1880 15}"
@@ -47,7 +47,7 @@ SESSION='export XDG_RUNTIME_DIR=/run/user/$(id -u) DBUS_SESSION_BUS_ADDRESS=unix
 run() { "$VM" ssh "$SESSION $*"; }
 tree() { run "python3 - $*" <"$HERE/a11y-tree.py"; }
 shot() { "$VM" screenshot "$OUT/$1.png" >/dev/null; }
-style() { run "dconf write /org/gnome/shell/extensions/ubuntu-ostrich/tweaks/quick-settings-style \"'$1'\""; }
+style() { run "dconf write /org/gnome/shell/extensions/ostrich-os/tweaks/quick-settings-style \"'$1'\""; }
 # shellcheck disable=SC2016 # expands in the VM
 shell_rss_kb() { "$VM" ssh 'awk "/^VmRSS:/{print \$2}" /proc/$(pgrep -u $(id -u) -x gnome-shell | head -1)/status'; }
 dev() { echo "/org/bluez/hci0/dev_AA_BB_CC_DD_EE_0$1"; }

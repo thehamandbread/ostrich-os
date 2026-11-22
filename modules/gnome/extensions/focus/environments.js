@@ -2,7 +2,7 @@
 // focus/environments.js: saved desktops ("environments"), the parts with no GNOME calls so the gjs
 // unit tests can run them: the file format, names, and which saved window a new window takes.
 //
-// An environment file (~/.config/ubuntu-ostrich/environments/<id>.json):
+// An environment file (~/.config/ostrich-os/environments/<id>.json):
 //   {"version": 2, "name": "Video editing",
 //    "apps": [{"app": "org.gnome.Nautilus.desktop",
 //              "windows": [{"monitor": 0, "x": 0, "y": 32, "width": 960, "height": 1048,

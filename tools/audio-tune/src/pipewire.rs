@@ -9,7 +9,7 @@
 
 use crate::eq::{Band, Eq, Kind};
 
-pub const NODE_NAME: &str = "ubuntu_ostrich_speakers";
+pub const NODE_NAME: &str = "ostrich_os_speakers";
 
 fn fmt(x: f64) -> String {
     let s = format!("{x:.3}");
@@ -56,7 +56,7 @@ pub fn filter_chain(eq: &Eq, target: &str) -> String {
         })
         .collect();
     format!(
-        "# Speaker tuning from Ubuntu Ostrich (ostrich speakers). Preset: {name}\n\
+        "# Speaker tuning from Ostrich OS (ostrich speakers). Preset: {name}\n\
          # Generated file: change it with `ostrich speakers`, remove it with `ostrich speakers off`.\n\
          context.modules = [\n\
          \x20 {{ name = libpipewire-module-filter-chain\n\

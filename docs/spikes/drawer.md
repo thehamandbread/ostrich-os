@@ -7,10 +7,10 @@ Throwaway code: `spikes/drawer-host/` (Rust, gtk4 0.11 + webkit6 0.6). It was bu
 | Question | Answer |
 |---|---|
 | Do the sites render in WebKitGTK? | **Yes.** Messages, Claude and YouTube render their real UI with WebKit's own user agent. A Chrome user agent changed nothing. Chat redirects to its marketing page when signed out (expected). |
-| Can a notification show as the service itself? | **Yes, through `org.gtk.Notifications.AddNotification(app_id, …)`** with app ID `ubuntu-ostrich.drawer.<service>` and a matching `.desktop` file. GNOME shows the service's name and icon, even when sent from the drawer process that owns the window. |
+| Can a notification show as the service itself? | **Yes, through `org.gtk.Notifications.AddNotification(app_id, …)`** with app ID `ostrich_os.drawer.<service>` and a matching `.desktop` file. GNOME shows the service's name and icon, even when sent from the drawer process that owns the window. |
 | Does the `desktop-entry` hint on `org.freedesktop.Notifications` work? | **No.** GNOME 50 silently drops those notifications (tested with our entries and with Firefox's). Without the hint, the notification is labelled with the sender's own app ID. |
 | Can sites post notifications without a prompt? | **Yes.** Grant the service origins in `WebContext::initialize-notification-permissions`; pages then see `Notification.permission === 'granted'`. `Notification.requestPermission()` without a user gesture still returns `denied`, but sites check `permission` first. |
-| Separate logins per service? | **Yes.** One `NetworkSession` per service, with data and cache under `~/.local/share/ubuntu-ostrich/drawer/<service>/`. |
+| Separate logins per service? | **Yes.** One `NetworkSession` per service, with data and cache under `~/.local/share/ostrich-os/drawer/<service>/`. |
 | Memory | Four signed-out services loaded at once: about **1.65 GB PSS** in total (UI process about 160 MB under llvmpipe, network process about 40 MB, web processes 50–480 MB each; YouTube and Claude are the heaviest). This drives the "only messaging stays loaded" rule. |
 
 ## Other findings
@@ -21,7 +21,7 @@ Throwaway code: `spikes/drawer-host/` (Rust, gtk4 0.11 + webkit6 0.6). It was bu
 
 ## Spike (b): placing the window from a Shell extension
 
-Code: `spikes/drawer-ext/drawer-spike@ubuntu-ostrich/`. A GNOME 50 extension finds the drawer window by its GTK application ID and is driven over D-Bus (`Toggle`, `State`).
+Code: `spikes/drawer-ext/drawer-spike@ostrich-os/`. A GNOME 50 extension finds the drawer window by its GTK application ID and is driven over D-Bus (`Toggle`, `State`).
 
 | Check | Result |
 |---|---|

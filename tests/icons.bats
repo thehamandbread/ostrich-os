@@ -50,9 +50,9 @@ setup() {
 
 @test "ostrich-icon-style puts the set for the colour scheme into the icon theme" {
 	export XDG_DATA_HOME="$BATS_TEST_TMPDIR/data"
-	mkdir -p "$XDG_DATA_HOME/ubuntu-ostrich/icons" "$XDG_DATA_HOME/icons/hicolor/scalable/apps" "$BATS_TEST_TMPDIR/bin"
-	cp -r "$ROOT/modules/tools/icons" "$XDG_DATA_HOME/ubuntu-ostrich/icons/dark"
-	cp -r "$ROOT/modules/tools/icons-light" "$XDG_DATA_HOME/ubuntu-ostrich/icons/light"
+	mkdir -p "$XDG_DATA_HOME/ostrich-os/icons" "$XDG_DATA_HOME/icons/hicolor/scalable/apps" "$BATS_TEST_TMPDIR/bin"
+	cp -r "$ROOT/modules/tools/icons" "$XDG_DATA_HOME/ostrich-os/icons/dark"
+	cp -r "$ROOT/modules/tools/icons-light" "$XDG_DATA_HOME/ostrich-os/icons/light"
 	for scheme in prefer-dark default; do
 		printf '#!/bin/sh\necho "%s"\n' "'$scheme'" >"$BATS_TEST_TMPDIR/bin/gsettings"
 		chmod +x "$BATS_TEST_TMPDIR/bin/gsettings"
@@ -60,7 +60,7 @@ setup() {
 		[ "$status" -eq 0 ]
 		want=dark
 		[ "$scheme" = default ] && want=light
-		cmp "$XDG_DATA_HOME/icons/hicolor/scalable/apps/ostrich-store.svg" "$XDG_DATA_HOME/ubuntu-ostrich/icons/$want/ostrich-store.svg"
+		cmp "$XDG_DATA_HOME/icons/hicolor/scalable/apps/ostrich-store.svg" "$XDG_DATA_HOME/ostrich-os/icons/$want/ostrich-store.svg"
 	done
 }
 

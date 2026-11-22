@@ -15,7 +15,7 @@ use gtk::glib::variant::ToVariant;
 use gtk::prelude::*;
 use webkit6::prelude::*;
 
-const APP_ID: &str = "ubuntu-ostrich.drawer";
+const APP_ID: &str = "ostrich_os.drawer";
 
 struct Service {
     id: &'static str,
@@ -47,7 +47,7 @@ const CHROME_UA: &str =
     "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36";
 
 fn data_dir(service: &str) -> PathBuf {
-    glib::user_data_dir().join("ubuntu-ostrich/drawer").join(service)
+    glib::user_data_dir().join("ostrich-os/drawer").join(service)
 }
 
 /// Re-sends a web notification through GTK's notification interface with the service's own app id,

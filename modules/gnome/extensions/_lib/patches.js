@@ -8,7 +8,7 @@ const warned = new Set();
 // A private field of a GNOME Shell object (Main.panel._leftBox, dateMenu._calendar…), or null when
 // GNOME has renamed or removed it; logged once per field, so that one feature goes quiet instead
 // of the extension failing to enable. owner names the extension in the log.
-export function shellField(obj, name, owner = 'ubuntu-ostrich') {
+export function shellField(obj, name, owner = 'ostrich-os') {
     const value = obj?.[name];
     if (value !== undefined && value !== null)
         return value;
@@ -30,7 +30,7 @@ export function shellField(obj, name, owner = 'ubuntu-ostrich') {
 // left its panel icon stuck on the old power mode (owner, 2026-11-18).
 // shortcut: GNOME hiding an item we already hide sends no notify, so restore can show a tile GNOME
 // had just hidden, until its next sync; read GNOME's own condition if that ever shows up.
-export function hideStockTile(quickSettings, field, owner = 'ubuntu-ostrich', defer = fn => (fn(), () => {})) {
+export function hideStockTile(quickSettings, field, owner = 'ostrich-os', defer = fn => (fn(), () => {})) {
     const indicator = quickSettings?.[field];
     if (indicator === undefined) {
         shellField(quickSettings, field, owner);
@@ -94,7 +94,7 @@ export class Patches {
     // The extension's name for the log, from the caller's file path (…/extensions/<uuid>/…).
     _owner() {
         const m = /extensions\/([^/]+)\//.exec(new Error().stack ?? '');
-        return m ? m[1] : 'ubuntu-ostrich';
+        return m ? m[1] : 'ostrich-os';
     }
 
     // Restores in reverse order, so stacked patches on one method unwind correctly.

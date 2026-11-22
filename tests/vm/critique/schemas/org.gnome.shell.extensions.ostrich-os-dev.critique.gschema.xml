@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- SPDX-License-Identifier: GPL-2.0-or-later -->
 <schemalist>
-  <schema id="org.gnome.shell.extensions.ubuntu-ostrich-dev.critique"
-          path="/org/gnome/shell/extensions/ubuntu-ostrich-dev/critique/">
+  <schema id="org.gnome.shell.extensions.ostrich-os-dev.critique"
+          path="/org/gnome/shell/extensions/ostrich-os-dev/critique/">
     <key name="start-critique" type="as"><default><![CDATA[['<Super><Alt>c']]]></default><summary>Freeze the screen and start a critique</summary></key>
   </schema>
 </schemalist>

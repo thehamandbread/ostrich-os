@@ -13,7 +13,7 @@ set -uo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="$(cd "$HERE/../.." && pwd)"
 VM="$HERE/vm.sh"
-PROJECT="ubuntu-ostrich"
+PROJECT="ostrich-os"
 VM_DIR="${VM_DIR:-${XDG_DATA_HOME:-$HOME/.local/share}/$PROJECT/vm}"
 OURS=post-fresh
 PRE=pre
@@ -123,7 +123,7 @@ settings_pages() {
 	run "pkill -x ostrich-setup; true"
 	for page in $ids; do
 		[[ $page == finish ]] && continue
-		run "setsid -f ~/.local/libexec/ubuntu-ostrich/ostrich-setup --step $page </dev/null >/dev/null 2>&1"
+		run "setsid -f ~/.local/libexec/ostrich-os/ostrich-setup --step $page </dev/null >/dev/null 2>&1"
 		sleep 4
 		"$VM" screenshot "$OUT/settings/$page.png" >/dev/null
 		run "pkill -x ostrich-setup; true"
@@ -178,7 +178,7 @@ w = L.append
 w("# Evidence pack\n")
 w(f"Built {os.popen('date -u +%Y-%m-%dT%H:%MZ').read().strip()} from the test VM: `{pre}` is the replica of the owner's "
   f"original setup (their extensions: Blur my Shell, Vitals, Space Bar, Dash to Dock...), `{ours}` is a fresh "
-  f"Ubuntu Ostrich install (commit {os.popen(f'git -C {root!r} rev-parse --short HEAD').read().strip()}). "
+  f"Ostrich OS install (commit {os.popen(f'git -C {root!r} rev-parse --short HEAD').read().strip()}). "
   "The VM renders with llvmpipe (software), so compositing cost shows up as gnome-shell CPU; "
   "watts can't be measured here.\n")
 w("## Steps\n")

@@ -1,4 +1,4 @@
-# ~/.config/ubuntu-ostrich/bashrc.sh: shell additions from Ubuntu Ostrich.
+# ~/.config/ostrich-os/bashrc.sh: shell additions from Ostrich OS.
 # Sourced from ~/.bashrc by a single line; your own ~/.bashrc stays yours.
 
 case ":$PATH:" in

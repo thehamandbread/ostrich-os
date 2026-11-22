@@ -112,7 +112,7 @@ svg {{ width:100%; max-width:340px; }} svg text {{ fill:var(--muted); font:11px 
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400&display=swap">
 <div class="wrap">
 <h1>Ostrich Design Spec</h1>
-<p class="lede">How fast things move, how round corners are, how full a menu may get, and the rest of Ubuntu Ostrich's design rules on one page. The numbers come straight from the files that set them (<code>tools/icons/tokens.toml</code>, <code>palette.toml</code>, <code>_lib/motion.js</code>); the rules from the <code>ostrich-design</code> skill, where each has its source (GNOME HIG, libadwaita 1.9, GNOME Shell 50's theme, WCAG 2.2, Material 3).</p>
+<p class="lede">How fast things move, how round corners are, how full a menu may get, and the rest of Ostrich OS's design rules on one page. The numbers come straight from the files that set them (<code>tools/icons/tokens.toml</code>, <code>palette.toml</code>, <code>_lib/motion.js</code>); the rules from the <code>ostrich-design</code> skill, where each has its source (GNOME HIG, libadwaita 1.9, GNOME Shell 50's theme, WCAG 2.2, Material 3).</p>
 
 <h2>Motion</h2>
 <div class="grid">

@@ -45,7 +45,7 @@ while (($# > 0)); do
 done
 HTTP_PORT=18765
 GIT_PORT=19418
-PROJECT="ubuntu-ostrich"
+PROJECT="ostrich-os"
 VM_DIR="${VM_DIR:-${XDG_DATA_HOME:-$HOME/.local/share}/$PROJECT/vm}"
 TOOLS_BIN="$VM_DIR/tools-bin"
 [[ $SNAP =~ ^[A-Za-z0-9._-]+$ && $FROM =~ ^[A-Za-z0-9._-]+$ && $MODE =~ ^(|keep|clean)$ ]] || {
@@ -69,7 +69,7 @@ trap cleanup EXIT
 if ((PIPE)); then
 	branch=$(git -C "$ROOT" rev-parse --abbrev-ref HEAD)
 	rm -rf "$SERVE" && mkdir -p "$SERVE/zips" "$SERVE/release"
-	git clone --quiet --bare --branch "$branch" "$ROOT" "$SERVE/ubuntu-ostrich.git"
+	git clone --quiet --bare --branch "$branch" "$ROOT" "$SERVE/ostrich-os.git"
 	git -C "$ROOT" show HEAD:install.sh >"$SERVE/install.sh"
 	DIST="$SERVE/zips" "$ROOT/modules/gnome/extensions/build.sh" >/dev/null
 	"$ROOT/tools/package.sh" "$TOOLS_BIN" "$SERVE/zips" "$SERVE/release" >&2
@@ -102,13 +102,13 @@ fi
 # shellcheck disable=SC2016
 {
 	session_env='export XDG_RUNTIME_DIR=/run/user/$(id -u) DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/$(id -u)/bus'
-	state='$HOME/.local/state/ubuntu-ostrich/install.log'
+	state='$HOME/.local/state/ostrich-os/install.log'
 }
 
 mode_flag=${MODE:+--$MODE}
 "$VM" ssh "bash -s" <"$HERE/state.sh" >"$VM_DIR/state-before.txt"
 if ((PIPE)); then
-	src="REPO_URL=git://10.0.2.2:$GIT_PORT/ubuntu-ostrich.git REPO_REF=$branch RELEASE_URL=http://10.0.2.2:$HTTP_PORT/release"
+	src="REPO_URL=git://10.0.2.2:$GIT_PORT/ostrich-os.git REPO_REF=$branch RELEASE_URL=http://10.0.2.2:$HTTP_PORT/release"
 	log "1/3 (no dry run in pipe mode: the dry run needs a checkout)"
 	log "2/3 install: wget -qO- .../install.sh | bash (a fresh Ubuntu has no curl or git)"
 	"$VM" ssh "$session_env; wget -qO- http://10.0.2.2:$HTTP_PORT/install.sh | $src bash -s -- $mode_flag" >&2 || fail "install failed"
@@ -144,24 +144,24 @@ check "flathub remote" 'flatpak remotes --columns=name | grep -qx flathub'
 check "chezmoi pinned" '~/.local/bin/chezmoi --version | grep -q "v2.73.2,"'
 check "ghostty config" 'grep -q "^theme = " ~/.config/ghostty/config'
 check "default terminal" 'grep -qx com.mitchellh.ghostty.desktop ~/.config/xdg-terminals.list'
-check "bashrc sources additions once" '[ "$(grep -c ubuntu-ostrich/bashrc.sh ~/.bashrc)" -eq 1 ]'
+check "bashrc sources additions once" '[ "$(grep -c ostrich-os/bashrc.sh ~/.bashrc)" -eq 1 ]'
 check "bashrc still has Ubuntu defaults" 'grep -q "HISTCONTROL" ~/.bashrc'
-check "backups taken" 'ls ~/.local/state/ubuntu-ostrich/backups/*/home/*/.bashrc >/dev/null'
+check "backups taken" 'ls ~/.local/state/ostrich-os/backups/*/home/*/.bashrc >/dev/null'
 check "new shell works" 'bash -ic "type gpu-status >/dev/null 2>&1 || true; echo \$PATH" | grep -q .local/bin'
 check "notification banners on" '[ "$(gsettings get org.gnome.desktop.notifications show-banners)" = true ]'
-check "extensions installed" 'for u in $EXTS; do [ -f ~/.local/share/gnome-shell/extensions/$u@ubuntu-ostrich/metadata.json ] || exit 1; done'
+check "extensions installed" 'for u in $EXTS; do [ -f ~/.local/share/gnome-shell/extensions/$u@ostrich-os/metadata.json ] || exit 1; done'
 check "tools installed and runnable" 'export PATH=$HOME/.local/bin:$PATH; ostrich help | grep -q store && ostrich theme list >/dev/null && ostrich speakers list | grep -qx flat'
-check "drawer and wizard libraries present" '! ldd ~/.local/libexec/ubuntu-ostrich/ostrich-drawer ~/.local/libexec/ubuntu-ostrich/ostrich-setup | grep -q "not found"'
+check "drawer and wizard libraries present" '! ldd ~/.local/libexec/ostrich-os/ostrich-drawer ~/.local/libexec/ostrich-os/ostrich-setup | grep -q "not found"'
 check "drawer autostarts hidden" 'grep -q -- "--hidden$" ~/.config/autostart/ostrich-drawer.desktop'
-check "wizard autostarts and is in the app grid" '[ -f ~/.config/autostart/ostrich-setup.desktop ] && [ -f ~/.local/share/applications/ubuntu-ostrich.setup.desktop ]'
-check "Ostrich Store is in the dock, App Center isn't" 'f=$(gsettings get org.gnome.shell favorite-apps); [[ $f == *ubuntu-ostrich.store.desktop* && $f != *snap-store_snap-store.desktop* ]]'
-check "Ostrich Store opens Flatpak files and app links" '[ "$(xdg-mime query default application/vnd.flatpak.ref)" = ubuntu-ostrich.store.desktop ] && [ "$(xdg-mime query default x-scheme-handler/appstream)" = ubuntu-ostrich.store.desktop ]'
+check "wizard autostarts and is in the app grid" '[ -f ~/.config/autostart/ostrich-setup.desktop ] && [ -f ~/.local/share/applications/ostrich_os.setup.desktop ]'
+check "Ostrich Store is in the dock, App Center isn't" 'f=$(gsettings get org.gnome.shell favorite-apps); [[ $f == *ostrich_os.store.desktop* && $f != *snap-store_snap-store.desktop* ]]'
+check "Ostrich Store opens Flatpak files and app links" '[ "$(xdg-mime query default application/vnd.flatpak.ref)" = ostrich_os.store.desktop ] && [ "$(xdg-mime query default x-scheme-handler/appstream)" = ostrich_os.store.desktop ]'
 check "replaced extensions off" 'gsettings get org.gnome.shell disabled-extensions | grep -q tiling-assistant@ubuntu.com'
-check "power boot unit enabled (the VM has PCIe ASPM)" 'systemctl is-enabled --quiet ubuntu-ostrich-power.service'
-check "helper installed for polkit" '[ -x /usr/libexec/ubuntu-ostrich/system-helper ] && [ -f /usr/share/polkit-1/actions/org.ubuntu-ostrich.system-helper.policy ]'
-check "polkit has the helper's four actions" '[ "$(pkaction | grep -c "^org.ubuntu-ostrich.system-helper\.")" = 4 ]'
+check "power boot unit enabled (the VM has PCIe ASPM)" 'systemctl is-enabled --quiet ostrich-os-power.service'
+check "helper installed for polkit" '[ -x /usr/libexec/ostrich-os/system-helper ] && [ -f /usr/share/polkit-1/actions/org.ostrich-os.system-helper.policy ]'
+check "polkit has the helper's four actions" '[ "$(pkaction | grep -c "^org.ostrich-os.system-helper\.")" = 4 ]'
 check "the Store's daily update check is on" 'systemctl --user is-enabled --quiet ostrich-store-updates.timer && systemctl --user is-active --quiet ostrich-store-updates.timer'
-check "our app icons are installed and used" 'for n in store settings drawer; do [ -f ~/.local/share/icons/hicolor/scalable/apps/ostrich-$n.svg ] && [ -f ~/.local/share/icons/hicolor/symbolic/apps/ostrich-$n-symbolic.svg ] || exit 1; done; grep -q "^Icon=ostrich-store$" ~/.local/share/applications/ubuntu-ostrich.store.desktop'
+check "our app icons are installed and used" 'for n in store settings drawer; do [ -f ~/.local/share/icons/hicolor/scalable/apps/ostrich-$n.svg ] && [ -f ~/.local/share/icons/hicolor/symbolic/apps/ostrich-$n-symbolic.svg ] || exit 1; done; grep -q "^Icon=ostrich-store$" ~/.local/share/applications/ostrich_os.store.desktop'
 EOF
 
 # New extensions load at the next login (Wayland). Let the session finish starting first: powering
@@ -176,10 +176,10 @@ sleep 10
 set -euo pipefail
 [ "$(gsettings get org.gnome.shell disable-user-extensions)" = false ] || { echo "  FAIL: GNOME disabled user extensions (a shell crash)"; exit 1; }
 for u in $EXTS; do
-	s=$(gnome-extensions info $u@ubuntu-ostrich | sed -n "s/^ *State: //p")
+	s=$(gnome-extensions info $u@ostrich-os | sed -n "s/^ *State: //p")
 	[ "$s" = ACTIVE ] && echo "  ok: $u active" || { echo "  FAIL: $u state=$s"; exit 1; }
 done
-n=$(journalctl --user -b -o cat /usr/bin/gnome-shell | grep -c "JS ERROR.*@ubuntu-ostrich" || true)
+n=$(journalctl --user -b -o cat /usr/bin/gnome-shell | grep -c "JS ERROR.*@ostrich-os" || true)
 [ "$n" = 0 ] && echo "  ok: no JS errors" || { echo "  FAIL: $n JS errors"; exit 1; }
 EOF
 

@@ -1,4 +1,4 @@
-# GNOME HIG: rules for Ubuntu Ostrich
+# GNOME HIG: rules for Ostrich OS
 
 Distilled from the GNOME Human Interface Guidelines (https://developer.gnome.org/hig/), all pages read 2026-11-05. Rules are paraphrased; short quotes are marked. When a rule here conflicts with the live HIG, the live HIG wins. Abbreviation: HIG = https://developer.gnome.org/hig
 

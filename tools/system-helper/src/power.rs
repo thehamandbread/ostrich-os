@@ -18,7 +18,7 @@
 //! | Wi-Fi power save (iw)                  | on                    | original | off         |
 //!
 //! Anything the machine doesn't have, or a value it doesn't offer, is reported, never an error.
-//! The first time a knob changes, its value is kept in /run/ubuntu-ostrich/power-originals, and
+//! The first time a knob changes, its value is kept in /run/ostrich-os/power-originals, and
 //! "original" puts that back (so balanced really is the machine's own default). /run is cleared at
 //! boot, which matches the knobs: the kernel resets them too.
 
@@ -48,7 +48,7 @@ impl Mode {
 pub struct Paths {
     pub sys: PathBuf,
     pub proc: PathBuf,
-    /// Where originals are kept (normally /run/ubuntu-ostrich).
+    /// Where originals are kept (normally /run/ostrich-os).
     pub run: PathBuf,
     /// The `iw` binary for Wi-Fi power save; None skips it (tests).
     pub iw: Option<PathBuf>,
@@ -59,7 +59,7 @@ impl Default for Paths {
         Paths {
             sys: PathBuf::from("/sys"),
             proc: PathBuf::from("/proc"),
-            run: PathBuf::from("/run/ubuntu-ostrich"),
+            run: PathBuf::from("/run/ostrich-os"),
             iw: ["/usr/sbin/iw", "/usr/bin/iw", "/sbin/iw"]
                 .iter()
                 .map(PathBuf::from)

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# tests/vm/image-test.sh: install from the Ubuntu Ostrich image in a throwaway VM and check it.
+# tests/vm/image-test.sh: install from the Ostrich OS image in a throwaway VM and check it.
 #
 #   image-test.sh [--keep] [--portable]
 #
@@ -14,7 +14,7 @@ set -euo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="$(cd "$HERE/../.." && pwd)"
 VM="$HERE/vm.sh"
-PROJECT="ubuntu-ostrich"
+PROJECT="ostrich-os"
 MAIN_VM_DIR="${VM_DIR:-${XDG_DATA_HOME:-$HOME/.local/share}/$PROJECT/vm}"
 IMG="$MAIN_VM_DIR/image-test"
 KEEP=0
@@ -49,8 +49,8 @@ VM_ISO="$IMG/ostrich-test.iso" VM_SEED=0 v install >&2
 v start >&2
 
 # shellcheck disable=SC2016 # expands in the VM
-state='$HOME/.local/state/ubuntu-ostrich'
-log "waiting for the first-login finish (it runs the installer from /opt/ubuntu-ostrich)"
+state='$HOME/.local/state/ostrich-os'
+log "waiting for the first-login finish (it runs the installer from /opt/ostrich-os)"
 for ((i = 0; i < 90; i++)); do
 	if v ssh "test -e $state/firstboot-done" 2>/dev/null; then
 		break
@@ -68,11 +68,11 @@ EXTS=$(find "$ROOT/modules/gnome/extensions" -mindepth 1 -maxdepth 1 -type d ! -
 v ssh "EXTS='$EXTS' bash -s" <<'EOF' || fail "post-install checks failed"
 set -euo pipefail
 check() { if eval "$2"; then echo "  ok: $1"; else echo "  FAIL: $1"; exit 1; fi; }
-check "image payload in /opt" '[ -x /opt/ubuntu-ostrich/firstboot/finish.sh ] && [ -f /opt/ubuntu-ostrich/release/SHA256SUMS ]'
-check "managed copy with GitHub as origin (for ostrich update)" 'git -C ~/.local/share/ubuntu-ostrich/src remote get-url origin | grep -q github.com/thehamandbread/ubuntu-ostrich'
-check "tools came from the image's release" 'grep -q "from file:///opt/ubuntu-ostrich/release" ~/.local/state/ubuntu-ostrich/install.log'
+check "image payload in /opt" '[ -x /opt/ostrich-os/firstboot/finish.sh ] && [ -f /opt/ostrich-os/release/SHA256SUMS ]'
+check "managed copy with GitHub as origin (for ostrich update)" 'git -C ~/.local/share/ostrich-os/src remote get-url origin | grep -q github.com/thehamandbread/ostrich-os'
+check "tools came from the image's release" 'grep -q "from file:///opt/ostrich-os/release" ~/.local/state/ostrich-os/install.log'
 check "ostrich command" '~/.local/bin/ostrich help | grep -q store'
-check "extensions installed" 'for u in $EXTS; do [ -f ~/.local/share/gnome-shell/extensions/$u@ubuntu-ostrich/metadata.json ] || exit 1; done'
+check "extensions installed" 'for u in $EXTS; do [ -f ~/.local/share/gnome-shell/extensions/$u@ostrich-os/metadata.json ] || exit 1; done'
 check "wizard autostarts" '[ -f ~/.config/autostart/ostrich-setup.desktop ]'
 EOF
 
@@ -84,7 +84,7 @@ v ssh "EXTS='$EXTS' bash -s" <<'EOF' || fail "checks after re-login failed"
 set -euo pipefail
 [ "$(gsettings get org.gnome.shell disable-user-extensions)" = false ] || { echo "  FAIL: GNOME disabled user extensions"; exit 1; }
 for u in $EXTS; do
-	s=$(gnome-extensions info $u@ubuntu-ostrich | sed -n "s/^ *State: //p")
+	s=$(gnome-extensions info $u@ostrich-os | sed -n "s/^ *State: //p")
 	[ "$s" = ACTIVE ] && echo "  ok: $u active" || { echo "  FAIL: $u state=$s"; exit 1; }
 done
 pgrep -f "[f]irstboot/finish.sh" >/dev/null && { echo "  FAIL: the finish ran again"; exit 1; }

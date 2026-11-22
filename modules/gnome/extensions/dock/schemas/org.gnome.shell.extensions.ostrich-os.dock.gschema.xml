@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- SPDX-License-Identifier: GPL-2.0-or-later -->
 <schemalist>
-  <schema id="org.gnome.shell.extensions.ubuntu-ostrich.dock"
-          path="/org/gnome/shell/extensions/ubuntu-ostrich/dock/">
+  <schema id="org.gnome.shell.extensions.ostrich-os.dock"
+          path="/org/gnome/shell/extensions/ostrich-os/dock/">
     <key name="icon-size" type="u">
       <range min="16" max="64"/>
       <default>40</default><summary>Icon size in pixels</summary>
@@ -31,7 +31,7 @@
     <key name="monitor" type="i"><range min="-1" max="8"/><default>-1</default><summary>Which monitor the dock is on (-1: the primary one)</summary></key>
     <key name="edge-gap" type="u"><range min="0" max="40"/><default>8</default><summary>Gap between the dock and the bottom edge, in pixels (a floating dock)</summary></key>
     <key name="hidden-app-prefixes" type="as">
-      <default>['ubuntu_ostrich.drawer']</default><summary>App IDs starting with these are never shown as running in the dock (the web-app drawer)</summary>
+      <default>['ostrich_os.drawer']</default><summary>App IDs starting with these are never shown as running in the dock (the web-app drawer)</summary>
     </key>
   </schema>
 </schemalist>

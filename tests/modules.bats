@@ -53,7 +53,7 @@ stub() {
 	run "$ROOT/modules/core/install.sh"
 	[ "$status" -eq 0 ]
 	[ ! -s "$CALLS" ]
-	! grep -q '\[CHANGE\]' "$XDG_STATE_HOME/ubuntu-ostrich/install.log"
+	! grep -q '\[CHANGE\]' "$XDG_STATE_HOME/ostrich-os/install.log"
 }
 
 @test "core: dry-run calls nothing privileged" {
@@ -113,7 +113,7 @@ esac'
 	run "$ROOT/modules/gnome/install.sh"
 	[ "$status" -eq 0 ]
 	[ "$(grep -c 'gnome-extensions install' "$CALLS")" -eq 11 ]
-	grep -q "enabled-extensions \['monitor@ubuntu-ostrich', 'dock@ubuntu-ostrich', 'workspaces@ubuntu-ostrich', 'tweaks@ubuntu-ostrich', 'tray@ubuntu-ostrich', 'focus@ubuntu-ostrich', 'blur@ubuntu-ostrich', 'drawer@ubuntu-ostrich', 'tiling@ubuntu-ostrich', 'holder-monitor@ubuntu-ostrich', 'search-new-window@ubuntu-ostrich'\]" "$GS"
+	grep -q "enabled-extensions \['monitor@ostrich-os', 'dock@ostrich-os', 'workspaces@ostrich-os', 'tweaks@ostrich-os', 'tray@ostrich-os', 'focus@ostrich-os', 'blur@ostrich-os', 'drawer@ostrich-os', 'tiling@ostrich-os', 'holder-monitor@ostrich-os', 'search-new-window@ostrich-os'\]" "$GS"
 	grep -q "disabled-extensions \['ubuntu-dock@ubuntu.com', 'ubuntu-appindicators@ubuntu.com', 'space-bar@luchrioh', 'Vitals@CoreCoding.com', 'just-perfection-desktop@just-perfection', 'blur-my-shell@aunetx', 'tiling-assistant@ubuntu.com'\]" "$GS"
 	grep -q 'show-banners true' "$GS"
 }
@@ -132,25 +132,25 @@ esac'
 	command -v /usr/bin/gnome-extensions >/dev/null || skip "needs gnome-extensions to build zips"
 	gnome_setup
 	sed -i "s|enabled-extensions @as \[\]|enabled-extensions ['ubuntu-dock@ubuntu.com', 'ding@rastersoft.com', 'nvidia-power@someone', 'Vitals@CoreCoding.com', 'dock@cleanest-ubuntu-setup', 'tray@ostrich-ubuntu']|" "$GS"
-	mkdir -p "$EXT_HOME/monitor@ubuntu-ostrich" && echo old >"$EXT_HOME/monitor@ubuntu-ostrich/extension.js"
+	mkdir -p "$EXT_HOME/monitor@ostrich-os" && echo old >"$EXT_HOME/monitor@ostrich-os/extension.js"
 	run "$ROOT/modules/gnome/install.sh"
 	[ "$status" -eq 0 ]
 	# keeps unrelated extensions, drops the ones ours replace (including a ported original)
-	grep -q "enabled-extensions \['ding@rastersoft.com', 'monitor@ubuntu-ostrich'" "$GS"
+	grep -q "enabled-extensions \['ding@rastersoft.com', 'monitor@ostrich-os'" "$GS"
 	grep -q "disabled-extensions .*'nvidia-power@someone'" "$GS"
 	grep -q "disabled-extensions .*'dock@cleanest-ubuntu-setup'" "$GS" # the project's former names
 	grep -q "disabled-extensions .*'tray@ostrich-ubuntu'" "$GS"
-	[ "$(cat "$XDG_STATE_HOME"/ubuntu-ostrich/backups/*"$EXT_HOME"/monitor@ubuntu-ostrich/extension.js)" = old ]
+	[ "$(cat "$XDG_STATE_HOME"/ostrich-os/backups/*"$EXT_HOME"/monitor@ostrich-os/extension.js)" = old ]
 }
 
 @test "gnome: an extension the user switched off stays off after an update" {
 	command -v /usr/bin/gnome-extensions >/dev/null || skip "needs gnome-extensions to build zips"
 	gnome_setup
-	sed -i "s|disabled-extensions @as \[\]|disabled-extensions ['blur@ubuntu-ostrich']|" "$GS"
+	sed -i "s|disabled-extensions @as \[\]|disabled-extensions ['blur@ostrich-os']|" "$GS"
 	run "$ROOT/modules/gnome/install.sh"
 	[ "$status" -eq 0 ]
-	grep -q "enabled-extensions .*'dock@ubuntu-ostrich'" "$GS"
-	! grep -q "enabled-extensions .*'blur@ubuntu-ostrich'" "$GS"
+	grep -q "enabled-extensions .*'dock@ostrich-os'" "$GS"
+	! grep -q "enabled-extensions .*'blur@ostrich-os'" "$GS"
 }
 
 @test "gnome: warns when GNOME disabled user extensions" {
@@ -168,7 +168,7 @@ esac'
 	echo "/org/gnome/shell/extensions/space-bar/state/workspace-names-map '{\"firefox_firefox\":[\"1\"]}'" >"$DCONF"
 	run "$ROOT/modules/gnome/install.sh"
 	[ "$status" -eq 0 ]
-	grep -q 'dconf write /org/gnome/shell/extensions/ubuntu-ostrich/workspaces/names-map' "$CALLS"
+	grep -q 'dconf write /org/gnome/shell/extensions/ostrich-os/workspaces/names-map' "$CALLS"
 	: >"$CALLS"
 	run "$ROOT/modules/gnome/install.sh"
 	! grep -q 'dconf write' "$CALLS"
@@ -180,7 +180,7 @@ esac'
 	printf '%s\n' "/org/gnome/shell/extensions/just-perfection/animation 5" "/org/gnome/shell/extensions/just-perfection/startup-status 1" >"$DCONF"
 	run "$ROOT/modules/gnome/install.sh"
 	[ "$status" -eq 0 ]
-	grep -q 'dconf write /org/gnome/shell/extensions/ubuntu-ostrich/tweaks/animation-speed 0.8' "$CALLS"
+	grep -q 'dconf write /org/gnome/shell/extensions/ostrich-os/tweaks/animation-speed 0.8' "$CALLS"
 	grep -q 'org.gnome.shell start-in-overview true' "$GS"
 	# Turned off by the user afterwards: an update leaves it off.
 	sed -i 's/^org.gnome.shell start-in-overview true$/org.gnome.shell start-in-overview false/' "$GS"
@@ -191,7 +191,7 @@ esac'
 @test "gnome: carries over Tiling Assistant's settings once" {
 	command -v /usr/bin/gnome-extensions >/dev/null || skip "needs gnome-extensions to build zips"
 	gnome_setup
-	local ta=/org/gnome/shell/extensions/tiling-assistant ours=/org/gnome/shell/extensions/ubuntu-ostrich/tiling
+	local ta=/org/gnome/shell/extensions/tiling-assistant ours=/org/gnome/shell/extensions/ostrich-os/tiling
 	printf '%s\n' "$ta/focus-hint-color 'rgb(203,67,20)'" "$ta/tiling-popup-all-workspace true" "$ta/window-gap 8" "$ta/focus-hint 2" >"$DCONF"
 	run "$ROOT/modules/gnome/install.sh"
 	[ "$status" -eq 0 ]
@@ -208,7 +208,7 @@ esac'
 @test "gnome: carries over Dash to Dock's hiding, icon size and its own colour" {
 	command -v /usr/bin/gnome-extensions >/dev/null || skip "needs gnome-extensions to build zips"
 	gnome_setup
-	local dd=/org/gnome/shell/extensions/dash-to-dock ours=/org/gnome/shell/extensions/ubuntu-ostrich/dock
+	local dd=/org/gnome/shell/extensions/dash-to-dock ours=/org/gnome/shell/extensions/ostrich-os/dock
 	# Always hidden until the bottom edge, 34 px, purple at 20 %: the owner's dock.
 	printf '%s\n' "$dd/dock-fixed false" "$dd/autohide true" "$dd/intellihide false" "$dd/dash-max-icon-size 34" \
 		"$dd/custom-background-color true" "$dd/background-color 'rgb(145,65,172)'" "$dd/background-opacity 0.2" >"$DCONF"
@@ -230,13 +230,13 @@ esac'
 	gnome_setup
 	printf '%s\n' "/org/gnome/shell/extensions/dash-to-dock/background-color 'rgb(145,65,172)'" >"$DCONF"
 	run "$ROOT/modules/gnome/install.sh"
-	! grep -q "dconf write /org/gnome/shell/extensions/ubuntu-ostrich/dock/background" "$CALLS"
+	! grep -q "dconf write /org/gnome/shell/extensions/ostrich-os/dock/background" "$CALLS"
 }
 
 @test "gnome: carries over Vitals' top-bar readings, place and interval once" {
 	command -v /usr/bin/gnome-extensions >/dev/null || skip "needs gnome-extensions to build zips"
 	gnome_setup
-	local v=/org/gnome/shell/extensions/vitals ours=/org/gnome/shell/extensions/ubuntu-ostrich/monitor
+	local v=/org/gnome/shell/extensions/vitals ours=/org/gnome/shell/extensions/ostrich-os/monitor
 	printf '%s\n' "$v/hot-sensors ['_processor_usage_', '_memory_usage_', '__temperature_avg__', '_gpu#1_', '__network-rx_max__']" \
 		"$v/position-in-panel 0" "$v/update-time 2" >"$DCONF"
 	run "$ROOT/modules/gnome/install.sh"
@@ -253,7 +253,7 @@ esac'
 	command -v /usr/bin/gnome-extensions >/dev/null || skip "needs gnome-extensions to build zips"
 	python3 -I -c 'from gi.repository import GLib' 2>/dev/null || skip "needs PyGObject"
 	gnome_setup
-	local bms=/org/gnome/shell/extensions/blur-my-shell ours=/org/gnome/shell/extensions/ubuntu-ostrich/blur
+	local bms=/org/gnome/shell/extensions/blur-my-shell ours=/org/gnome/shell/extensions/ostrich-os/blur
 	printf '%s\n' "$bms/pipelines {'pipeline_default': {'name': <'Default'>, 'effects': <[<{'type': <'native_static_gaussian_blur'>, 'id': <'effect_0'>, 'params': <{'radius': <30>, 'brightness': <0.6>}>}>]>}, 'pipeline_folders': {'name': <'Folders'>, 'effects': <[<{'type': <'native_static_gaussian_blur'>, 'id': <'effect_1'>, 'params': <{'radius': <60>, 'brightness': <0.2>}>}>]>}}" \
 		"$bms/panel/pipeline 'pipeline_default'" "$bms/appfolder/pipeline 'pipeline_folders'" >"$DCONF"
 	run "$ROOT/modules/gnome/install.sh"
@@ -273,7 +273,7 @@ esac'
 	gnome_setup
 	printf '%s\n' "/org/gnome/shell/extensions/dash-to-dock/dock-fixed true" >"$DCONF"
 	run "$ROOT/modules/gnome/install.sh"
-	grep -q "dconf write /org/gnome/shell/extensions/ubuntu-ostrich/dock/autohide false" "$CALLS"
+	grep -q "dconf write /org/gnome/shell/extensions/ostrich-os/dock/autohide false" "$CALLS"
 }
 
 # ---- tools module (a fake build or a fake release; nothing real is downloaded) ----
@@ -300,17 +300,17 @@ tools_fake_bins() {
 	stub xdg-mime 'm="$BATS_TEST_TMPDIR/mime"; case $1 in default) for t in "${@:3}"; do echo "$t $2" >>"$m"; done ;; query) awk -v t="$3" "\$1 == t { d = \$2 } END { if (d) print d }" "$m" 2>/dev/null ;; esac'
 	run "$ROOT/modules/tools/install.sh"
 	[ "$status" -eq 0 ]
-	[ -x "$HOME/.local/bin/ostrich" ] && [ -x "$HOME/.local/libexec/ubuntu-ostrich/ostrich-store" ] && [ -x "$HOME/.local/libexec/ubuntu-ostrich/ostrich-drawer" ]
+	[ -x "$HOME/.local/bin/ostrich" ] && [ -x "$HOME/.local/libexec/ostrich-os/ostrich-store" ] && [ -x "$HOME/.local/libexec/ostrich-os/ostrich-drawer" ]
 	[ -x "$DIST/ostrich-system-helper" ]
 	[ ! -e "$HOME/.local/bin/ostrich-system-helper" ]
 	[ -x "$HELPER_DEST" ] && [ -f "$POLICY_DEST" ]
 	[ -f "$HOME/.config/systemd/user/ostrich-store-updates.timer" ]
-	grep -q "^ExecStart=$HOME/.local/libexec/ubuntu-ostrich/ostrich-store-gtk --check-updates$" "$HOME/.config/systemd/user/ostrich-store-updates.service"
-	grep -q "^Exec=$HOME/.local/libexec/ubuntu-ostrich/ostrich-drawer --hidden$" "$HOME/.config/autostart/ostrich-drawer.desktop"
+	grep -q "^ExecStart=$HOME/.local/libexec/ostrich-os/ostrich-store-gtk --check-updates$" "$HOME/.config/systemd/user/ostrich-store-updates.service"
+	grep -q "^Exec=$HOME/.local/libexec/ostrich-os/ostrich-drawer --hidden$" "$HOME/.config/autostart/ostrich-drawer.desktop"
 	[ -f "$HOME/.config/autostart/ostrich-setup.desktop" ]
-	[ -f "$HOME/.local/share/applications/ubuntu-ostrich.setup.desktop" ]
-	[ "$(xdg-mime query default application/vnd.flatpak.ref)" = ubuntu-ostrich.store.desktop ]
-	grep -q '^MimeType=application/vnd.flatpak.ref;' "$HOME/.local/share/applications/ubuntu-ostrich.store.desktop"
+	[ -f "$HOME/.local/share/applications/ostrich_os.setup.desktop" ]
+	[ "$(xdg-mime query default application/vnd.flatpak.ref)" = ostrich_os.store.desktop ]
+	grep -q '^MimeType=application/vnd.flatpak.ref;' "$HOME/.local/share/applications/ostrich_os.store.desktop"
 	run "$ROOT/modules/tools/install.sh"
 	[ "$status" -eq 0 ]
 	[[ $output != *CHANGE* ]]
@@ -344,11 +344,11 @@ tools_fake_bins() {
 @test "tools: no welcome autostart once the wizard is finished" {
 	export BUILD_DIR="$BATS_TEST_TMPDIR/build" DIST="$BATS_TEST_TMPDIR/dist"
 	tools_fake_bins "$BUILD_DIR"
-	mkdir -p "$HOME/.config/ubuntu-ostrich" && touch "$HOME/.config/ubuntu-ostrich/welcome-done"
+	mkdir -p "$HOME/.config/ostrich-os" && touch "$HOME/.config/ostrich-os/welcome-done"
 	run "$ROOT/modules/tools/install.sh"
 	[ "$status" -eq 0 ]
 	[ ! -e "$HOME/.config/autostart/ostrich-setup.desktop" ]
-	[ -f "$HOME/.local/share/applications/ubuntu-ostrich.setup.desktop" ]
+	[ -f "$HOME/.local/share/applications/ostrich_os.setup.desktop" ]
 }
 
 # A clip "download" from a local file, a stubbed GStreamer, and a fake ostrich-speakers that writes
@@ -356,7 +356,7 @@ tools_fake_bins() {
 tools_clip_setup() {
 	export BUILD_DIR="$BATS_TEST_TMPDIR/build" DIST="$BATS_TEST_TMPDIR/dist"
 	tools_fake_bins "$BUILD_DIR"
-	printf '#!/bin/sh\nmkdir -p "$HOME/.local/share/ubuntu-ostrich/audio" && touch "$HOME/.local/share/ubuntu-ostrich/audio/$2.wav"\n' >"$BUILD_DIR/ostrich-speakers"
+	printf '#!/bin/sh\nmkdir -p "$HOME/.local/share/ostrich-os/audio" && touch "$HOME/.local/share/ostrich-os/audio/$2.wav"\n' >"$BUILD_DIR/ostrich-speakers"
 	stub gst-launch-1.0 'for a in "$@"; do case $a in location=*) out=${a#location=} ;; esac; done; echo wav >"$out"'
 	echo "some audio" >"$BATS_TEST_TMPDIR/song.ogg"
 	local sum
@@ -379,7 +379,7 @@ tools_clip_setup() {
 	run "$ROOT/modules/tools/install.sh"
 	[ "$status" -eq 0 ]
 	[[ $output == *"speaker-tuning clip: A song (CC0, Someone)"* ]]
-	[ -f "$HOME/.local/share/ubuntu-ostrich/audio/tune.wav" ]
+	[ -f "$HOME/.local/share/ostrich-os/audio/tune.wav" ]
 	run "$ROOT/modules/tools/install.sh"
 	[[ $output != *"speaker-tuning clip"* ]]
 }
@@ -390,7 +390,7 @@ tools_clip_setup() {
 	run "$ROOT/modules/tools/install.sh"
 	[ "$status" -eq 0 ]
 	[[ $output == *"couldn't get the speaker-tuning clip A song"* ]]
-	[ ! -e "$HOME/.local/share/ubuntu-ostrich/audio/tune.wav" ]
+	[ ! -e "$HOME/.local/share/ostrich-os/audio/tune.wav" ]
 }
 
 @test "tools: downloads the release and verifies it; refuses a bad checksum" {
@@ -399,23 +399,23 @@ tools_clip_setup() {
 	local v rel name
 	v=$(cat "$ROOT/VERSION")
 	rel="$BATS_TEST_TMPDIR/release"
-	name="ubuntu-ostrich-tools-v$v-amd64"
+	name="ostrich-os-tools-v$v-amd64"
 	tools_fake_bins "$rel/$name/bin"
-	echo zip >"$rel/monitor@ubuntu-ostrich.shell-extension.zip"
+	echo zip >"$rel/monitor@ostrich-os.shell-extension.zip"
 	tar -C "$rel" -czf "$rel/$name.tar.gz" "$name"
-	(cd "$rel" && sha256sum "$name.tar.gz" monitor@ubuntu-ostrich.shell-extension.zip >SHA256SUMS)
+	(cd "$rel" && sha256sum "$name.tar.gz" monitor@ostrich-os.shell-extension.zip >SHA256SUMS)
 	export RELEASE_URL="file://$rel"
 	run "$ROOT/modules/tools/install.sh"
 	[ "$status" -eq 0 ]
-	[ -x "$HOME/.local/libexec/ubuntu-ostrich/ostrich-theme" ]
-	[ -f "$DIST/monitor@ubuntu-ostrich.shell-extension.zip" ]
+	[ -x "$HOME/.local/libexec/ostrich-os/ostrich-theme" ]
+	[ -f "$DIST/monitor@ostrich-os.shell-extension.zip" ]
 
 	rm -rf "$DIST" "$HOME/.local/bin" "$HOME/.local/libexec"
 	echo tampered >>"$rel/$name.tar.gz"
 	run "$ROOT/modules/tools/install.sh"
 	[ "$status" -ne 0 ]
 	[[ $output == *"checksum mismatch"* ]]
-	[ ! -e "$HOME/.local/libexec/ubuntu-ostrich/ostrich-theme" ]
+	[ ! -e "$HOME/.local/libexec/ostrich-os/ostrich-theme" ]
 }
 
 # ---- hardware modules (sysfs fixtures; sudo, prime-select, systemctl stubbed) ----
@@ -469,7 +469,7 @@ pci() { # pci <slot> <class> <vendor>
 	run "$ROOT/modules/hardware/power/install.sh"
 	[ "$status" -eq 0 ]
 	grep -q "sudo install -D -m 0644 .* $UNIT_DEST" "$CALLS"
-	grep -q 'sudo systemctl reenable ubuntu-ostrich-power.service' "$CALLS"
+	grep -q 'sudo systemctl reenable ostrich-os-power.service' "$CALLS"
 }
 
 @test "power: skips on machines without the knobs" {
@@ -483,11 +483,11 @@ pci() { # pci <slot> <class> <vendor>
 @test "package.sh: packs the binaries and zips the installer downloads, with checksums" {
 	local bins="$BATS_TEST_TMPDIR/bins" zips="$BATS_TEST_TMPDIR/zips" out="$BATS_TEST_TMPDIR/out"
 	tools_fake_bins "$bins"
-	mkdir -p "$zips" && echo z >"$zips/dock@ubuntu-ostrich.shell-extension.zip"
+	mkdir -p "$zips" && echo z >"$zips/dock@ostrich-os.shell-extension.zip"
 	run "$ROOT/tools/package.sh" "$bins" "$zips" "$out"
 	[ "$status" -eq 0 ]
 	(cd "$out" && sha256sum --quiet -c SHA256SUMS)
-	tar -tzf "$out/ubuntu-ostrich-tools-v$(cat "$ROOT/VERSION")-amd64.tar.gz" | grep -q '/bin/ostrich$'
+	tar -tzf "$out/ostrich-os-tools-v$(cat "$ROOT/VERSION")-amd64.tar.gz" | grep -q '/bin/ostrich$'
 	# what package.sh writes is what the tools module accepts (it downloads with curl)
 	command -v curl >/dev/null || skip "needs curl for the install half"
 	export BUILD_DIR="$BATS_TEST_TMPDIR/none" DIST="$BATS_TEST_TMPDIR/dist" RELEASE_URL="file://$out"
@@ -529,7 +529,7 @@ pci() { # pci <slot> <class> <vendor>
 	stub gsettings 'f="$BATS_TEST_TMPDIR/favs"; case $1 in list-schemas) echo org.gnome.shell ;; get) cat "$f" ;; set) echo "$4" >"$f" ;; esac'
 	run "$ROOT/modules/tools/install.sh"
 	[ "$status" -eq 0 ]
-	[ "$(cat "$BATS_TEST_TMPDIR/favs")" = "['firefox_firefox.desktop', 'ubuntu-ostrich.store.desktop', 'org.gnome.Yelp.desktop']" ]
+	[ "$(cat "$BATS_TEST_TMPDIR/favs")" = "['firefox_firefox.desktop', 'ostrich_os.store.desktop', 'org.gnome.Yelp.desktop']" ]
 	run "$ROOT/modules/tools/install.sh"
 	[[ $output != *"favorite-apps"* ]]
 	# Taken out of the dock by the user: an update leaves it out.
@@ -543,15 +543,15 @@ pci() { # pci <slot> <class> <vendor>
 	script="$BATS_TEST_TMPDIR/load.sh"
 	sed '/{{/d' "$ROOT/home/run_onchange_after_ostrich-settings.sh.tmpl" >"$script"
 	stub dconf 'cat >>"$BATS_TEST_TMPDIR/loaded"; echo "$@" >>"$CALLS"'
-	f="$HOME/.config/ubuntu-ostrich/settings.dconf"
+	f="$HOME/.config/ostrich-os/settings.dconf"
 	mkdir -p "$(dirname "$f")"
-	cp "$ROOT/home/dot_config/ubuntu-ostrich/settings.dconf" "$f"
+	cp "$ROOT/home/dot_config/ostrich-os/settings.dconf" "$f"
 	run bash "$script"
 	[ "$status" -eq 0 ] && [ ! -e "$BATS_TEST_TMPDIR/loaded" ]
 	printf '# mine\n[dock]\nicon-size=uint32 48\n' >"$f"
 	run bash "$script"
 	[ "$status" -eq 0 ]
-	grep -q "load /org/gnome/shell/extensions/ubuntu-ostrich/" "$CALLS"
+	grep -q "load /org/gnome/shell/extensions/ostrich-os/" "$CALLS"
 	[ "$(cat "$BATS_TEST_TMPDIR/loaded")" = "$(printf '[dock]\nicon-size=uint32 48')" ]
 	rm "$BATS_TEST_TMPDIR/loaded"
 	printf '[drawer]\nhost-command=%s\n' "'sh -c evil'" >"$f"
@@ -566,9 +566,9 @@ pci() { # pci <slot> <class> <vendor>
 	command -v /usr/bin/gnome-extensions >/dev/null || skip "needs gnome-extensions to build zips"
 	gnome_setup
 	"$ROOT/modules/gnome/install.sh"
-	touch -d 2000-01-01 "$DIST/dock@ubuntu-ostrich.shell-extension.zip"
+	touch -d 2000-01-01 "$DIST/dock@ostrich-os.shell-extension.zip"
 	run "$ROOT/modules/gnome/install.sh"
 	[ "$status" -eq 0 ]
 	[[ $output == *"building extensions: dock"* ]]
-	[ "$DIST/dock@ubuntu-ostrich.shell-extension.zip" -nt "$ROOT/modules/gnome/extensions/build.sh" ]
+	[ "$DIST/dock@ostrich-os.shell-extension.zip" -nt "$ROOT/modules/gnome/extensions/build.sh" ]
 }

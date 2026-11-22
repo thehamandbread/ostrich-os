@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# tools/icons/export.sh: makes the Ubuntu Ostrich app icons. Fills template.svg with each glyph in
+# tools/icons/export.sh: makes the Ostrich OS app icons. Fills template.svg with each glyph in
 # glyphs/ and the colours in palette.toml, and copies each 16 px symbolic from symbolic/, writing
 # modules/tools/icons/ostrich-NAME.svg and ostrich-NAME-symbolic.svg (the installer's copies).
 # Needs only bash and sed, so it runs headless (and Claude can drive it). With rsvg-convert or
@@ -7,7 +7,7 @@
 #
 #   export.sh [--check] [--preview DIR]
 #     --check     only verify the committed icons match what this would write (CI)
-#     --preview   where previews go (default: $XDG_CACHE_HOME/ubuntu-ostrich/icon-previews)
+#     --preview   where previews go (default: $XDG_CACHE_HOME/ostrich-os/icon-previews)
 #
 # The default look is two sets: modules/tools/icons/ for the dark style (template.svg, dark.toml) and
 # modules/tools/icons-light/ for the light one (template-light.svg, light.toml). modules/tools/install.sh
@@ -31,7 +31,7 @@
 set -euo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 OUT="${ICONS_OUT:-$(cd "$HERE/../.." && pwd)/modules/tools/icons}" # ICONS_OUT: elsewhere (scheme previews)
-PREVIEW="${XDG_CACHE_HOME:-$HOME/.cache}/ubuntu-ostrich/icon-previews"
+PREVIEW="${XDG_CACHE_HOME:-$HOME/.cache}/ostrich-os/icon-previews"
 CHECK=0
 ARGS=("$@")
 while (($# > 0)); do

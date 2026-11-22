@@ -37,7 +37,7 @@ build_one() {
 	local src=$1 uuid out
 	[[ -f $src/metadata.json && -f $src/extension.js ]] || die "$src is not an extension"
 	uuid=$(uuid_of "$src")
-	[[ $uuid == *@ubuntu-ostrich ]] || die "$src: uuid must end in @ubuntu-ostrich (got '$uuid')"
+	[[ $uuid == *@ostrich-os ]] || die "$src: uuid must end in @ostrich-os (got '$uuid')"
 	out="$DIST/build/$uuid"
 	rm -rf "$out"
 	mkdir -p "$out"

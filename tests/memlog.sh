@@ -6,11 +6,11 @@
 #   tests/memlog.sh [INTERVAL]   log every INTERVAL s (default 600) until stopped (Ctrl+C, or kill)
 #   tests/memlog.sh --summary    which apps grew most between the first and the last sample
 #
-# File: ~/.local/share/ubuntu-ostrich/memlog.tsv (time, app, memory MB, swap MB; "_system" is the
+# File: ~/.local/share/ostrich-os/memlog.tsv (time, app, memory MB, swap MB; "_system" is the
 # machine's used memory and swap).
 set -euo pipefail
 
-LOG="${MEMLOG:-${XDG_DATA_HOME:-$HOME/.local/share}/ubuntu-ostrich/memlog.tsv}"
+LOG="${MEMLOG:-${XDG_DATA_HOME:-$HOME/.local/share}/ostrich-os/memlog.tsv}"
 
 # The app a process belongs to, from its systemd unit: app-gnome-firefox_firefox-1234.scope -> firefox_firefox.
 app_of() {

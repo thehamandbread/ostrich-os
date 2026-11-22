@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# image/to-usb.sh: install Ubuntu Ostrich onto a USB drive, as a whole system you carry between PCs.
+# image/to-usb.sh: install Ostrich OS onto a USB drive, as a whole system you carry between PCs.
 #
 #   image/to-usb.sh DEVICE          run the installer (image/build-iso.sh --portable) onto DEVICE
 #   image/to-usb.sh --boot DEVICE   boot the installed drive in a window (first login, checks)
@@ -12,7 +12,7 @@ set -euo pipefail
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="$(cd "$HERE/.." && pwd)"
-ISO="${ISO:-$ROOT/dist/ubuntu-ostrich-26.04-amd64.iso}"
+ISO="${ISO:-$ROOT/dist/ostrich-os-26.04-amd64.iso}"
 OVMF_CODE="${OVMF_CODE:-/usr/share/OVMF/OVMF_CODE_4M.fd}" # the same firmware as tests/vm/vm.sh; tests swap in fakes
 OVMF_VARS_TEMPLATE="${OVMF_VARS_TEMPLATE:-/usr/share/OVMF/OVMF_VARS_4M.fd}"
 LSBLK="${LSBLK:-lsblk}" # tests swap in a fake
@@ -56,7 +56,7 @@ trap 'rm -f "$vars"' EXIT
 cp "$OVMF_VARS_TEMPLATE" "$vars"
 echo "Opening a window. Install: pick 'Erase disk' (the USB drive is the only disk listed),"
 echo "encryption recommended. After the restart, log in once to finish setup, then shut down."
-qemu-system-x86_64 -name ubuntu-ostrich-usb \
+qemu-system-x86_64 -name ostrich-os-usb \
 	-machine q35,accel=kvm -cpu host -smp "${VM_CPUS:-4}" -m "${VM_MEM:-6G}" \
 	-drive "if=pflash,format=raw,readonly=on,file=$OVMF_CODE" \
 	-drive "if=pflash,format=raw,file=$vars" \

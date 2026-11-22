@@ -1,4 +1,4 @@
-//! ostrich-setup: Ostrich Settings (DESIGN.md: welcome): every Ubuntu Ostrich setting, a page each,
+//! ostrich-setup: Ostrich Settings (DESIGN.md: welcome): every Ostrich OS setting, a page each,
 //! with a sidebar. On the first login it runs as the tour (Back / Next / Skip the tour).
 //!
 //!   ostrich-setup [--tour | --step NAME]
@@ -20,9 +20,9 @@ use welcome::{
     recommended, search, set_pin, steps, Entry, Hardware, Paths, Step, RECOMMENDED_GROUPS,
 };
 
-const APP_ID: &str = "ubuntu-ostrich.setup";
-const OURS: &str = "ubuntu-ostrich";
-const HELPER: &str = "/usr/libexec/ubuntu-ostrich/system-helper";
+const APP_ID: &str = "ostrich_os.setup";
+const OURS: &str = "ostrich-os";
+const HELPER: &str = "/usr/libexec/ostrich-os/system-helper";
 
 // ---- settings ----
 
@@ -212,10 +212,10 @@ fn missing(group: &adw::PreferencesGroup, what: &str) {
 
 // ---- running tools ----
 
-/// Our tools live in ~/.local/libexec/ubuntu-ostrich (behind the `ostrich` command).
+/// Our tools live in ~/.local/libexec/ostrich-os (behind the `ostrich` command).
 fn tool(name: &str) -> PathBuf {
     let ours = glib::home_dir()
-        .join(".local/libexec/ubuntu-ostrich")
+        .join(".local/libexec/ostrich-os")
         .join(name);
     if ours.exists() {
         return ours;
@@ -378,7 +378,7 @@ fn groups(step: Step, hw: &Hardware) -> Vec<adw::PreferencesGroup> {
     }
 }
 
-/// What Ubuntu Ostrich adds: (extension, name, one-line description, icon).
+/// What Ostrich OS adds: (extension, name, one-line description, icon).
 const EXTENSIONS: [(&str, &str, &str, &str); 11] = [
     (
         "dock",
@@ -492,7 +492,7 @@ fn collect_rows(widget: &gtk::Widget, step: usize, page: &str, out: &mut Vec<Ent
 
 fn welcome_step() -> Vec<adw::PreferencesGroup> {
     let g = group(
-        "What Ubuntu Ostrich added",
+        "What Ostrich OS added",
         "Turn anything off here, or set it up on its own page. Everything is in Ostrich Settings in the app grid.",
     );
     let places = group("Where things are", "");
@@ -741,7 +741,7 @@ fn top_bar_step() -> Vec<adw::PreferencesGroup> {
                 &[
                     (
                         "ostrich",
-                        "Ubuntu Ostrich (a power-mode row on laptops with three modes)",
+                        "Ostrich OS (a power-mode row on laptops with three modes)",
                     ),
                     ("stock", "GNOME's own"),
                 ],
@@ -1375,7 +1375,7 @@ fn refresh_envs(e: &std::rc::Rc<Envs>) {
     for r in e.rows.borrow_mut().drain(..) {
         e.group.remove(&r);
     }
-    let dir = glib::user_config_dir().join("ubuntu-ostrich/environments");
+    let dir = glib::user_config_dir().join("ostrich-os/environments");
     let mut files: Vec<PathBuf> = std::fs::read_dir(&dir)
         .map(|r| r.filter_map(|x| x.ok().map(|x| x.path())).collect())
         .unwrap_or_default();
@@ -1487,7 +1487,7 @@ fn environments_group(fs: &gio::Settings) -> adw::PreferencesGroup {
 /// For each saved environment: which Ostrich Drawer sites its top bar has (`ostrich env drawer`).
 /// None ticked: it uses the normal sites.
 fn environment_drawer_rows(ostrich: &str) -> Vec<adw::ExpanderRow> {
-    let dir = glib::user_config_dir().join("ubuntu-ostrich/environments");
+    let dir = glib::user_config_dir().join("ostrich-os/environments");
     let drawer = tool("ostrich-drawer");
     let sites = output(Command::new(&drawer).arg("--list"))
         .map(|t| parse_drawer_list(&t))
@@ -1738,7 +1738,7 @@ impl Speakers {
 
     /// The clip (or pink noise) through a preset's EQ, written to the runtime dir.
     fn render_to(&self, eq: &audio_tune::eq::Eq, name: &str) -> Result<PathBuf, String> {
-        let path = glib::user_runtime_dir().join(format!("ubuntu-ostrich-{name}.wav"));
+        let path = glib::user_runtime_dir().join(format!("ostrich-os-{name}.wav"));
         let clip = self.clip.borrow().clone();
         let music = clip
             .as_deref()

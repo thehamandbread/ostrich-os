@@ -13,7 +13,7 @@
 #   originals.txt        "<path>\t<copy of the original>" for files we replaced
 #   created-root.txt / originals-root.txt   the same for system files (sudo)
 
-RESTORE_DIR="${RESTORE_DIR:-${STATE_DIR:-${XDG_STATE_HOME:-$HOME/.local/state}/ubuntu-ostrich}/restore/original}"
+RESTORE_DIR="${RESTORE_DIR:-${STATE_DIR:-${XDG_STATE_HOME:-$HOME/.local/state}/ostrich-os}/restore/original}"
 EXT_HOME="${EXT_HOME:-${XDG_DATA_HOME:-$HOME/.local/share}/gnome-shell/extensions}"
 
 # take_restore_point: only on the first install (or the first after an uninstall).

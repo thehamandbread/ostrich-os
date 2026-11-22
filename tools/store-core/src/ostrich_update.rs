@@ -1,4 +1,4 @@
-//! Updates to Ubuntu Ostrich itself: the latest GitHub release against the version installed.
+//! Updates to Ostrich OS itself: the latest GitHub release against the version installed.
 //!
 //! Offered in the Store's Updates tab and the daily notification. Updating runs `ostrich update`
 //! pinned to that release's tag in a terminal (it asks for the password and prints what it does).
@@ -7,7 +7,7 @@
 use crate::github::{latest_release, parse_repo};
 
 /// Where the releases are published.
-pub const SLUG: &str = "thehamandbread/ubuntu-ostrich";
+pub const SLUG: &str = "thehamandbread/ostrich-os";
 
 /// The id of this entry in the Store's list of updates (the other ids are Flatpak apps and
 /// `github:owner/name`).

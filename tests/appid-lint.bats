@@ -8,10 +8,10 @@ setup() {
 	mkdir -p "$REPO/tools/t/src" "$REPO/modules/x"
 }
 
-@test "the tree passes (known renames still pending are reported, not failed)" {
+@test "the tree passes, with no exemptions" {
 	run "$LINT" "$ROOT"
 	[ "$status" -eq 0 ]
-	[[ $output == *"appid-lint: ok"* ]]
+	[ "$output" = "appid-lint: ok" ]
 }
 
 @test "an underscore form and a dash in the last part pass" {

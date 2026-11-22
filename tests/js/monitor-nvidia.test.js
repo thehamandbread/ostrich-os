@@ -27,7 +27,7 @@ check('session scope is not an app', appFromCgroup('/user.slice/user-1000.slice/
 
 const drawer = appFromCgroup('app-gnome-ostrich\\x2ddrawer-1732465.scope');
 check('the drawer scope is read as ostrich-drawer', drawer?.id === 'ostrich-drawer');
-check('the drawer, Store and Settings are Ostrich\'s own', isOwnApp(drawer) && isOwnApp({id: 'ostrich-store'}) && isOwnApp({id: 'ubuntu_ostrich.drawer'}));
+check('the drawer, Store and Settings are Ostrich\'s own', isOwnApp(drawer) && isOwnApp({id: 'ostrich-store'}) && isOwnApp({id: 'ostrich_os.drawer'}));
 check('other apps are not', !isOwnApp(desktop) && !isOwnApp(flatpak) && !isOwnApp(null) && !isOwnApp({id: 'not-ostrich-at-all'}));
 
 print(failures === 0 ? '# all passed' : `# ${failures} failed`);

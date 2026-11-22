@@ -56,7 +56,7 @@ fi
 chez_config="${XDG_CONFIG_HOME:-$HOME/.config}/chezmoi"
 # chezmoi init rewrites its config: someone's own setup is kept, so uninstall puts it back.
 if [[ -e $chez_config/chezmoi.toml ]] && ! grep -qF "$REPO" "$chez_config/chezmoi.toml"; then
-	warn "your chezmoi config is saved; Ubuntu Ostrich's dotfiles take over chezmoi until uninstall"
+	warn "your chezmoi config is saved; Ostrich OS's dotfiles take over chezmoi until uninstall"
 fi
 # Once it's ours (a later run or update), there's nothing of theirs left to save.
 if ! grep -qsF "$REPO" "$chez_config/chezmoi.toml"; then

@@ -12,5 +12,5 @@ ask_yes_no() {
 	fi
 	local -a flags=()
 	[[ $default == no ]] && flags+=(--defaultno)
-	whiptail --title "Ubuntu Ostrich" "${flags[@]}" --yesno "$question" 10 70
+	whiptail --title "Ostrich OS" "${flags[@]}" --yesno "$question" 10 70
 }

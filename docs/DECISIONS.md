@@ -376,3 +376,8 @@ Their calls, which replace earlier ones:
 - Keep the name Ostrich OS. No public ISO until Canonical's IP policy on modified images is checked; a USPTO class 9 search before announcing.
 - Council session approval is deferred to build step 8.
 - Agents: keep gemini as a data file; add a local-model agent (opencode with Ollama) so diagnosis works without a paid plan.
+
+## 2026-11-22 — Renamed: Ostrich OS
+
+- Name Ostrich OS; repo thehamandbread/ostrich-os. `ostrich-os` for paths, extension UUIDs and schemas; `ostrich_os` for app, .desktop and D-Bus ids (the portal's dash rule, 2026-10-31), which also fixes the store and setup ids. The CLI stays `ostrich`.
+- Install order: stop our apps (graceful), migrate, install new .desktop files, migrate notification children, remove old launchers and autostart, enable new UUIDs. Cookies are never moved under a running drawer, and a cross-filesystem copy is checksummed before the old copy is deleted.

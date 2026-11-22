@@ -1,5 +1,5 @@
 # tests/Dockerfile: ubuntu:26.04 smoke test. Build from the repo root:
-#   docker build -f tests/Dockerfile -t ubuntu-ostrich-test . && docker run --rm ubuntu-ostrich-test
+#   docker build -f tests/Dockerfile -t ostrich-os-test . && docker run --rm ostrich-os-test
 FROM ubuntu:26.04
 
 RUN apt-get update \

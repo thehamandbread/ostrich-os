@@ -1,4 +1,4 @@
-# tools/: Rust workspace for Ubuntu Ostrich's standalone tools (MIT).
+# tools/: Rust workspace for Ostrich OS's standalone tools (MIT).
 [workspace]
 resolver = "2"
 members = ["ostrich", "palette", "store-core", "store-tui", "store-gtk", "system-helper", "audio-tune", "drawer-host", "welcome"]
@@ -6,8 +6,8 @@ members = ["ostrich", "palette", "store-core", "store-tui", "store-gtk", "system
 [workspace.package]
 edition = "2021"
 license = "MIT"
-version = "0.5.0"
-repository = "https://github.com/thehamandbread/ubuntu-ostrich"
+version = "0.6.0"
+repository = "https://github.com/thehamandbread/ostrich-os"
 
 [profile.release]
 opt-level = 3

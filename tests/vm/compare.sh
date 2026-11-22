@@ -23,7 +23,7 @@ set -euo pipefail
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 VM="$HERE/vm.sh"
-PROJECT="ubuntu-ostrich"
+PROJECT="ostrich-os"
 VM_DIR="${VM_DIR:-${XDG_DATA_HOME:-$HOME/.local/share}/$PROJECT/vm}"
 ORIGINALS=pre
 OURS=post-fresh
@@ -68,7 +68,7 @@ scenes() { # snapshot side
 	"$VM" start
 	if ((CHECKOUT)) && [[ $2 == ours ]]; then
 		local zip
-		for zip in "$HERE/../../dist"/*@ubuntu-ostrich.shell-extension.zip; do
+		for zip in "$HERE/../../dist"/*@ostrich-os.shell-extension.zip; do
 			"$VM" copy "$zip" /tmp/ext.zip
 			"$VM" ssh "gnome-extensions install --force /tmp/ext.zip"
 		done

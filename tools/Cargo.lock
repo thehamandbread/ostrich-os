@@ -31,7 +31,7 @@ checksum = "683d7910e743518b0e34f1186f92494becacb047c7b6bf616c96772180fef923"
 
 [[package]]
 name = "audio-tune"
-version = "0.5.0"
+version = "0.6.0"
 
 [[package]]
 name = "autocfg"
@@ -243,7 +243,7 @@ dependencies = [
 
 [[package]]
 name = "drawer-host"
-version = "0.5.0"
+version = "0.6.0"
 dependencies = [
  "gio",
  "gtk4",
@@ -1081,11 +1081,11 @@ checksum = "9f7c3e4beb33f85d45ae3e3a1792185706c8e16d043238c593331cc7cd313b50"
 
 [[package]]
 name = "ostrich"
-version = "0.5.0"
+version = "0.6.0"
 
 [[package]]
 name = "palette"
-version = "0.5.0"
+version = "0.6.0"
 dependencies = [
  "image",
  "jxl-oxide",
@@ -1438,7 +1438,7 @@ checksum = "a2eb9349b6444b326872e140eb1cf5e7c522154d69e7a0ffb0fb81c06b37543f"
 
 [[package]]
 name = "store-core"
-version = "0.5.0"
+version = "0.6.0"
 dependencies = [
  "flate2",
  "nucleo-matcher",
@@ -1449,7 +1449,7 @@ dependencies = [
 
 [[package]]
 name = "store-gtk"
-version = "0.5.0"
+version = "0.6.0"
 dependencies = [
  "gtk4",
  "libadwaita",
@@ -1459,7 +1459,7 @@ dependencies = [
 
 [[package]]
 name = "store-tui"
-version = "0.5.0"
+version = "0.6.0"
 dependencies = [
  "crossterm",
  "ratatui",
@@ -1544,7 +1544,7 @@ dependencies = [
 
 [[package]]
 name = "system-helper"
-version = "0.5.0"
+version = "0.6.0"
 
 [[package]]
 name = "target-lexicon"
@@ -1740,7 +1740,7 @@ dependencies = [
 
 [[package]]
 name = "welcome"
-version = "0.5.0"
+version = "0.6.0"
 dependencies = [
  "audio-tune",
  "gtk4",

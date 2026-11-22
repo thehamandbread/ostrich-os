@@ -3,7 +3,7 @@
 #
 #   blur-test.sh [--snapshot NAME] [--out DIR]
 #
-# Needs a snapshot with Ubuntu Ostrich installed (default: post-fresh). The blur and dock
+# Needs a snapshot with Ostrich OS installed (default: post-fresh). The blur and dock
 # extensions from this checkout replace the installed ones. The wallpaper becomes a black-and-white
 # checkerboard (24 px squares); then:
 #   - on the open desktop the squares show at full contrast (the check is fair);
@@ -18,7 +18,7 @@ HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$HERE/journal-gate.sh"
 ROOT="$(cd "$HERE/../.." && pwd)"
 VM="$HERE/vm.sh"
-PROJECT="ubuntu-ostrich"
+PROJECT="ostrich-os"
 VM_DIR="${VM_DIR:-${XDG_DATA_HOME:-$HOME/.local/share}/$PROJECT/vm}"
 SNAPSHOT=post-fresh
 OUT="$VM_DIR/blur-test"
@@ -46,8 +46,8 @@ step() { printf '== %s\n' "$*"; }
 SESSION='export XDG_RUNTIME_DIR=/run/user/$(id -u) DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/$(id -u)/bus;'
 run() { "$VM" ssh "$SESSION $*"; }
 # shellcheck disable=SC2016 # expands in the VM
-BS='gsettings --schemadir $HOME/.local/share/gnome-shell/extensions/blur@ubuntu-ostrich/schemas'
-SCHEMA=org.gnome.shell.extensions.ubuntu-ostrich.blur
+BS='gsettings --schemadir $HOME/.local/share/gnome-shell/extensions/blur@ostrich-os/schemas'
+SCHEMA=org.gnome.shell.extensions.ostrich-os.blur
 # Standard deviation and mean of a box of a screenshot: "std mean".
 stats() { # png x0 y0 x1 y1
 	python3 -I - "$@" <<'EOF'
@@ -69,7 +69,7 @@ step "start from $SNAPSHOT with this checkout's blur and dock"
 sleep 10
 "$ROOT/modules/gnome/extensions/build.sh" blur dock >/dev/null
 for e in blur dock; do
-	"$VM" copy "$ROOT/dist/$e@ubuntu-ostrich.shell-extension.zip" "/tmp/$e.zip"
+	"$VM" copy "$ROOT/dist/$e@ostrich-os.shell-extension.zip" "/tmp/$e.zip"
 	run "gnome-extensions install --force /tmp/$e.zip"
 done
 # The checkerboard wallpaper, written with the standard library only.

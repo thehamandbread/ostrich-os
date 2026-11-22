@@ -6,7 +6,7 @@
 #   drawer-test.sh --sites [--out DIR]             loads every recommended site in WebKitGTK and
 #                                                  flags pages that turn the browser away
 #
-# Needs a snapshot with Ubuntu Ostrich installed (default: post-fresh) and the tools built into
+# Needs a snapshot with Ostrich OS installed (default: post-fresh) and the tools built into
 # $VM_DIR/tools-bin (build-tools.sh). The drawer and focus extensions from this checkout and the
 # freshly built drawer and ostrich replace the installed ones. The drawer's state comes from its
 # published `state` action (org.gtk.Actions.Describe). Screenshots go to DIR.
@@ -17,7 +17,7 @@ HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$HERE/journal-gate.sh"
 ROOT="$(cd "$HERE/../.." && pwd)"
 VM="$HERE/vm.sh"
-PROJECT="ubuntu-ostrich"
+PROJECT="ostrich-os"
 VM_DIR="${VM_DIR:-${XDG_DATA_HOME:-$HOME/.local/share}/$PROJECT/vm}"
 SNAPSHOT=post-fresh
 OUT="$VM_DIR/drawer-test"
@@ -52,12 +52,12 @@ step() { printf '== %s\n' "$*"; }
 SESSION='export XDG_RUNTIME_DIR=/run/user/$(id -u) DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/$(id -u)/bus WAYLAND_DISPLAY=wayland-0;'
 run() { "$VM" ssh "$SESSION $*"; }
 # shellcheck disable=SC2016 # expands in the VM
-DS='gsettings --schemadir $HOME/.local/share/gnome-shell/extensions/drawer@ubuntu-ostrich/schemas'
-DRAWER_SCHEMA=org.gnome.shell.extensions.ubuntu-ostrich.drawer
+DS='gsettings --schemadir $HOME/.local/share/gnome-shell/extensions/drawer@ostrich-os/schemas'
+DRAWER_SCHEMA=org.gnome.shell.extensions.ostrich_os.drawer
 # shellcheck disable=SC2016 # expands in the VM
 OSTRICH='$HOME/.local/bin/ostrich'
 # shellcheck disable=SC2016 # expands in the VM
-HOST='$HOME/.local/libexec/ubuntu-ostrich/ostrich-drawer'
+HOST='$HOME/.local/libexec/ostrich-os/ostrich-drawer'
 TOP=32 # GNOME's top bar height at 1080p in the VM
 
 # The drawer's state as shell-friendly lines: "active ID", "shown true", "window W H",
@@ -83,7 +83,7 @@ for x in s.get("sites", []):
           "width=%s" % x["width"], "height=%s" % x["height"], "keep=" + low(x["keep"]), "mb=%s" % x.get("mb", 0))
 EOF
 state() {
-	run "gdbus call --session --dest ubuntu_ostrich.drawer --object-path /ubuntu_ostrich/drawer --method org.gtk.Actions.Describe state" |
+	run "gdbus call --session --dest ostrich_os.drawer --object-path /ostrich_os/drawer --method org.gtk.Actions.Describe state" |
 		python3 -I -c "$PY_STATE"
 }
 field() { sed -n "s/^$1 //p" <<<"$2" | head -1; }
@@ -154,7 +154,7 @@ fi
 
 "$ROOT/modules/gnome/extensions/build.sh" drawer focus tray dock blur monitor >/dev/null
 for e in drawer focus tray dock blur monitor; do
-	"$VM" copy "$ROOT/dist/$e@ubuntu-ostrich.shell-extension.zip" "/tmp/$e.zip"
+	"$VM" copy "$ROOT/dist/$e@ostrich-os.shell-extension.zip" "/tmp/$e.zip"
 	run "gnome-extensions install --force /tmp/$e.zip"
 done
 "$VM" copy "$VM_DIR/tools-bin/ostrich-drawer" /tmp/ostrich-drawer
@@ -177,7 +177,7 @@ is "at login only kept sites are loaded ($unkept_loaded others)" test "$unkept_l
 is "bar has the 4 starters" test "$(field bar "$s")" = "messages chat claude youtube"
 # Messaging pages aren't media players: no empty "ostrich-drawer" card in the clock menu (council
 # verdict 2026-10-24-motion-now-playing-spotify-colour, M1).
-players=$(run "busctl --user list" | grep -c 'org.mpris.MediaPlayer2.ubuntu_ostrich.drawer' || true)
+players=$(run "busctl --user list" | grep -c 'org.mpris.MediaPlayer2.ostrich_os.drawer' || true)
 is "no drawer media players at login ($players)" test "$players" = 0
 run "$DS set $DRAWER_SCHEMA bar-max 0"
 sleep 2
@@ -321,7 +321,7 @@ step "unread badge"
 run "mkdir -p /tmp/site && printf '<title>(3) Test inbox</title><p>hi</p>' > /tmp/site/t.html && (cd /tmp/site && setsid -f python3 -m http.server 8765 >/dev/null 2>&1)"
 sleep 1
 run "$HOST --add http://localhost:8765/t.html"
-run "gdbus call --session --dest ubuntu_ostrich.drawer --object-path /ubuntu_ostrich/drawer --method org.gtk.Actions.Activate keep \"[<('localhost', true)>]\" {}" >/dev/null
+run "gdbus call --session --dest ostrich_os.drawer --object-path /ostrich_os/drawer --method org.gtk.Actions.Activate keep \"[<('localhost', true)>]\" {}" >/dev/null
 run "$DS set $DRAWER_SCHEMA bar-max 5"
 sleep 5
 s=$(state)
@@ -347,18 +347,18 @@ shot 06b-left-site
 run "pkill -f '[f]irefox' || true"
 run "$HOST --remove localhost"
 sleep 1
-is "the drawer's data folder is private" test "$(run 'stat -c %a ~/.local/share/ubuntu-ostrich/drawer')" = 700
+is "the drawer's data folder is private" test "$(run 'stat -c %a ~/.local/share/ostrich-os/drawer')" = 700
 # Its cookies and storage are cleared at once; the folder goes at the drawer's next start.
 run "pkill -f '[o]strich-drawer' || true"
 sleep 1
 run "$HOST --hidden >/dev/null 2>&1 &"
 sleep 4
-is "a removed site's data is gone after a restart" test "$(run 'test -e ~/.local/share/ubuntu-ostrich/drawer/localhost && echo kept')" = ""
+is "a removed site's data is gone after a restart" test "$(run 'test -e ~/.local/share/ostrich-os/drawer/localhost && echo kept')" = ""
 
 step "a kept site shows what it costs (measured 30 s after it loads)"
 # Messages is kept loaded only on a machine with 12 GB or more; keep it here, so the check doesn't
 # depend on the VM's memory (the restart above left nothing loaded on a fresh install).
-run "gdbus call --session --dest ubuntu_ostrich.drawer --object-path /ubuntu_ostrich/drawer --method org.gtk.Actions.Activate keep \"[<('messages', true)>]\" {}" >/dev/null
+run "gdbus call --session --dest ostrich_os.drawer --object-path /ostrich_os/drawer --method org.gtk.Actions.Activate keep \"[<('messages', true)>]\" {}" >/dev/null
 for _ in $(seq 25); do
 	site_has messages "mb=[1-9]" "$(state)" && break
 	sleep 3
@@ -394,7 +394,7 @@ sleep 2
 is "YouTube loaded" site_has youtube "loaded=true" "$(state)"
 # Media sites may still be players (they're the ones a media card should control). Informational:
 # YouTube only registers once its page has media, which needs the network.
-echo "    drawer media players with YouTube open: $(run "busctl --user list" | grep -c 'org.mpris.MediaPlayer2.ubuntu_ostrich.drawer' || true)"
+echo "    drawer media players with YouTube open: $(run "busctl --user list" | grep -c 'org.mpris.MediaPlayer2.ostrich_os.drawer' || true)"
 run "sudo powerprofilesctl set power-saver"
 sleep 4
 s=$(state)
@@ -518,7 +518,7 @@ sleep 2
 s=$(state)
 is "a name typed in its menu adds the site" test "$(field added "$s")" = whatsapp
 "$VM" key esc
-act() { run "gdbus call --session --dest ubuntu_ostrich.drawer --object-path /ubuntu_ostrich/drawer --method org.gtk.Actions.Activate $1 \"[<'$2'>]\" {}" >/dev/null; }
+act() { run "gdbus call --session --dest ostrich_os.drawer --object-path /ostrich_os/drawer --method org.gtk.Actions.Activate $1 \"[<'$2'>]\" {}" >/dev/null; }
 act remove whatsapp
 sleep 1
 act add whatsapp

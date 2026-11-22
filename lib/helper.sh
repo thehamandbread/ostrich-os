@@ -3,9 +3,9 @@
 # hardware modules, each of which calls it only when its hardware is present). Source after pkg.sh.
 
 HELPER_SRC="${HELPER_SRC:-$LIB_DIR/../dist/ostrich-system-helper}"
-HELPER_DEST="${HELPER_DEST:-/usr/libexec/ubuntu-ostrich/system-helper}"
-POLICY_SRC="$LIB_DIR/../modules/hardware/org.ubuntu-ostrich.system-helper.policy"
-POLICY_DEST="${POLICY_DEST:-/usr/share/polkit-1/actions/org.ubuntu-ostrich.system-helper.policy}"
+HELPER_DEST="${HELPER_DEST:-/usr/libexec/ostrich-os/system-helper}"
+POLICY_SRC="$LIB_DIR/../modules/hardware/org.ostrich-os.system-helper.policy"
+POLICY_DEST="${POLICY_DEST:-/usr/share/polkit-1/actions/org.ostrich-os.system-helper.policy}"
 
 # sudo_install <src> <dest> <mode>: root-owned file; compared first, the old one kept beside it.
 sudo_install() {
@@ -15,10 +15,10 @@ sudo_install() {
 	fi
 	if [[ ! -e $dest ]]; then
 		record_line created-root.txt "$dest"
-	elif [[ ! -e $dest.before-ubuntu-ostrich ]] && ! grep -qxF -- "$dest" "$RESTORE_DIR/created-root.txt" 2>/dev/null; then
+	elif [[ ! -e $dest.before-ostrich-os ]] && ! grep -qxF -- "$dest" "$RESTORE_DIR/created-root.txt" 2>/dev/null; then
 		# The machine's own file, kept once: later runs replace only our version.
-		run_cmd "$SUDO" cp -a "$dest" "$dest.before-ubuntu-ostrich"
-		record_line originals-root.txt "$dest	$dest.before-ubuntu-ostrich"
+		run_cmd "$SUDO" cp -a "$dest" "$dest.before-ostrich-os"
+		record_line originals-root.txt "$dest	$dest.before-ostrich-os"
 	fi
 	changed "install $dest"
 	run_cmd "$SUDO" install -D -m "$mode" "$src" "$dest"

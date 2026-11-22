@@ -1,5 +1,5 @@
 {
-  "uuid": "blur-spike@ubuntu-ostrich",
+  "uuid": "blur-spike@ostrich-os",
   "name": "Blur spike",
   "description": "Throwaway spike: live panel blur that only re-renders when what is behind the panel changes.",
   "shell-version": ["50"],

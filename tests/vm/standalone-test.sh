@@ -16,7 +16,7 @@ HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=tests/vm/journal-gate.sh
 source "$HERE/journal-gate.sh"
 VM="$HERE/vm.sh"
-VM_DIR="${VM_DIR:-${XDG_DATA_HOME:-$HOME/.local/share}/ubuntu-ostrich/vm}"
+VM_DIR="${VM_DIR:-${XDG_DATA_HOME:-$HOME/.local/share}/ostrich-os/vm}"
 OUT="$VM_DIR/standalone-test"
 SNAPSHOT=stock
 STEADY_MB="${STEADY_MB:-8}"
@@ -73,7 +73,7 @@ for n in "${names[@]}"; do
 	run "gsettings set org.gnome.desktop.session idle-delay 0"
 	prev=$(rss_kb)
 	for _ in 1 2 3; do
-		run "for i in \$(seq 20); do gnome-extensions disable $n@ubuntu-ostrich; sleep 0.4; gnome-extensions enable $n@ubuntu-ostrich; sleep 0.4; done"
+		run "for i in \$(seq 20); do gnome-extensions disable $n@ostrich-os; sleep 0.4; gnome-extensions enable $n@ostrich-os; sleep 0.4; done"
 		sleep 3
 		now=$(rss_kb)
 		grew=$(((now - prev) / 1024))
@@ -91,7 +91,7 @@ for n in "${names[@]}"; do
 		read -r bx by < <(tree showing "'Monitor settings'")
 		"$VM" click "$bx" "$by"
 	else
-		run "setsid -f gnome-extensions prefs $n@ubuntu-ostrich >/dev/null 2>&1"
+		run "setsid -f gnome-extensions prefs $n@ostrich-os >/dev/null 2>&1"
 	fi
 	sleep 6
 	"$VM" screenshot "$OUT/$n-prefs.png" >/dev/null

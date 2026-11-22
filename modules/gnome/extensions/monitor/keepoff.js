@@ -7,7 +7,7 @@ import Gio from 'gi://Gio';
 import GioUnix from 'gi://GioUnix';
 import GLib from 'gi://GLib';
 
-const STATE_FILE = GLib.build_filenamev([GLib.get_user_config_dir(), 'ubuntu-ostrich', 'keep-off.json']);
+const STATE_FILE = GLib.build_filenamev([GLib.get_user_config_dir(), 'ostrich-os', 'keep-off.json']);
 // Where the original nvidia-power extension kept this list; read once if ours doesn't exist yet.
 const LEGACY_STATE_FILE = GLib.build_filenamev([GLib.get_user_config_dir(), 'nvidia-power', 'keep-off.json']);
 const APPS_DIR = GLib.build_filenamev([GLib.get_user_data_dir(), 'applications']);

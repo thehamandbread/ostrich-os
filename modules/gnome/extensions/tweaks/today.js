@@ -21,7 +21,7 @@ import {profilesProxy, proxy} from './_lib/timers.js';
 const UPOWER_CHARGING = 1;
 const UPOWER_DISCHARGING = 2;
 const UPOWER_FULL = 4;
-const MONITOR = 'monitor@ubuntu-ostrich'; // its indicator's role in the top bar
+const MONITOR = 'monitor@ostrich-os'; // its indicator's role in the top bar
 const PROFILES = {'performance': 'Performance', 'balanced': 'Balanced', 'power-saver': 'Power Saver'};
 
 const decoder = new TextDecoder();

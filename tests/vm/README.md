@@ -2,7 +2,7 @@
 
 Every test runs here (or later on an external SSD). The developer's own machine is never modified. See `docs/DESIGN.md` → Testing.
 
-`vm.sh` drives a QEMU/KVM VM running Ubuntu 26.04 desktop. Images, keys and the ISO are stored in `~/.local/share/ubuntu-ostrich/vm/` (override with `VM_DIR`). Nothing is stored in the repo.
+`vm.sh` drives a QEMU/KVM VM running Ubuntu 26.04 desktop. Images, keys and the ISO are stored in `~/.local/share/ostrich-os/vm/` (override with `VM_DIR`). Nothing is stored in the repo.
 
 ## One-time host setup
 
@@ -79,7 +79,7 @@ Drag a box around the problem, or click a part to pick it (it's outlined and nam
 wrong, choose Bug / Looks wrong / Idea, and press Enter (Shift+Enter for a new line, Esc to cancel).
 More boxes can go in one note.
 
-Notes land straight on this computer, in `~/.local/share/ubuntu-ostrich/vm/critiques/` (the VM
+Notes land straight on this computer, in `~/.local/share/ostrich-os/vm/critiques/` (the VM
 mounts that folder), one folder each with the screenshot, a crop per box, what was boxed and its
 settings, the versions, and the recent errors. Nothing is lost when a snapshot is restored.
 
@@ -91,5 +91,5 @@ tests/vm/critique.sh show ID         # one note
 tests/vm/critique.sh selftest        # the tool, end to end
 ```
 
-The tool is a test-VM extension only (`tests/vm/critique/`); it is never part of Ubuntu Ostrich.
+The tool is a test-VM extension only (`tests/vm/critique/`); it is never part of Ostrich OS.
 

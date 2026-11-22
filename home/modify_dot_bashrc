@@ -1,7 +1,12 @@
 #!/usr/bin/env bash
 # chezmoi modify script: keep the user's ~/.bashrc and add one line that sources our additions.
+# The line (and its comment) an earlier name wrote is taken out, so it is not sourced twice.
 set -euo pipefail
-line='[ -f "$HOME/.config/ubuntu-ostrich/bashrc.sh" ] && . "$HOME/.config/ubuntu-ostrich/bashrc.sh"'
+line='[ -f "$HOME/.config/ostrich-os/bashrc.sh" ] && . "$HOME/.config/ostrich-os/bashrc.sh"'
 content=$(cat)
+for old in cleanest-ubuntu-setup ostrich-ubuntu ubuntu-ostrich; do
+	content=$(grep -vxF -e "[ -f \"\$HOME/.config/$old/bashrc.sh\" ] && . \"\$HOME/.config/$old/bashrc.sh\"" <<<"$content" || true)
+done
+content=$(grep -vxF -e '# Ubuntu Ostrich' <<<"$content" || true)
 printf '%s\n' "$content"
-grep -qxF "$line" <<<"$content" || printf '\n# Ubuntu Ostrich\n%s\n' "$line"
+grep -qxF "$line" <<<"$content" || printf '\n# Ostrich OS\n%s\n' "$line"

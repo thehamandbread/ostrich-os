@@ -75,6 +75,6 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Build ubuntu:26.04 test image
-        run: docker build -f tests/Dockerfile -t ubuntu-ostrich-test .
+        run: docker build -f tests/Dockerfile -t ostrich-os-test .
       - name: Dry run + bats (as non-root user)
-        run: docker run --rm ubuntu-ostrich-test
+        run: docker run --rm ostrich-os-test

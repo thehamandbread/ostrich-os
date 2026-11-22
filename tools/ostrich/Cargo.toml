@@ -1,6 +1,6 @@
 [package]
 name = "ostrich"
-description = "The ostrich command: one entry point for Ubuntu Ostrich's tools"
+description = "The ostrich command: one entry point for Ostrich OS's tools"
 edition.workspace = true
 license.workspace = true
 version.workspace = true

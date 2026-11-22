@@ -1,8 +1,8 @@
-//! ostrich: the one command for Ubuntu Ostrich.
+//! ostrich: the one command for Ostrich OS.
 //!
 //!   ostrich <command> [arguments]       ostrich help   lists the commands
 //!
-//! Each command is a separate program in ~/.local/libexec/ubuntu-ostrich/ (OSTRICH_LIBEXEC
+//! Each command is a separate program in ~/.local/libexec/ostrich-os/ (OSTRICH_LIBEXEC
 //! overrides it), so this front end stays tiny and the GTK/WebKit tools load only when used.
 
 mod config;
@@ -44,7 +44,7 @@ const COMMANDS: [(&str, &str, &str, &str); 6] = [
     (
         "settings",
         "ostrich-setup",
-        "Ostrich Settings: every Ubuntu Ostrich setting, a page each.",
+        "Ostrich Settings: every Ostrich OS setting, a page each.",
         "ostrich settings --step dock",
     ),
     (
@@ -60,7 +60,7 @@ fn libexec() -> PathBuf {
         .map(PathBuf::from)
         .unwrap_or_else(|| {
             PathBuf::from(stdenv::var_os("HOME").unwrap_or_default())
-                .join(".local/libexec/ubuntu-ostrich")
+                .join(".local/libexec/ostrich-os")
         })
 }
 
@@ -83,26 +83,26 @@ fn state_home() -> PathBuf {
 /// The installer that `update` and `uninstall` run: the copy the one-line install keeps, else the
 /// checkout it was installed from (install.sh records its path).
 fn installer() -> Option<PathBuf> {
-    let fetched = data_home().join("ubuntu-ostrich/src/install.sh");
+    let fetched = data_home().join("ostrich-os/src/install.sh");
     if fetched.exists() {
         return Some(fetched);
     }
-    let recorded = std::fs::read_to_string(state_home().join("ubuntu-ostrich/source")).ok()?;
+    let recorded = std::fs::read_to_string(state_home().join("ostrich-os/source")).ok()?;
     let checkout = PathBuf::from(recorded.trim()).join("install.sh");
     checkout.exists().then_some(checkout)
 }
 
 fn help() -> String {
     let mut s =
-        format!("Ubuntu Ostrich {VERSION}\n\nUsage: ostrich <command> [arguments]\n\nCommands:\n");
+        format!("Ostrich OS {VERSION}\n\nUsage: ostrich <command> [arguments]\n\nCommands:\n");
     for (name, _, text, example) in COMMANDS {
         s.push_str(&format!("  {name:<9} {text}\n            e.g. {example}\n"));
     }
     s.push_str(
         "  config    Every setting from the terminal, and a settings file for your dotfiles (`ostrich config help`).\n  \
          workspace Saved workspaces: open one named, close it where you left off (`ostrich workspace help`; also `env`).\n  \
-         update    Get the latest Ubuntu Ostrich and apply it (safe to run any time).\n  \
-         uninstall Put your computer back the way it was before Ubuntu Ostrich.\n  \
+         update    Get the latest Ostrich OS and apply it (safe to run any time).\n  \
+         uninstall Put your computer back the way it was before Ostrich OS.\n  \
          version   Show the version.\n  \
          help      Show this.\n\n\
          Add --help after a command for its own options, e.g. `ostrich store --help`.\n",
@@ -127,7 +127,7 @@ fn decide(args: &[String]) -> Action {
     let rest = args[1..].to_vec();
     match cmd.as_str() {
         "help" | "-h" | "--help" => Action::Print(help()),
-        "version" | "-V" | "--version" => Action::Print(format!("Ubuntu Ostrich {VERSION}\n")),
+        "version" | "-V" | "--version" => Action::Print(format!("Ostrich OS {VERSION}\n")),
         "env" | "workspace" => Action::Env(rest),
         "config" => Action::Config(rest),
         "update" | "uninstall" => match installer() {
@@ -139,7 +139,7 @@ fn decide(args: &[String]) -> Action {
             None => Action::Fail(
                 "ostrich: can't find the installer it was installed with (the downloaded copy, or \
                  the checkout it was run from, if that has moved). Run the install command again:\n  \
-                 wget -qO- https://raw.githubusercontent.com/thehamandbread/ubuntu-ostrich/main/install.sh | bash\n"
+                 wget -qO- https://raw.githubusercontent.com/thehamandbread/ostrich-os/main/install.sh | bash\n"
                     .into(),
             ),
         },
@@ -267,7 +267,7 @@ mod tests {
         let root = std::env::temp_dir().join(format!("ostrich-test-{}", std::process::id()));
         let (data, state, checkout) =
             (root.join("data"), root.join("state"), root.join("checkout"));
-        for d in [&data, &state.join("ubuntu-ostrich"), &checkout] {
+        for d in [&data, &state.join("ostrich-os"), &checkout] {
             std::fs::create_dir_all(d).unwrap();
         }
         stdenv::set_var("XDG_DATA_HOME", &data);
@@ -276,7 +276,7 @@ mod tests {
         // Installed from a checkout: install.sh recorded where.
         std::fs::write(checkout.join("install.sh"), "").unwrap();
         std::fs::write(
-            state.join("ubuntu-ostrich/source"),
+            state.join("ostrich-os/source"),
             format!("{}\n", checkout.display()),
         )
         .unwrap();
@@ -292,15 +292,12 @@ mod tests {
             )
         );
         // The one-line install's copy comes first.
-        std::fs::create_dir_all(data.join("ubuntu-ostrich/src")).unwrap();
-        std::fs::write(data.join("ubuntu-ostrich/src/install.sh"), "").unwrap();
+        std::fs::create_dir_all(data.join("ostrich-os/src")).unwrap();
+        std::fs::write(data.join("ostrich-os/src/install.sh"), "").unwrap();
         let Action::Run(_, args) = decide(&a(&["update"])) else {
             panic!()
         };
-        assert!(
-            args[0].ends_with("ubuntu-ostrich/src/install.sh"),
-            "{args:?}"
-        );
+        assert!(args[0].ends_with("ostrich-os/src/install.sh"), "{args:?}");
         std::fs::remove_dir_all(&root).unwrap();
     }
 
@@ -322,7 +319,7 @@ mod tests {
     fn version() {
         assert_eq!(
             decide(&a(&["--version"])),
-            Action::Print(format!("Ubuntu Ostrich {VERSION}\n"))
+            Action::Print(format!("Ostrich OS {VERSION}\n"))
         );
     }
 }

@@ -1,12 +1,12 @@
-//! ostrich theme: theme accents from the wallpaper (Ubuntu Ostrich).
+//! ostrich theme: theme accents from the wallpaper (Ostrich OS).
 //!
 //!   ostrich theme [list] [--wallpaper PATH]          numbered swatches: wallpaper picks, then GNOME's accents
 //!   ostrich theme apply <N | #rrggbb | NAME> [--wallpaper PATH] [--dry-run]
 //!
 //! `apply` writes, keeping everything outside its marked block:
 //!   ~/.config/gtk-4.0/gtk.css, ~/.config/gtk-3.0/gtk.css   accent override
-//!   ~/.config/ghostty/themes/ubuntu-ostrich        cursor/selection accent
-//!   ~/.config/ubuntu-ostrich/palette.json           for the shell extensions
+//!   ~/.config/ghostty/themes/ostrich-os        cursor/selection accent
+//!   ~/.config/ostrich-os/palette.json           for the shell extensions
 //! and sets org.gnome.desktop.interface accent-color to the nearest standard accent.
 //!
 //!   ostrich theme scheme [list] [--tsv]           the colour schemes (built in, then your own);
@@ -16,7 +16,7 @@
 //!   ostrich theme scheme apply ID [--dry-run]     its extension colours (live), accent, icon theme
 //!                                                 and wallpaper
 //!   ostrich theme scheme new ID [--from BASE]     your own, copied from BASE (default: the current
-//!                                                 one) into ~/.config/ubuntu-ostrich/schemes/
+//!                                                 one) into ~/.config/ostrich-os/schemes/
 //!   ostrich theme scheme delete ID                one of your own
 
 mod color;
@@ -187,7 +187,7 @@ fn apply(
         write(&path, &merged, dry_run)?;
     }
     put(
-        &cfg.join("ghostty/themes/ubuntu-ostrich"),
+        &cfg.join("ghostty/themes/ostrich-os"),
         &output::ghostty_theme(accent),
         dry_run,
     )?;
@@ -195,7 +195,7 @@ fn apply(
         .map(|p| p.display().to_string())
         .unwrap_or_default();
     put(
-        &cfg.join("ubuntu-ostrich/palette.json"),
+        &cfg.join("ostrich-os/palette.json"),
         &output::palette_json(accent, candidates, &wp),
         dry_run,
     )?;
@@ -261,7 +261,7 @@ fn gs_set(schema: &str, key: &str, value: &str, dry_run: bool) -> Result<(), Str
 }
 
 fn scheme_dir() -> PathBuf {
-    config_dir().join("ubuntu-ostrich/scheme")
+    config_dir().join("ostrich-os/scheme")
 }
 
 fn current_scheme() -> Option<String> {
@@ -284,8 +284,8 @@ fn before_files() -> [(&'static str, PathBuf); 4] {
     [
         ("gtk4.css", cfg.join("gtk-4.0/gtk.css")),
         ("gtk3.css", cfg.join("gtk-3.0/gtk.css")),
-        ("ghostty", cfg.join("ghostty/themes/ubuntu-ostrich")),
-        ("palette.json", cfg.join("ubuntu-ostrich/palette.json")),
+        ("ghostty", cfg.join("ghostty/themes/ostrich-os")),
+        ("palette.json", cfg.join("ostrich-os/palette.json")),
     ]
 }
 
@@ -392,7 +392,7 @@ fn apply_scheme(s: &scheme::Scheme, dry_run: bool) -> Result<(), String> {
     // The wallpaper: drawn from the scheme's colours, or the pictures it names (if installed).
     let mut walls: Vec<(&str, PathBuf)> = Vec::new();
     if let Some((dark, light)) = scheme::wallpaper_svgs(s) {
-        let out = data_dir().join("backgrounds/ubuntu-ostrich");
+        let out = data_dir().join("backgrounds/ostrich-os");
         let (d, l) = (
             out.join(format!("{}.svg", s.id)),
             out.join(format!("{}-light.svg", s.id)),
@@ -686,7 +686,7 @@ mod tests {
         let gtk = root.join("config/gtk-4.0/gtk.css");
         fs::create_dir_all(gtk.parent().unwrap()).unwrap();
         fs::write(&gtk, "mine { }\n").unwrap();
-        let ghostty = root.join("config/ghostty/themes/ubuntu-ostrich");
+        let ghostty = root.join("config/ghostty/themes/ostrich-os");
         fs::create_dir_all(ghostty.parent().unwrap()).unwrap();
         fs::write(&ghostty, "from an earlier ostrich theme apply\n").unwrap();
 
@@ -721,7 +721,7 @@ mod tests {
         // Our own files are never "backed up" as if they were the user's.
         assert!(!ghostty.with_extension("css.before-palette").exists());
         assert!(!root
-            .join("config/ubuntu-ostrich/palette.css.before-palette")
+            .join("config/ostrich-os/palette.css.before-palette")
             .exists());
         fs::remove_dir_all(&root).unwrap();
     }

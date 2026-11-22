@@ -1,4 +1,4 @@
-# tools/icons/palette.toml: Ubuntu Ostrich's colours, in one place. export.sh fills the app icons
+# tools/icons/palette.toml: Ostrich OS's colours, in one place. export.sh fills the app icons
 # (template.svg and the glyphs) with the #rrggbb ones; modules/gnome/extensions/build.sh fills the
 # extensions' stylesheet.css.in with all of them. Change a colour here, run both, and everything
 # follows. It is also the "Classic" scheme (`ostrich theme scheme`): the colours without one. The

@@ -24,7 +24,7 @@ HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=tests/vm/journal-gate.sh
 source "$HERE/journal-gate.sh"
 VM="$HERE/vm.sh"
-VM_DIR="${VM_DIR:-${XDG_DATA_HOME:-$HOME/.local/share}/ubuntu-ostrich/vm}"
+VM_DIR="${VM_DIR:-${XDG_DATA_HOME:-$HOME/.local/share}/ostrich-os/vm}"
 OUT="$VM_DIR/topbar-test"
 SNAPSHOT="try-me"
 PILLS="${PILLS:-24 51 78 105 132}" # x of the five workspace pills (y 15)
@@ -126,7 +126,7 @@ sleep 1
 
 echo "== no activation: open without touching a row"
 # Everything a row in either menu could change.
-state() { run "echo \$(gsettings get org.gnome.desktop.notifications show-banners) \$(gsettings --schemadir \$HOME/.local/share/gnome-shell/extensions/focus@ubuntu-ostrich/schemas get org.gnome.shell.extensions.ubuntu-ostrich.focus focus-on 2>/dev/null || echo -) \$(gsettings get org.gnome.desktop.interface color-scheme) \$(powerprofilesctl get)"; }
+state() { run "echo \$(gsettings get org.gnome.desktop.notifications show-banners) \$(gsettings --schemadir \$HOME/.local/share/gnome-shell/extensions/focus@ostrich-os/schemas get org.gnome.shell.extensions.ostrich-os.focus focus-on 2>/dev/null || echo -) \$(gsettings get org.gnome.desktop.interface color-scheme) \$(powerprofilesctl get)"; }
 sweep() { for p in "$@"; do
 	"$VM" move "${p%,*}" "${p#*,}"
 	sleep 0.4
@@ -169,7 +169,7 @@ read -r r2 _ < <(stats "$OUT/saver-2.png" "$MONITOR_BOX")
 if ((r2 > 20)); then ok "readings back on Balanced (contrast $r2)"; else bad "readings not back on Balanced (contrast $r2)"; fi
 
 echo "== hot corner: pushing up into the top-right corner opens quick settings"
-CORNER_KEY=/org/gnome/shell/extensions/ubuntu-ostrich/tweaks/quick-settings-corner
+CORNER_KEY=/org/gnome/shell/extensions/ostrich-os/tweaks/quick-settings-corner
 qs_open() { run "python3 - showing 'Dark Style'" <"$HERE/a11y-tree.py" >/dev/null 2>&1; } # a stock tile, on screen only while quick settings is open
 push_corner() {
 	"$VM" key esc

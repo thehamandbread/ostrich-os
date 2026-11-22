@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-// _lib/alert.js: Ubuntu Ostrich's pop-out alert, for every Ostrich system alert.
+// _lib/alert.js: Ostrich OS's pop-out alert, for every Ostrich system alert.
 // It grows out of the top-bar item it belongs to (the monitor's readings, say) and expands into a
 // card just below it: a title, one plain line on what's happening, an icon, and buttons. App
 // notifications (mail, chat) stay GNOME's banners; this is for the system telling you something.

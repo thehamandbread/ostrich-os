@@ -1,11 +1,11 @@
 ---
 name: ostrich-design
-description: Design rules for Ubuntu Ostrich's UI, from the GNOME HIG, libadwaita 1.9, GNOME Shell 50's own theme (St CSS), WCAG 2.2 and Material/Apple motion. Use before and while writing or changing any GNOME Shell extension surface (top bar items, dock, menus, quick settings, pop-out cards, OSDs, stylesheet.css/.css.in) or any GTK4/libadwaita screen in tools/ (Ostrich Settings, Store, Drawer, speaker tuning), and when reviewing how something looks.
+description: Design rules for Ostrich OS's UI, from the GNOME HIG, libadwaita 1.9, GNOME Shell 50's own theme (St CSS), WCAG 2.2 and Material/Apple motion. Use before and while writing or changing any GNOME Shell extension surface (top bar items, dock, menus, quick settings, pop-out cards, OSDs, stylesheet.css/.css.in) or any GTK4/libadwaita screen in tools/ (Ostrich Settings, Store, Drawer, speaker tuning), and when reviewing how something looks.
 ---
 
 # Ostrich design
 
-Ubuntu Ostrich should look like GNOME's own designers made it, then a little warmer. Every rule here
+Ostrich OS should look like GNOME's own designers made it, then a little warmer. Every rule here
 comes from a source in `references/`, each with its URL or source file and the date it was read.
 When this file and a reference disagree, the reference wins; when a reference and the live GNOME 50
 system disagree, the system wins (check it in the VM).

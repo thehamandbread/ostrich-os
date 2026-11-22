@@ -1,6 +1,6 @@
-# Ubuntu Ostrich
+# Ostrich OS
 
-A clean, sturdy Ubuntu desktop that anyone can use, whatever they know about computers, and that a power user still gets a lot out of. It's built on Ubuntu 26.04 LTS and GNOME 50, and is light on battery, memory and CPU.
+An opinionated desktop for Ubuntu 26.04 LTS that anyone can use, whatever they know about computers, and that a power user still gets a lot out of. It's built on GNOME 50, and is light on battery, memory and CPU.
 
 **Status:** pre-release. Tested end to end in a virtual machine; real-hardware testing is next.
 
@@ -9,14 +9,14 @@ A clean, sturdy Ubuntu desktop that anyone can use, whatever they know about com
 **On a machine already running Ubuntu 26.04:**
 
 ```bash
-wget -qO- https://raw.githubusercontent.com/thehamandbread/ubuntu-ostrich/main/install.sh | bash
+wget -qO- https://raw.githubusercontent.com/thehamandbread/ostrich-os/main/install.sh | bash
 ```
 
 Then log out and back in. The setup tour opens and walks you through everything. It's safe to run the command again; `ostrich update` does the same.
 
 Already customised your desktop? The installer asks whether to keep your other extensions or start clean, and it takes a restore point first: **`ostrich uninstall` puts your computer back the way it was.** See [docs/DEFAULTS.md](docs/DEFAULTS.md#undo). On a machine you rely on, follow [docs/INSTALLING.md](docs/INSTALLING.md).
 
-**On a new machine (USB installer):** `image/build-iso.sh` builds `ubuntu-ostrich-26.04-amd64.iso`. Write it to a USB stick with Startup Disk Creator, boot from it, and install as you would Ubuntu. **You choose the disk**, so pick the right one: everything on the disk you choose is replaced. At the first login a window finishes the setup and asks for your password once.
+**On a new machine (USB installer):** `image/build-iso.sh` builds `ostrich-os-26.04-amd64.iso`. Write it to a USB stick with Startup Disk Creator, boot from it, and install as you would Ubuntu. **You choose the disk**, so pick the right one: everything on the disk you choose is replaced. At the first login a window finishes the setup and asks for your password once.
 
 ## What it changes
 
@@ -51,3 +51,7 @@ ostrich uninstall                      put everything back as it was
 See [docs/DESIGN.md](docs/DESIGN.md) for the design and [CLAUDE.md](CLAUDE.md) for the build and test commands. Everything is tested in a scripted QEMU VM (`tests/vm/`), never on the developer's own machine.
 
 MIT licensed, except `modules/gnome/extensions/`, which is GPL-2.0-or-later.
+
+## Trademarks
+
+Ubuntu is a registered trademark of Canonical Ltd. Ostrich OS is not affiliated with or endorsed by Canonical.

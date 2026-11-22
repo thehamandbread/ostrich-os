@@ -3,7 +3,7 @@
 #
 #   power-test.sh [--snapshot NAME]
 #
-# Needs a snapshot with Ubuntu Ostrich installed (default: post-fresh). Switches power saver on
+# Needs a snapshot with Ostrich OS installed (default: post-fresh). Switches power saver on
 # through power-profiles-daemon, as the user would, and checks the monitor extension had the helper
 # set the knobs this VM has (PCIe ASPM, audio codec, USB, NMI watchdog, writeback) and the saver
 # desktop (screen off after 2 min; animations stay on). Then checks balanced puts every value back, and
@@ -36,7 +36,7 @@ step() { printf '== %s\n' "$*"; }
 # shellcheck disable=SC2016 # expands in the VM
 SESSION='export XDG_RUNTIME_DIR=/run/user/$(id -u) DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/$(id -u)/bus;'
 run() { "$VM" ssh "$SESSION $*"; }
-HELPER=/usr/libexec/ubuntu-ostrich/system-helper
+HELPER=/usr/libexec/ostrich-os/system-helper
 
 # One "name value" line per knob the VM has.
 knobs() {
@@ -124,7 +124,7 @@ if [[ $b == "$base" ]]; then ok "back to balanced: all values as before"; else
 fi
 
 step "locked screen: the monitor is off (nothing runs, no rule), and back at unlock (the low-battery rule is checked at every start)"
-ext_state() { run "gnome-extensions info monitor@ubuntu-ostrich | sed -n 's/^ *State: //p'"; }
+ext_state() { run "gnome-extensions info monitor@ostrich-os | sed -n 's/^ *State: //p'"; }
 run "gdbus call --session --dest org.gnome.ScreenSaver --object-path /org/gnome/ScreenSaver --method org.gnome.ScreenSaver.Lock" >/dev/null
 sleep 4
 state=$(ext_state)

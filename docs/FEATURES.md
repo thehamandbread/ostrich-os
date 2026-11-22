@@ -1,6 +1,6 @@
 # What every feature is supposed to do
 
-The checklist Ubuntu Ostrich is tested against. Each row says what a feature **should** do,
+The checklist Ostrich OS is tested against. Each row says what a feature **should** do,
 written from the intent docs (`DESIGN.md`, `DEFAULTS.md`, `PARITY.md`, the council verdicts in
 `council/`, `DECISIONS.md`) and the owner's notes, **not from the code**, so a test can catch code
 that does the wrong thing. Where the docs don't say, the row says **ask** instead of guessing.
@@ -20,8 +20,8 @@ Notes are the owner's VM critiques (`tests/vm/critique.sh show ID`), by their ti
 |---|---|---|---|
 | INS-1 | `install.sh` on a fresh Ubuntu 26.04 installs everything with no questions (except the sudo password once, and Keep/Clean if other extensions exist). | e2e | untested |
 | INS-2 | Running it twice changes nothing the second time; `--dry-run` lists changes and makes none. | Docker smoke, e2e | untested |
-| INS-3 | Before overwriting one of the few files it changes (dotfile additions, `gtk.css`, the extensions folder), copies that file under `~/.local/state/ubuntu-ostrich/backups/`. Your own files are never copied or touched. | bats (restore), e2e | untested |
-| INS-4 | Logs what each module changed to `~/.local/state/ubuntu-ostrich/install.log`. | e2e | untested |
+| INS-3 | Before overwriting one of the few files it changes (dotfile additions, `gtk.css`, the extensions folder), copies that file under `~/.local/state/ostrich-os/backups/`. Your own files are never copied or touched. | bats (restore), e2e | untested |
+| INS-4 | Logs what each module changed to `~/.local/state/ostrich-os/install.log`. | e2e | untested |
 | INS-5 | Stops before installing when the tools build in `BUILD_DIR` is stale or partial (`.tools-stamp`). | bats | untested |
 | INS-6 | Keep (default): only the extensions Ostrich replaces are switched off; Clean: every other one too, settings reset. Nothing deleted either way. | e2e (keep/clean round trips) | untested |
 | INS-7 | Carries over as much as it can from what it replaces: Space Bar names; Just Perfection animation speed and start-in-overview; Tiling Assistant keys, gap and popup; Dash to Dock hiding, icon size, background colour and opacity; Vitals' pinned readings and panel position; Blur my Shell's strength and brightness per surface. | e2e from `pre`, bats | pass (bats, 2026-11-01) |

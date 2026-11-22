@@ -39,7 +39,7 @@ import {
 } from './sources.js';
 import {SECTIONS, buildSections, panelItems, togglePin, needed, rowName, fmt} from './vitals.js';
 
-const HELPER = '/usr/libexec/ubuntu-ostrich/system-helper';
+const HELPER = '/usr/libexec/ostrich-os/system-helper';
 // Opened by the popup's monitor button: the first that is installed.
 const MONITOR_APPS = ['net.nokyan.Resources.desktop', 'org.gnome.SystemMonitor.desktop', 'gnome-system-monitor.desktop'];
 // Said under every alert that asks before ending an app (_lib/alert.js `warn`).
@@ -81,7 +81,7 @@ function setText(label, text) {
 }
 
 function libexec(cmd) {
-    const ours = GLib.build_filenamev([GLib.get_home_dir(), '.local', 'libexec', 'ubuntu-ostrich', cmd]);
+    const ours = GLib.build_filenamev([GLib.get_home_dir(), '.local', 'libexec', 'ostrich-os', cmd]);
     return GLib.file_test(ours, GLib.FileTest.IS_EXECUTABLE) ? ours : GLib.find_program_in_path(cmd) ?? ours;
 }
 

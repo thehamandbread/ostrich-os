@@ -9,7 +9,7 @@ Prototype: `spikes/touchscreen/touchscreen.sh` (`status | off [--level hid|trans
   - **hid**: the nearest one (`hid-multitouch` on the Precision 5570; `virtio_input` in the VM). Input stops.
   - **transport**: the next one up (`i2c_hid_acpi` on the 5570; `virtio-pci` in the VM). Used only when that device has exactly one bound child, so it can't take a touchpad or anything else down with it. The controller can power down too.
 - A touch controller is one HID device even when it exposes several inputs. On the 5570 the touchscreen HID device has three (touch plus extra collections, probably pen and vendor), so the check counts bound child devices, not inputs.
-- `--persist` writes `/etc/udev/rules.d/90-ubuntu-ostrich-touchscreen.rules`, which unbinds the device again on add/bind. `on` removes the rule and rebinds exactly what was unbound (state in `/var/lib/ubuntu-ostrich/touchscreen.state`).
+- `--persist` writes `/etc/udev/rules.d/90-ostrich-os-touchscreen.rules`, which unbinds the device again on add/bind. `on` removes the rule and rebinds exactly what was unbound (state in `/var/lib/ostrich-os/touchscreen.state`).
 
 ## Results (VM)
 

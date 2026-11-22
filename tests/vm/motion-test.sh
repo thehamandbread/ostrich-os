@@ -20,7 +20,7 @@ HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=tests/vm/journal-gate.sh
 source "$HERE/journal-gate.sh"
 VM="$HERE/vm.sh"
-VM_DIR="${VM_DIR:-${XDG_DATA_HOME:-$HOME/.local/share}/ubuntu-ostrich/vm}"
+VM_DIR="${VM_DIR:-${XDG_DATA_HOME:-$HOME/.local/share}/ostrich-os/vm}"
 OUT="$VM_DIR/motion-test"
 SNAPSHOT=post-fresh
 CYCLES=20
@@ -49,7 +49,7 @@ run() { "$VM" ssh "$SESSION $*"; }
 # The drawer's shortcut (Super+Alt+D), straight to QEMU: vm.sh key waits 0.15 s after each key.
 toggle() { printf 'sendkey meta_l-alt-d\n' | socat -t 0.3 - "UNIX-CONNECT:$VM_DIR/monitor.sock" >/dev/null; }
 shown() {
-	run "gdbus call --session --dest ubuntu_ostrich.drawer --object-path /ubuntu_ostrich/drawer --method org.gtk.Actions.Describe state" |
+	run "gdbus call --session --dest ostrich_os.drawer --object-path /ostrich_os/drawer --method org.gtk.Actions.Describe state" |
 		grep -o '"shown":[a-z]*' | cut -d: -f2
 }
 open_drawer() { [[ $(shown) == true ]] || {

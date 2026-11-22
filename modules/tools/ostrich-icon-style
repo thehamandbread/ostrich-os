@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 # ostrich-icon-style: keeps our app icons in step with the colour scheme (owner, 2026-11-06: the dark
 # style uses the pale tinted tile, the light style the dark tile). The installer puts both sets in
-# $DATA/ubuntu-ostrich/icons/{dark,light}; this copies the one for the current style into the icon
+# $DATA/ostrich-os/icons/{dark,light}; this copies the one for the current style into the icon
 # theme, once with `apply` and then each time the style changes (`watch`, run from autostart).
 set -u
 DATA="${XDG_DATA_HOME:-$HOME/.local/share}"
-SETS="$DATA/ubuntu-ostrich/icons"
+SETS="$DATA/ostrich-os/icons"
 DEST="$DATA/icons/hicolor/scalable/apps"
 
 apply() {

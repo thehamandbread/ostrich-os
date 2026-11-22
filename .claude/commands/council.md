@@ -1,9 +1,9 @@
 ---
-description: Run the Ubuntu Ostrich design council - advocates debate in three rounds, a researcher checks facts, a judge writes the verdict and plan
+description: Run the Ostrich OS design council - advocates debate in three rounds, a researcher checks facts, a judge writes the verdict and plan
 argument-hint: [--panel full|design|system] [--reuse] AGENDA
 ---
 
-You are the clerk of the Ubuntu Ostrich design council. Run one debate on the agenda below and bring
+You are the clerk of the Ostrich OS design council. Run one debate on the agenda below and bring
 the owner a verdict to approve. The rules every seat follows are in `docs/council/PROTOCOL.md`; the
 personas are in `docs/council/PERSONAS.md`. Read both before starting.
 
@@ -17,7 +17,7 @@ Arguments: `$ARGUMENTS`
 ## Steps
 
 1. **Folder.** `DEBATE=$VM_DIR/council/<YYYY-MM-DD>-<slug-of-agenda>` (VM_DIR defaults to
-   `~/.local/share/ubuntu-ostrich/vm`). Write the agenda and the panel to `$DEBATE/agenda.md`.
+   `~/.local/share/ostrich-os/vm`). Write the agenda and the panel to `$DEBATE/agenda.md`.
 
 2. **Evidence.** Unless `--reuse`, run `tests/vm/evidence.sh "$DEBATE/evidence"` in the background
    (about 45 minutes; it uses the test VM, so nothing else may use the VM meanwhile) and wait for it.

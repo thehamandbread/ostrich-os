@@ -18,7 +18,7 @@ use std::path::{Path, PathBuf};
 use std::process::Command;
 
 pub struct Dirs {
-    /// Our data dir: ~/.local/share/ubuntu-ostrich
+    /// Our data dir: ~/.local/share/ostrich-os
     pub data: PathBuf,
     /// Launchers: ~/.local/share/applications
     pub applications: PathBuf,
@@ -30,7 +30,7 @@ impl Dirs {
             .map(PathBuf::from)
             .or_else(|| std::env::var_os("HOME").map(|h| PathBuf::from(h).join(".local/share")))?;
         Some(Dirs {
-            data: share.join("ubuntu-ostrich"),
+            data: share.join("ostrich-os"),
             applications: share.join("applications"),
         })
     }
@@ -70,12 +70,12 @@ fn dir_name(repo: &Repo) -> String {
     format!("{}_{}", repo.owner, repo.name)
 }
 
-const HELPER: &str = "/usr/libexec/ubuntu-ostrich/system-helper";
+const HELPER: &str = "/usr/libexec/ostrich-os/system-helper";
 
 /// The system helper's AppArmor profile for an app (tools/system-helper/src/apparmor.rs).
 fn sandbox_profile(repo: &Repo) -> PathBuf {
     PathBuf::from(format!(
-        "/etc/apparmor.d/ubuntu-ostrich-github-{}",
+        "/etc/apparmor.d/ostrich-os-github-{}",
         dir_name(repo)
     ))
 }

@@ -30,6 +30,14 @@ MIGRATE_ROOT_REPLACED=(
 	'/usr/share/polkit-1/actions/org.@S@.system-helper.policy|/usr/share/polkit-1/actions/org.@N@.system-helper.policy'
 	'/etc/systemd/system/@S@-power.service|/etc/systemd/system/@N@-power.service'
 	'/etc/udev/rules.d/90-@S@-touchscreen.rules|/etc/udev/rules.d/90-@N@-touchscreen.rules'
+	'/etc/modprobe.d/@S@-nvidia-pm.conf|/etc/modprobe.d/@N@-nvidia-pm.conf'
+)
+# Files in the home that carry the slug in their name (base: config or data). Moved like the
+# directories: never over an existing file.
+MIGRATE_USER_FILES=(
+	'config|ghostty/themes/@S@|ghostty/themes/@N@'
+	'config|pipewire/pipewire.conf.d/90-@S@-speakers.conf|pipewire/pipewire.conf.d/90-@N@-speakers.conf'
+	'data|backgrounds/@S@|backgrounds/@N@'
 )
 MIGRATE_ROOT_MOVED=('/var/lib/@S@|/var/lib/@N@')
 MIGRATE_ROOT_DIRS=('/usr/libexec/@S@')
@@ -37,6 +45,7 @@ MIGRATE_ROOT="${MIGRATE_ROOT:-}" # a prefix for the root paths (tests)
 
 MIG_CHANGES=0
 MIG_RELOGIN=0
+export MIG_DRAWER_SKIPPED=0 # 1: the data dir stayed because the drawer runs (install.sh says so)
 MIG_VERBOSE="${MIG_VERBOSE:-0}"
 
 mig_note() {
@@ -157,6 +166,39 @@ mig_dconf_copy() {
 
 mig_drawer_running() { pgrep -x ostrich-drawer >/dev/null 2>&1; }
 
+# mig_copy is a function so a test can break it.
+mig_copy() { cp -a -- "$1" "$2"; }
+
+mig_sums() { # <file or dir>: sha256 of every regular file, by relative path
+	if [[ -d $1 ]]; then (cd "$1" && find . -type f -exec sha256sum {} + | sort -k2); else sha256sum <"$1"; fi
+}
+
+# mig_mv <old> <new>: a rename on one filesystem. Across filesystems (or with MIG_FORCE_COPY=1):
+# copy, compare sha256 of every file (cookies.sqlite-wal and -shm included), delete the old copy
+# only if all match; otherwise keep both and say so (status 1).
+mig_mv() {
+	local old=$1 new=$2
+	if ((DRY_RUN)); then
+		run_cmd mv "$old" "$new"
+		return 0
+	fi
+	if [[ -z ${MIG_FORCE_COPY:-} && $(stat -c %d "$old") == "$(stat -c %d "$(dirname "$new")")" ]]; then
+		mv -- "$old" "$new"
+		return
+	fi
+	info "migrate: $old is on another filesystem: copying, then comparing checksums"
+	if ! mig_copy "$old" "$new"; then
+		warn "migrate: copying $old failed; keeping it (a partial copy may be at $new)"
+		return 1
+	fi
+	if [[ $(mig_sums "$old") == "$(mig_sums "$new")" ]]; then
+		rm -rf -- "$old"
+	else
+		warn "migrate: checksums of $old and $new differ; keeping both"
+		return 1
+	fi
+}
+
 # mig_merge <old> <new>: new exists. Move what new lacks, drop identical copies, never overwrite.
 # A drawer/<site> directory is one unit (cookies.sqlite with its -wal/-shm). Status 1: conflicts,
 # old kept (with only the conflicting parts left in it).
@@ -167,7 +209,7 @@ mig_merge() {
 		name=${e##*/}
 		if [[ ! -e $new/$name && ! -L $new/$name ]]; then
 			mig_note "move $e -> $new/$name"
-			run_cmd mv "$e" "$new/$name"
+			mig_mv "$e" "$new/$name" || rc=1
 		elif [[ -d $e && ! -L $e && -d $new/$name && ${old##*/} != drawer ]]; then
 			mig_merge "$e" "$new/$name" || rc=1
 		elif [[ -f $e && -f $new/$name ]] && cmp -s "$e" "$new/$name"; then
@@ -188,7 +230,7 @@ mig_move_dir() {
 	if [[ ! -e $2 ]]; then
 		mig_note "move $1 -> $2"
 		run_cmd mkdir -p "$(dirname "$2")"
-		run_cmd mv "$1" "$2"
+		mig_mv "$1" "$2" || warn "migrate: $1 kept (see above)"
 	else
 		mig_merge "$1" "$2" || warn "migrate: $1 kept (see conflicts above)"
 	fi
@@ -203,43 +245,108 @@ mig_repoint() { # <old state dir> <new state dir>
 	[[ -z ${LOG_FILE:-} ]] || mkdir -p "$(dirname "$LOG_FILE")"
 }
 
+# mig_sed_file <file> <old> <new> <what>: replace text in a file, only if it has it.
+mig_sed_file() {
+	[[ -f $1 ]] && grep -qF -- "$2" "$1" || return 0
+	mig_note "$4: $1"
+	run_cmd sed -i "s|$(printf '%s' "$2" | sed 's/[][\\.*^$|]/\\&/g')|$3|g" "$1"
+}
+
+# mig_refs <old slug> <cfg> <data>: places that name the old slug inside files and settings that
+# stay where they are: the theme block markers in the user's gtk.css, `theme =` in Ghostty's
+# config, the wallpaper paths GNOME holds, and the launchers and list of apps the Store installed
+# from GitHub (their paths point into the data dir).
+mig_refs() {
+	local s=$1 cfg=$2 data=$3 n=$MIGRATE_NEW_SLUG f key v
+	for f in "$cfg/gtk-4.0/gtk.css" "$cfg/gtk-3.0/gtk.css"; do
+		mig_sed_file "$f" "$s theme: " "$n theme: " "theme block marker"
+	done
+	for f in "$cfg/ghostty/config" "$cfg/ghostty/config.ghostty"; do
+		[[ -f $f ]] || continue
+		grep -qE "^theme *= *$s\$" "$f" || continue
+		mig_note "ghostty theme name: $f"
+		run_cmd sed -i -E "s|^theme *= *$s\$|theme = $n|" "$f"
+	done
+	for key in /org/gnome/desktop/background/picture-uri /org/gnome/desktop/background/picture-uri-dark /org/gnome/desktop/screensaver/picture-uri; do
+		v=$(dconf read "$key" 2>/dev/null)
+		[[ $v == *"/backgrounds/$s/"* ]] || continue
+		mig_note "$key"
+		run_cmd dconf write "$key" "${v//\/backgrounds\/$s\//\/backgrounds\/$n\/}"
+	done
+	for f in "$data"/applications/ost-github-*.desktop "$data/$n/github-apps.json"; do
+		mig_sed_file "$f" "/share/$s/" "/share/$n/" "path into the data dir"
+	done
+}
+
+# mig_move_path <old> <new>: a directory as above; a file only if new lacks it.
+mig_move_path() {
+	if [[ -d $1 ]]; then
+		mig_move_dir "$1" "$2"
+	elif [[ -f $1 ]]; then
+		if [[ ! -e $2 ]]; then
+			mig_note "move $1 -> $2"
+			run_cmd mkdir -p "$(dirname "$2")"
+			mig_mv "$1" "$2" || true
+		elif cmp -s "$1" "$2"; then
+			run_cmd rm -f "$1"
+		else
+			warn "migrate: conflict, $1 and $2 differ; keeping $1"
+		fi
+	fi
+}
+
 # --- the run ------------------------------------------------------------------------------
 
-# Newest slug first, so when two old installs left a child for the same site the newer one wins.
-mig_notifications() {
+# mig_child_default <child path>: nothing set but application-id (GNOME made it, nobody changed it).
+mig_child_default() {
+	local k
+	k=$(dconf list "$1/" 2>/dev/null)
+	[[ -z $k || $k == application-id ]]
+}
+
+# migrate_notifications: per-app notification settings follow the app id (plan 01, verified rule).
+# Run after the new .desktop files are installed. Matches on the application-id key, newest slug
+# first (so when two old installs left a child for one site the newer wins). A new child that
+# GNOME already made with defaults gets the old keys written over it; one the user has changed
+# is kept. Migrated old children leave application-children.
+migrate_notifications() {
 	local base=/org/gnome/desktop/notifications/application kids_key=/org/gnome/desktop/notifications/application-children
-	local kid id new newkid dump changed=0 i s
-	local -a cur=()
+	local kid id new newkid changed=0 i s exists
+	local -a cur=() out=()
 	mapfile -t cur < <(mig_list_items "$kids_key")
 	((${#cur[@]})) || return 0
 	for ((s = ${#MIGRATE_OLD_SLUGS[@]} - 1; s >= 0; s--)); do
 		for i in "${!cur[@]}"; do
 			kid=${cur[i]}
+			[[ -n $kid ]] || continue
 			id=$(dconf read "$base/$kid/application-id" 2>/dev/null)
 			id=${id#\'}
 			id=${id%\'}
 			[[ $id == "${MIGRATE_OLD_SLUGS[s]}".* || $id == "${MIGRATE_OLD_SLUGS[s]//-/_}".* ]] || continue
 			new=$(migrate_map_id "$id") || continue
 			newkid=$(migrate_child_name "$new")
-			if [[ " ${cur[*]} " == *" $newkid "* || -n $(dconf list "$base/$newkid/" 2>/dev/null) ]]; then
-				mig_v "notifications: $newkid exists, keeping it (and $kid)"
+			exists=0
+			[[ " ${cur[*]} " == *" $newkid "* || -n $(dconf list "$base/$newkid/" 2>/dev/null) ]] && exists=1
+			if ((exists)) && ! mig_child_default "$base/$newkid"; then
+				mig_v "notifications: $newkid has your settings, keeping them (and $kid)"
 				continue
 			fi
 			mig_note "notification settings $kid -> $newkid"
-			cur[i]=$newkid
 			changed=1
-			((DRY_RUN)) && continue
-			dump=$(dconf dump "$base/$kid/")
-			if printf '%s\n' "$dump" | sed "s|^application-id=.*|application-id='$new'|" | dconf load "$base/$newkid/"; then
-				dconf reset -f "$base/$kid/"
-			else
-				warn "migrate: could not copy notification settings $kid -> $newkid"
-				cur[i]=$kid
+			if ((!DRY_RUN)); then
+				if dconf dump "$base/$kid/" | sed "s|^application-id=.*|application-id='$new'|" | dconf load "$base/$newkid/"; then
+					dconf reset -f "$base/$kid/"
+				else
+					warn "migrate: could not copy notification settings $kid -> $newkid"
+					continue
+				fi
 			fi
+			if [[ " ${cur[*]} " == *" $newkid "* ]]; then cur[i]=""; else cur[i]=$newkid; fi
 		done
 	done
-	((changed)) && run_cmd dconf write "$kids_key" "$(mig_list_format "${cur[@]}")"
-	return 0
+	((changed)) || return 0
+	for kid in "${cur[@]}"; do [[ -n $kid ]] && out+=("$kid"); done
+	run_cmd dconf write "$kids_key" "$(mig_list_format "${out[@]}")"
 }
 
 mig_extension_dirs() {
@@ -262,10 +369,11 @@ mig_extension_dirs() {
 migrate_run() {
 	local cfg=${XDG_CONFIG_HOME:-$HOME/.config} data=${XDG_DATA_HOME:-$HOME/.local/share}
 	local state=${XDG_STATE_HOME:-$HOME/.local/state} libexec=$HOME/.local/libexec
-	local n=$MIGRATE_NEW_SLUG i s from_version=unknown found=() v
+	local n=$MIGRATE_NEW_SLUG i s from_version=unknown found=() v f base from to
 	local -a disabled=()
 	MIG_CHANGES=0
 	MIG_RELOGIN=0
+	MIG_DRAWER_SKIPPED=0
 	info "migrate: start (dry-run=$DRY_RUN)"
 
 	# Newest slug first: it wins the move, older ones only add what is missing.
@@ -279,10 +387,23 @@ migrate_run() {
 		fi
 		mig_move_dir "$cfg/$s" "$cfg/$n"
 		if [[ -d $data/$s/drawer ]] && mig_drawer_running; then
-			warn "migrate: the drawer is running; quit it and run again to move $data/$s (config and settings moved)"
+			MIG_DRAWER_SKIPPED=1
+			warn "migrate: the drawer is running; its data ($data/$s) stays until it quits: log out, then run \`ostrich update\` again (everything else moved)"
+		elif [[ $LIB_DIR/ == "$data/$s/src/"* ]]; then
+			warn "migrate: this installer runs from $data/$s/src; $data/$s stays until it is run from elsewhere"
 		else
+			# The old copy of the installer's source is only a cache: a fresh one is fetched.
+			if [[ -d $data/$s/src ]]; then
+				mig_note "drop the old source copy $data/$s/src"
+				run_cmd rm -rf "$data/$s/src"
+			fi
 			mig_move_dir "$data/$s" "$data/$n"
 		fi
+		for f in "${MIGRATE_USER_FILES[@]}"; do
+			IFS='|' read -r base from to <<<"$f"
+			[[ $base == config ]] && base=$cfg || base=$data
+			mig_move_path "$base/$(mig_sub "$from" "$s")" "$base/$(mig_sub "$to" "$s")"
+		done
 		if [[ -d $state/$s ]]; then
 			mig_move_dir "$state/$s" "$state/$n"
 			if ((!DRY_RUN)) && [[ ! -d $state/$s ]]; then mig_repoint "$state/$s" "$state/$n"; fi
@@ -290,6 +411,8 @@ migrate_run() {
 		mig_move_dir "$libexec/$s" "$libexec/$n"
 		mig_dconf_copy "/org/gnome/shell/extensions/$s/" "/org/gnome/shell/extensions/$n/"
 	done
+
+	for s in "${found[@]}"; do mig_refs "$s" "$cfg" "$data"; done
 
 	# Extensions: disabled stays disabled (each list is mapped on its own); the new uuid never
 	# goes into enabled-extensions when it is in disabled-extensions.
@@ -302,7 +425,6 @@ migrate_run() {
 
 	mig_rewrite_list /org/gnome/shell/favorite-apps migrate_map_id
 	mig_rewrite_list "/org/gnome/shell/extensions/$n/dock/hidden-app-prefixes" migrate_map_id
-	mig_notifications
 
 	if ((MIG_CHANGES > 0 && !DRY_RUN)) && [[ ! -e $state/$n/migrated-from ]]; then
 		mkdir -p "$state/$n"
@@ -315,6 +437,99 @@ migrate_run() {
 	fi
 	for v in "${found[@]}"; do mig_v "found an install under $v"; done
 	info "migrate: done, $MIG_CHANGES change(s) (dry-run=$DRY_RUN)"
+}
+
+# migrate_stop_apps: before anything moves. Asks each old drawer to quit over D-Bus (app.quit; a
+# drawer from before 0.6.0 has no such action and keeps running), sends SIGTERM to our other apps
+# under the old libexec dirs, and waits up to MIG_STOP_WAIT seconds (10). It never sends SIGKILL.
+# A drawer that is still running makes migrate_run leave the data dir where it is.
+migrate_stop_apps() {
+	local libexec=$HOME/.local/libexec s u name path pid i left
+	local uid=${UID:-$(id -u)}
+	((DRY_RUN)) && {
+		info "migrate: would stop our running apps (the drawer over D-Bus, the rest with SIGTERM)"
+		return 0
+	}
+	for s in "${MIGRATE_OLD_SLUGS[@]}"; do
+		for u in "$s" "${s//-/_}"; do
+			name=$u.drawer
+			path=/${name//./\/}
+			gdbus call --session --dest "$name" --object-path "${path//-/_}" \
+				--method org.gtk.Actions.Activate quit '[]' '{}' >/dev/null 2>&1 && info "migrate: asked $name to quit"
+		done
+		for pid in $(pgrep -u "$uid" -f -- "$libexec/$s/" 2>/dev/null); do
+			tr '\0' ' ' <"/proc/$pid/cmdline" 2>/dev/null | grep -q ostrich-drawer && continue
+			info "migrate: asking pid $pid to stop"
+			kill -TERM "$pid" 2>/dev/null || true
+		done
+	done
+	for ((i = 0; i < ${MIG_STOP_WAIT:-10} * 2; i++)); do
+		left=0
+		for s in "${MIGRATE_OLD_SLUGS[@]}"; do
+			pgrep -u "$uid" -f -- "$libexec/$s/" >/dev/null 2>&1 && left=1
+		done
+		((left)) || return 0
+		sleep 0.5
+	done
+	mig_drawer_running && warn "migrate: the drawer is still running; its data stays where it is until you log out and run \`ostrich update\` again"
+	return 0
+}
+
+# migrate_finish: after the modules installed the new extensions, launchers and apps. Removes what
+# the old names left behind: old extension folders (once the new one is installed), old launchers
+# and autostart entries, then refreshes the desktop database. Also swaps the Store's AppArmor
+# profiles (root, through $SUDO) because their paths follow the data dir.
+migrate_finish() {
+	local data=${XDG_DATA_HOME:-$HOME/.local/share} cfg=${XDG_CONFIG_HOME:-$HOME/.config}
+	local s u f removed=0
+	mig_extension_dirs "$data/gnome-shell/extensions"
+	shopt -s nullglob
+	for s in "${MIGRATE_OLD_SLUGS[@]}"; do
+		for u in "$s" "${s//-/_}"; do
+			for f in "$data/applications/$u".*.desktop "$cfg/autostart/$u".*.desktop; do
+				mig_note "remove old launcher $f"
+				run_cmd rm -f -- "$f"
+				removed=1
+			done
+		done
+		# Autostart entries the tools module rewrites for the new paths; one it didn't is stale.
+		for f in "$cfg"/autostart/*.desktop; do
+			grep -q "libexec/$s/" "$f" || continue
+			mig_note "remove stale autostart entry $f"
+			run_cmd rm -f -- "$f"
+			removed=1
+		done
+		for f in "$data"/icons/hicolor/*/apps/"$s"-*; do
+			mig_note "remove old icon $f"
+			run_cmd rm -f -- "$f"
+		done
+	done
+	shopt -u nullglob
+	if ((removed && !DRY_RUN)) && command -v update-desktop-database >/dev/null 2>&1; then
+		update-desktop-database "$data/applications" || true
+	fi
+	mig_apparmor
+}
+
+mig_apparmor() {
+	local s old new tmp
+	shopt -s nullglob
+	for s in "${MIGRATE_OLD_SLUGS[@]}"; do
+		for old in "$MIGRATE_ROOT/etc/apparmor.d/$s"-github-*; do
+			new=${old/"/$s-github-"/"/$MIGRATE_NEW_SLUG-github-"}
+			mig_note "AppArmor profile $old -> $new"
+			if [[ ! -e $new ]]; then
+				tmp=$(mktemp)
+				sed "s|profile $s-github-|profile $MIGRATE_NEW_SLUG-github-|; s|/share/$s/|/share/$MIGRATE_NEW_SLUG/|" "$old" >"$tmp"
+				mig_root install -m 644 "$tmp" "$new"
+				mig_root apparmor_parser -r "$new" || warn "migrate: could not load $new"
+				rm -f "$tmp"
+			fi
+			mig_root apparmor_parser -R "$old" >/dev/null 2>&1 || true
+			mig_root rm -f "$old"
+		done
+	done
+	shopt -u nullglob
 }
 
 # --- root items ---------------------------------------------------------------------------

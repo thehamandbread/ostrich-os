@@ -1,5 +1,5 @@
 {
-  "name": "ubuntu-ostrich-lint",
+  "name": "ostrich-os-lint",
   "private": true,
   "description": "Lint tooling only (run through tests/lint-js.sh in Docker).",
   "license": "MIT",

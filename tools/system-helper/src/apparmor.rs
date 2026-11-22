@@ -23,7 +23,7 @@ pub fn valid_name(name: &str) -> bool {
 }
 
 pub fn profile_name(name: &str) -> String {
-    format!("ubuntu-ostrich-github-{name}")
+    format!("ostrich-os-github-{name}")
 }
 
 /// shortcut: assumes the default XDG_DATA_HOME (~/.local/share), as the store does on Ubuntu;
@@ -31,11 +31,11 @@ pub fn profile_name(name: &str) -> String {
 pub fn profile(name: &str) -> String {
     let p = profile_name(name);
     format!(
-        "# Ubuntu Ostrich: lets {name}, installed from GitHub by Ostrich Store, use its sandbox.\n\
+        "# Ostrich OS: lets {name}, installed from GitHub by Ostrich Store, use its sandbox.\n\
          abi <abi/4.0>,\n\
          include <tunables/global>\n\
          \n\
-         profile {p} @{{HOME}}/.local/share/ubuntu-ostrich/github/{name}/app/** flags=(default_allow) {{\n\
+         profile {p} @{{HOME}}/.local/share/ostrich-os/github/{name}/app/** flags=(default_allow) {{\n\
          \x20 userns,\n\
          }}\n"
     )
@@ -90,8 +90,8 @@ mod tests {
     fn profile_covers_the_unpacked_app_only() {
         let p = profile("upscayl_upscayl");
         assert!(p.contains(
-            "profile ubuntu-ostrich-github-upscayl_upscayl @{HOME}/.local/share/ubuntu-ostrich/github/upscayl_upscayl/app/** flags=(default_allow) {\n  userns,\n}\n"
+            "profile ostrich-os-github-upscayl_upscayl @{HOME}/.local/share/ostrich-os/github/upscayl_upscayl/app/** flags=(default_allow) {\n  userns,\n}\n"
         ));
-        assert!(p.starts_with("# Ubuntu Ostrich") && p.contains("abi <abi/4.0>,\n"));
+        assert!(p.starts_with("# Ostrich OS") && p.contains("abi <abi/4.0>,\n"));
     }
 }

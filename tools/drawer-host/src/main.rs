@@ -8,7 +8,7 @@
 //! The window is only the site: no bar. Window placement, the slide animation, the top-bar icons
 //! and their menus (add, unload, remove...) belong to the drawer shell extension. Esc or Ctrl+W
 //! folds it up, Alt+Left/Right and the mouse's side buttons go back and forward, Ctrl+R reloads.
-//! This app exposes GApplication actions over D-Bus (org.gtk.Actions on /ubuntu_ostrich/drawer):
+//! This app exposes GApplication actions over D-Bus (org.gtk.Actions on /ostrich_os/drawer):
 //!   toggle, show(s), mute(b)               the drawer as a whole
 //!   load(s) unload(s) reload(s) back(s) remove(s) add(s)
 //!   elsewhere(s)                           a DRM site: its own app, or the browser
@@ -42,14 +42,14 @@ use webkit6::prelude::*;
 // No dash before the last dot: WebKit writes this id into its sandbox's /.flatpak-info, and
 // xdg-desktop-portal 1.21 rejects such an id without an error and crashes (upstream #2123), which
 // Ubuntu shows as "internal error" the first time a site opens.
-const APP_ID: &str = "ubuntu_ostrich.drawer";
+const APP_ID: &str = "ostrich_os.drawer";
 
 fn data_root() -> PathBuf {
-    glib::user_data_dir().join("ubuntu-ostrich/drawer")
+    glib::user_data_dir().join("ostrich-os/drawer")
 }
 
 fn config_path() -> PathBuf {
-    glib::user_config_dir().join("ubuntu-ostrich/drawer.toml")
+    glib::user_config_dir().join("ostrich-os/drawer.toml")
 }
 
 /// The sites, and whether they really came from the file. Only then may `build` delete the data of
@@ -116,7 +116,7 @@ fn save_config(c: &Config) {
         let _ = std::fs::create_dir_all(dir);
     }
     let header =
-        "# Ostrich Drawer's sites (Ubuntu Ostrich). Edit here or with the drawer's + button.\n";
+        "# Ostrich Drawer's sites (Ostrich OS). Edit here or with the drawer's + button.\n";
     // Written beside it, then renamed over it: a crash or a full disk mid-write never leaves an
     // empty or half file (which read as "no sites").
     let tmp = path.with_extension("toml.tmp");
@@ -1806,7 +1806,7 @@ fn main() -> glib::ExitCode {
         .build();
     let state: Rc<RefCell<Option<Shared>>> = Rc::new(RefCell::new(None));
 
-    // app.toggle, app.show(s), app.mute(b): used by the shell extension, focus mode and notifications.
+    // app.toggle, app.show(s), app.mute(b), app.quit: used by the shell extension, focus mode and notifications.
     let s = state.clone();
     let toggle = gio::SimpleAction::new("toggle", None);
     toggle.connect_activate(move |_, _| {
@@ -1846,6 +1846,12 @@ fn main() -> glib::ExitCode {
         }
     });
     app.add_action(&mute);
+    // app.quit: how the installer asks a running drawer to exit (before it moves the data
+    // directory under it). A clean exit, so WebKit closes its cookie databases.
+    let quit = gio::SimpleAction::new("quit", None);
+    let a = app.clone();
+    quit.connect_activate(move |_, _| a.quit());
+    app.add_action(&quit);
 
     let s = state.clone();
     app.connect_command_line(move |app, cmd| {

@@ -221,16 +221,7 @@ impl Config {
         } else {
             labels[0]
         };
-        let base: String = main
-            .chars()
-            .filter(|c| c.is_ascii_alphanumeric() || *c == '-')
-            .collect::<String>()
-            .to_lowercase();
-        let base = if base.is_empty() {
-            "site".to_string()
-        } else {
-            base
-        };
+        let base = slug_id(main);
         let mut id = base.clone();
         let mut n = 2;
         while self.services.iter().any(|s| s.id == id) {
@@ -255,6 +246,26 @@ impl Config {
         let before = self.services.len();
         self.services.retain(|s| s.id != id);
         self.services.len() != before
+    }
+}
+
+/// A site's service id from a name or host label: lower-case ASCII letters, digits and dashes
+/// only, no leading or trailing dash, at most 40 characters, never empty. It becomes the last
+/// part of the site's app id (`ostrich_os.drawer.<id>`), so a dot would add a part and an empty
+/// string would leave a trailing dot; the portal accepts a dash only in that last part.
+pub fn slug_id(name: &str) -> String {
+    let s: String = name
+        .to_lowercase()
+        .chars()
+        .filter(|c| c.is_ascii_alphanumeric() || *c == '-')
+        .collect();
+    let s = s.trim_matches('-');
+    let s = &s[..s.len().min(40)];
+    let s = s.trim_end_matches('-');
+    if s.is_empty() {
+        "site".to_string()
+    } else {
+        s.to_string()
     }
 }
 
@@ -530,6 +541,33 @@ mod tests {
         );
         let dup = "[[service]]\nid = \"a\"\nname = \"x\"\nurl = \"https://x.com\"\n[[service]]\nid = \"a\"\nname = \"y\"\nurl = \"https://y.com\"\n";
         assert!(Config::parse(dup).is_err());
+    }
+
+    #[test]
+    fn site_ids_are_one_clean_part() {
+        for name in [
+            "a.b",
+            "..",
+            "Ünïcode",
+            "",
+            "-",
+            "---x---",
+            "a/b c",
+            &"x".repeat(100),
+        ] {
+            let id = slug_id(name);
+            assert!(valid_id(&id), "{name:?} gave {id:?}");
+            assert!(!id.contains('.') && !id.starts_with('-') && !id.ends_with('-'));
+        }
+        assert_eq!(slug_id("a.b"), "ab");
+        assert_eq!(slug_id(".."), "site");
+        assert_eq!(slug_id(""), "site");
+        assert_eq!(slug_id("Ünïcode"), "ncode");
+        // The same through the one place ids are made: a host label that is nothing usable.
+        let mut c = Config::default();
+        assert_eq!(c.add_site("https://a.b.c", None).unwrap(), "b");
+        assert_eq!(c.add_site("http://localhost", None).unwrap(), "localhost");
+        assert!(c.services.iter().all(|s| valid_id(&s.id)));
     }
 
     #[test]

@@ -28,8 +28,9 @@ EXTENSIONS=(monitor dock workspaces tweaks tray focus blur drawer tiling holder-
 REPLACED=(ubuntu-dock@ubuntu.com ubuntu-appindicators@ubuntu.com space-bar@luchrioh Vitals@CoreCoding.com just-perfection-desktop@just-perfection blur-my-shell@aunetx tiling-assistant@ubuntu.com)
 # The original machine's own extensions that ours are ports of (any user name before the @).
 REPLACED_PREFIXES=(nvidia-power@ holder-monitor@ new-window-on-search@)
-# Our own extensions under the project's former names (The Cleanest Ubuntu Setup, Ostrich Ubuntu).
-OLD_SUFFIXES=(@cleanest-ubuntu-setup @ostrich-ubuntu)
+# Our own extensions under the project's former names (The Cleanest Ubuntu Setup, Ostrich Ubuntu,
+# Ubuntu Ostrich): switched off here; lib/migrate.sh renames the entries it finds.
+OLD_SUFFIXES=(@cleanest-ubuntu-setup @ostrich-ubuntu @ubuntu-ostrich)
 
 uuid_of() { sed -n 's/^ *"uuid": *"\([^"]*\)".*/\1/p' "$REPO/modules/gnome/extensions/$1/metadata.json"; }
 
@@ -95,7 +96,7 @@ install_extensions() {
 	local -a replaced=("${REPLACED[@]}") prefix e
 	for prefix in "${REPLACED_PREFIXES[@]}"; do
 		while IFS= read -r e; do
-			[[ $e == "$prefix"* && $e != *@ubuntu-ostrich ]] && replaced+=("$e")
+			[[ $e == "$prefix"* && $e != *@ostrich-os ]] && replaced+=("$e")
 		done < <(gs_list org.gnome.shell enabled-extensions)
 	done
 	local old
@@ -111,7 +112,7 @@ install_extensions() {
 		for dir in "$EXT_HOME"/*/; do
 			[[ -d $dir ]] || continue
 			u=$(basename "$dir")
-			[[ $u == *@ubuntu-ostrich ]] && continue
+			[[ $u == *@ostrich-os ]] && continue
 			replaced+=("$u")
 			reset_extension_settings "$dir"
 		done
@@ -135,7 +136,7 @@ install_extensions() {
 # themselves already live in GNOME's own workspace-names key, which both use.
 migrate_space_bar_names() {
 	command -v dconf >/dev/null 2>&1 || return 0
-	local ours=/org/gnome/shell/extensions/ubuntu-ostrich/workspaces/names-map
+	local ours=/org/gnome/shell/extensions/ostrich-os/workspaces/names-map
 	local theirs=/org/gnome/shell/extensions/space-bar/state/workspace-names-map
 	local current value
 	current=$(dconf read "$ours")
@@ -155,7 +156,7 @@ fi
 # an index into fixed factors; startup-status 1 means "start in the overview" (GNOME's own key).
 migrate_just_perfection() {
 	command -v dconf >/dev/null 2>&1 || return 0
-	local jp=/org/gnome/shell/extensions/just-perfection ours=/org/gnome/shell/extensions/ubuntu-ostrich/tweaks
+	local jp=/org/gnome/shell/extensions/just-perfection ours=/org/gnome/shell/extensions/ostrich-os/tweaks
 	local anim status factor
 	anim=$(dconf read "$jp/animation")
 	if [[ -n $anim && -z $(dconf read "$ours/animation-speed") ]]; then
@@ -178,7 +179,7 @@ migrate_just_perfection() {
 # One-time copy of Tiling Assistant's gap, popup and focus-hint choices.
 migrate_tiling_assistant() {
 	command -v dconf >/dev/null 2>&1 || return 0
-	local ta=/org/gnome/shell/extensions/tiling-assistant ours=/org/gnome/shell/extensions/ubuntu-ostrich/tiling
+	local ta=/org/gnome/shell/extensions/tiling-assistant ours=/org/gnome/shell/extensions/ostrich-os/tiling
 	local their our_key v
 	[[ -z $(dconf read "$ours/migrated") ]] || return 0
 	for their in window-gap:window-gap enable-tiling-popup:fill-popup tiling-popup-all-workspace:fill-popup-all-workspaces focus-hint-color:focus-hint-color; do
@@ -203,7 +204,7 @@ migrate_tiling_assistant() {
 # from the default (dconf read returns only what was set).
 migrate_dash_to_dock() {
 	command -v dconf >/dev/null 2>&1 || return 0
-	local dd=/org/gnome/shell/extensions/dash-to-dock ours=/org/gnome/shell/extensions/ubuntu-ostrich/dock
+	local dd=/org/gnome/shell/extensions/dash-to-dock ours=/org/gnome/shell/extensions/ostrich-os/dock
 	local fixed auto intel size
 	fixed=$(dconf read "$dd/dock-fixed")
 	auto=$(dconf read "$dd/autohide")
@@ -258,7 +259,7 @@ css_hex() {
 # the same reading; the rest are left out), where they sit, and how often it updates.
 migrate_vitals() {
 	command -v dconf >/dev/null 2>&1 || return 0
-	local v=/org/gnome/shell/extensions/vitals ours=/org/gnome/shell/extensions/ubuntu-ostrich/monitor
+	local v=/org/gnome/shell/extensions/vitals ours=/org/gnome/shell/extensions/ostrich-os/monitor
 	local hot pins position update
 	hot=$(dconf read "$v/hot-sensors")
 	if [[ -n $hot && -z $(dconf read "$ours/panel-items") ]]; then
@@ -315,7 +316,7 @@ EOF
 # per-surface keys (older versions) or the blur effect in the pipeline each surface uses (v60+).
 migrate_blur_my_shell() {
 	command -v dconf >/dev/null 2>&1 || return 0
-	local bms=/org/gnome/shell/extensions/blur-my-shell ours=/org/gnome/shell/extensions/ubuntu-ostrich/blur
+	local bms=/org/gnome/shell/extensions/blur-my-shell ours=/org/gnome/shell/extensions/ostrich-os/blur
 	local pipelines line surface radius brightness
 	[[ -z $(dconf read "$ours/migrated-bms") ]] || return 0
 	pipelines=$(dconf read "$bms/pipelines")
