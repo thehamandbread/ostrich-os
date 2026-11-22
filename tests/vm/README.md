@@ -55,9 +55,30 @@ tests/vm/nowplaying-test.sh [--measure]                       # the now-playing 
 tests/vm/everyday-test.sh                                     # what opens web pages, PDFs, office files, photos, music, video; printing
 tests/vm/ext-test.sh focus monitor                            # 20 enable/disable cycles each
 tests/vm/a11y-test.sh                                         # screen-reader names of our buttons, over AT-SPI
+tests/vm/rename-test.sh [--from STEP] [--break-cookies]       # 0.5.0 -> 0.6.0 (the Ostrich OS rename), in a lab slot on a stock base
 ```
 
 `env-test.sh`, `power-test.sh`, `drawer-test.sh` and `motion-test.sh` start from `post-fresh`; `drawer-test.sh` uses the tools in `$VM_DIR/tools-bin` (`build-tools.sh`).
+
+## The rename test
+
+`rename-test.sh` never touches the main VM: it books a slot of a second lab built from `stock`, so the
+main VM can keep running. One-time setup, then the run:
+
+```bash
+export VM_DIR=~/.local/share/ubuntu-ostrich/vm LAB_DIR=$VM_DIR/lab-stock   # the dev VM's folder, and the stock-based lab beside it
+tests/vm/lab.sh base stock                                     # once: copy the stock snapshot into the lab (about 9 GB)
+tests/vm/build-tools-docker.sh                                 # the 0.6.0 tools, built in an ubuntu:26.04 container
+tests/vm/rename-test.sh                                        # all four stages (about 25 minutes)
+tests/vm/rename-test.sh --from verify --break-cookies          # the negative control: must exit 1 (2 = the check is blind)
+```
+
+Stages (each ends in a snapshot of the slot, `rt-<stage>`, so `--from STEP` repeats a stage without a new
+install): `install` (v0.5.0 from the real GitHub release, SHA256SUMS logged), `state` (a signed-in
+localhost stand-in site, its notifications off, the drawer pinned, one extension disabled, a custom site
+list, a Store app under its AppArmor profile), `upgrade` (this branch's installer with the 0.5.0 drawer
+running and holding its data), `verify` (reboot, then every assertion). Logs go to `$VM_DIR/rename-test/`.
+`--release` gives the slot back at the end.
 
 ## Snapshots
 

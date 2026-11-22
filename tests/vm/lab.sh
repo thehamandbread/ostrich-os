@@ -20,7 +20,7 @@ set -euo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 VM="$HERE/vm.sh"
 VM_DIR="${VM_DIR:-${XDG_DATA_HOME:-$HOME/.local/share}/ostrich-os/vm}"
-LAB="$VM_DIR/lab"
+LAB="${LAB_DIR:-$VM_DIR/lab}" # LAB_DIR: a second lab (e.g. a stock-based one) next to the first
 SLOTS=2
 SNAPSHOT=$(cat "$LAB/snapshot" 2>/dev/null || echo try-me) # set by lab.sh base SNAPSHOT
 MIN_FREE_GB=5

@@ -17,3 +17,6 @@ tests/migrate.bats         # tests of the migration
 tests/modules.bats         # tests the old-extension switch-off
 tests/rename-allowlist.txt # this file
 tests/rename.bats          # the pattern itself
+tests/interrupted.bats
+tests/vm/rename-test.sh
+tests/vm/README.md
