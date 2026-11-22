@@ -1,0 +1,300 @@
+### cat /etc/os-release
+PRETTY_NAME="Ubuntu 26.04.1 LTS"
+VERSION_ID="26.04"
+
+### dpkg -l apport systemd-coredump whoopsie (fresh container)
+dpkg-query: no packages found matching apport
+dpkg-query: no packages found matching systemd-coredump
+dpkg-query: no packages found matching whoopsie
+
+### apt-cache policy systemd-coredump
+systemd-coredump:
+  Installed: (none)
+  Candidate: 259.9-0ubuntu0.1
+  Version table:
+     259.9-0ubuntu0.1 500
+        500 http://archive.ubuntu.com/ubuntu resolute-updates/universe amd64 Packages
+     259.5-0ubuntu3.4 500
+        500 http://security.ubuntu.com/ubuntu resolute-security/universe amd64 Packages
+     259.5-0ubuntu3 500
+        500 http://archive.ubuntu.com/ubuntu resolute/universe amd64 Packages
+
+### sysctl.d dirs (before install)
+/etc/sysctl.d/:
+total 12
+drwxr-xr-x 2 root root 4096 Oct  6 21:25 .
+drwxr-xr-x 1 root root 4096 Nov 22 01:03 ..
+-rw-r--r-- 1 root root  269 Dec  1  2025 README.sysctl
+
+/usr/lib/sysctl.d/:
+total 44
+drwxr-xr-x  2 root root 4096 Oct  6 21:25 .
+drwxr-xr-x 14 root root 4096 Oct  6 21:25 ..
+-rw-r--r--  1 root root  481 Dec  1  2025 55-bufferbloat.conf
+-rw-r--r--  1 root root   77 Dec  1  2025 55-console-messages.conf
+-rw-r--r--  1 root root  490 Dec  1  2025 55-ipv6-privacy.conf
+-rw-r--r--  1 root root 1229 Dec  1  2025 55-kernel-hardening.conf
+-rw-r--r--  1 root root 1184 Dec  1  2025 55-magic-sysrq.conf
+-rw-r--r--  1 root root  164 Dec  1  2025 55-map-count.conf
+-rw-r--r--  1 root root  158 Dec  1  2025 55-network-security.conf
+-rw-r--r--  1 root root 1292 Dec  1  2025 55-ptrace.conf
+-rw-r--r--  1 root root  506 Dec  1  2025 55-zeropage.conf
+
+### grep core_pattern (before install)
+grep: /etc/sysctl.conf: No such file or directory
+
+### apt-cache policy (tools)
+python3-gi:
+  Installed: (none)
+  Candidate: 3.56.2-1
+gir1.2-gtk-4.0:
+  Installed: (none)
+  Candidate: 4.22.4+ds-0ubuntu0.2
+gir1.2-adw-1:
+  Installed: (none)
+  Candidate: 1.9.1-0ubuntu0.2
+libnotify-bin:
+  Installed: (none)
+  Candidate: 0.8.8-1
+jq:
+  Installed: (none)
+  Candidate: 1.8.1-4ubuntu2
+gh:
+  Installed: (none)
+  Candidate: 2.46.0-4
+gdb:
+  Installed: (none)
+  Candidate: 17.1-2ubuntu1
+debuginfod:
+  Installed: (none)
+  Candidate: 0.194-4
+xdg-terminal-exec:
+  Installed: (none)
+  Candidate: 0.14.0-1ubuntu0.1
+gitleaks:
+  Installed: (none)
+  Candidate: 8.16.0-1build2
+
+### notify-send --version / --help
+notify-send 0.8.8
+Usage:
+  notify-send [OPTION…] <SUMMARY> [BODY] - create a notification
+
+Help Options:
+  -?, --help                        Show help options
+
+Application Options:
+  -u, --urgency=LEVEL               Specifies the urgency level (low, normal, critical).
+  -t, --expire-time=TIME            Specifies the timeout in milliseconds at which to expire the notification.
+  -a, --app-name=APP_NAME           Specifies the app name for the notification
+  -i, --icon=ICON                   Specifies an icon filename or stock icon to display.
+  -n, --app-icon=ICON               Specifies an application icon filename or app icon name. The server may or may not display it.
+  -c, --category=TYPE[,TYPE...]     Specifies the notification category.
+  -e, --transient                   Create a transient notification
+  -h, --hint=TYPE:NAME:VALUE        Specifies basic extra data to pass. Valid types are boolean, int, double, string, byte and variant.
+  -p, --print-id                    Print the notification ID.
+  --id-fd                           File descriptor where to write the notification ID.
+  -r, --replace-id=REPLACE_ID       The ID of the notification to replace.
+  -w, --wait                        Wait for the notification to be closed before exiting.
+  -A, --action=[NAME=]Text...       Specifies the actions to display to the user. Implies --wait to wait for user input. May be set multiple times. The name of the action is output to stdout. If NAME is not specified, the numerical index of the option is used (starting with 0).
+  --selected-action-fd              File descriptor where to write the action chosen by the user.
+  --activation-token-fd             File descriptor where to write the action activation token. The daemon must support it.
+  -v, --version                     Version of the package.
+
+
+### apport installed? (needed to compare)
+ii  apport         2.34.1-0ubuntu0.1 all          automatically generate crash reports for debugging
+
+### apport sysctl files
+/usr/lib/systemd/system/apport-coredump-hook@.service
+/usr/lib/systemd/system/systemd-coredump@.service.d
+/usr/lib/systemd/system/systemd-coredump@.service.d/apport-coredump-hook.conf
+
+### core_pattern with apport only
+
+### INSTALL systemd-coredump
+sysctl: setting key "fs.protected_fifos", ignoring: Read-only file system
+sysctl: setting key "vm.max_map_count", ignoring: Read-only file system
+sysctl: setting key "kernel.pid_max", ignoring: Read-only file system
+sysctl: setting key "kernel.printk", ignoring: Read-only file system
+sysctl: setting key "net.ipv6.conf.all.use_tempaddr", ignoring: Read-only file system
+sysctl: setting key "net.ipv6.conf.default.use_tempaddr", ignoring: Read-only file system
+sysctl: setting key "kernel.kptr_restrict", ignoring: Read-only file system
+sysctl: setting key "kernel.sysrq", ignoring: Read-only file system
+sysctl: setting key "vm.max_map_count", ignoring: Read-only file system
+sysctl: setting key "net.ipv4.conf.default.rp_filter", ignoring: Read-only file system
+sysctl: setting key "net.ipv4.conf.all.rp_filter", ignoring: Read-only file system
+sysctl: setting key "kernel.yama.ptrace_scope", ignoring: Read-only file system
+sysctl: setting key "vm.mmap_min_addr", ignoring: Read-only file system
+Processing triggers for libc-bin (2.43-2ubuntu2.4) ...
+Processing triggers for shared-mime-info (2.4-5build3) ...
+
+### dpkg -L systemd-coredump (sysctl/conf/core files)
+/etc/systemd/coredump.conf
+/usr/bin/coredumpctl
+/usr/lib/sysctl.d
+/usr/lib/sysctl.d/50-coredump.conf
+/usr/lib/sysusers.d/systemd-coredump.conf
+/usr/share/man/man5/coredump.conf.5.gz
+/usr/share/man/man5/coredump.conf.d.5.gz
+
+### ls sysctl.d after
+/etc/sysctl.d/:
+total 16
+drwxr-xr-x 2 root root 4096 Oct  6 21:25 .
+drwxr-xr-x 1 root root 4096 Nov 22 01:05 ..
+-rw-r--r-- 1 root root  269 Dec  1  2025 README.sysctl
+
+/usr/lib/sysctl.d/:
+total 64
+drwxr-xr-x 1 root root 4096 Nov 22 01:05 .
+drwxr-xr-x 1 root root 4096 Nov 22 01:05 ..
+-rw-r--r-- 1 root root   25 Sep 16 14:55 10-coredump-debian.conf
+-rw-r--r-- 1 root root 1822 Sep 16 14:55 50-coredump.conf
+-rw-r--r-- 1 root root 2170 Feb 23  2026 50-default.conf
+-rw-r--r-- 1 root root  649 Sep 10 23:27 50-pid-max.conf
+-rw-r--r-- 1 root root  481 Dec  1  2025 55-bufferbloat.conf
+-rw-r--r-- 1 root root   77 Dec  1  2025 55-console-messages.conf
+-rw-r--r-- 1 root root  490 Dec  1  2025 55-ipv6-privacy.conf
+-rw-r--r-- 1 root root 1229 Dec  1  2025 55-kernel-hardening.conf
+-rw-r--r-- 1 root root 1184 Dec  1  2025 55-magic-sysrq.conf
+-rw-r--r-- 1 root root  164 Dec  1  2025 55-map-count.conf
+-rw-r--r-- 1 root root  158 Dec  1  2025 55-network-security.conf
+-rw-r--r-- 1 root root 1292 Dec  1  2025 55-ptrace.conf
+-rw-r--r-- 1 root root  506 Dec  1  2025 55-zeropage.conf
+
+### grep core_pattern after
+/usr/lib/sysctl.d/10-coredump-debian.conf:1:kernel.core_pattern=core
+/usr/lib/sysctl.d/50-coredump.conf:16:kernel.core_pattern=|/usr/lib/systemd/systemd-coredump %P %u %g %s %t %c %h %d %F
+
+### sysctl --system order (sorted by basename; later files win)
+10-coredump-debian.conf
+50-coredump.conf
+50-default.conf
+50-pid-max.conf
+55-bufferbloat.conf
+55-console-messages.conf
+55-ipv6-privacy.conf
+55-kernel-hardening.conf
+55-magic-sysrq.conf
+55-map-count.conf
+55-network-security.conf
+55-ptrace.conf
+55-zeropage.conf
+--- /usr/lib/sysctl.d/*apport*
+cat: '/usr/lib/sysctl.d/*apport*': No such file or directory
+--- /usr/lib/sysctl.d/10-coredump-debian.conf
+kernel.core_pattern=core
+--- /usr/lib/sysctl.d/50-coredump.conf
+#  This file is part of systemd.
+#
+#  systemd is free software; you can redistribute it and/or modify it
+#  under the terms of the GNU Lesser General Public License as published by
+#  the Free Software Foundation; either version 2.1 of the License, or
+#  (at your option) any later version.
+
+# See sysctl.d(5) for the description of the files in this directory.
+
+# Pipe the core file to systemd-coredump. The systemd-coredump process spawned
+# by the kernel will start a second copy of itself as the
+# systemd-coredump@.service, which will do the actual processing and storing of
+# the core dump.
+#
+# See systemd-coredump(8) and core(5).
+kernel.core_pattern=|/usr/lib/systemd/systemd-coredump %P %u %g %s %t %c %h %d %F
+
+# Allow 16 coredumps to be dispatched in parallel by the kernel.
+# We collect metadata from /proc/%P/, and thus need to make sure the crashed
+# processes are not reaped until we have finished collecting what we need. The
+# kernel default for this sysctl is "0" which means the kernel doesn't wait for
+# userspace to finish processing before reaping the crashed processes. With a
+# higher setting the kernel will delay reaping until we are done, but only for
+# the specified number of crashes in parallel. The value of 16 is chosen to
+# match systemd-coredump.socket's MaxConnections= value.
+kernel.core_pipe_limit=16
+
+# Also dump processes executing a set-user-ID/set-group-ID program that is
+# owned by a user/group other than the real user/group ID of the process, or
+# a program that has file capabilities. ("2" is called "suidsafe" in core(5)).
+#
+# systemd-coredump will store the core file owned by the effective uid and gid
+# of the running process (and not the filesystem-user-ID which the kernel uses
+# when saving a core dump).
+#
+# See proc(5), setuid(2), capabilities(7).
+fs.suid_dumpable=2
+
+### apport package: does it hook core_pattern in postinst/service?
+/usr/lib/systemd
+/usr/lib/systemd/system
+/usr/lib/systemd/system/apport-autoreport.path
+/usr/lib/systemd/system/apport-autoreport.service
+/usr/lib/systemd/system/apport-autoreport.timer
+/usr/lib/systemd/system/apport-coredump-hook@.service
+/usr/lib/systemd/system/apport-forward.socket
+/usr/lib/systemd/system/apport-forward@.service
+/usr/lib/systemd/system/systemd-coredump@.service.d
+/usr/lib/systemd/system/systemd-coredump@.service.d/apport-coredump-hook.conf
+
+### apport.service ExecStart
+
+### apt-cache policy systemd-coredump after / Depends/Conflicts
+systemd-coredump
+  Depends: libc6
+  Depends: libsystemd-shared
+  Depends: systemd
+  Conflicts: <core-dump-handler>
+    corekeeper
+    apport-core-dump-handler
+    minicoredumper
+  Replaces: <core-dump-handler>
+    corekeeper
+Replaces: core-dump-handler
+Depends: libc6 (>= 2.36), libsystemd-shared (= 259.9-0ubuntu0.1), systemd
+Conflicts: core-dump-handler
+
+### apport Conflicts/Breaks?
+Replaces: python-apport (<< 2.2-0ubuntu1)
+Breaks: python-apport (<< 2.2-0ubuntu1)
+
+### 50-coredump.conf contents
+#  This file is part of systemd.
+#
+#  systemd is free software; you can redistribute it and/or modify it
+#  under the terms of the GNU Lesser General Public License as published by
+#  the Free Software Foundation; either version 2.1 of the License, or
+#  (at your option) any later version.
+
+# See sysctl.d(5) for the description of the files in this directory.
+
+# Pipe the core file to systemd-coredump. The systemd-coredump process spawned
+# by the kernel will start a second copy of itself as the
+# systemd-coredump@.service, which will do the actual processing and storing of
+# the core dump.
+#
+# See systemd-coredump(8) and core(5).
+kernel.core_pattern=|/usr/lib/systemd/systemd-coredump %P %u %g %s %t %c %h %d %F
+
+# Allow 16 coredumps to be dispatched in parallel by the kernel.
+# We collect metadata from /proc/%P/, and thus need to make sure the crashed
+# processes are not reaped until we have finished collecting what we need. The
+# kernel default for this sysctl is "0" which means the kernel doesn't wait for
+# userspace to finish processing before reaping the crashed processes. With a
+# higher setting the kernel will delay reaping until we are done, but only for
+# the specified number of crashes in parallel. The value of 16 is chosen to
+# match systemd-coredump.socket's MaxConnections= value.
+kernel.core_pipe_limit=16
+
+# Also dump processes executing a set-user-ID/set-group-ID program that is
+# owned by a user/group other than the real user/group ID of the process, or
+# a program that has file capabilities. ("2" is called "suidsafe" in core(5)).
+#
+# systemd-coredump will store the core file owned by the effective uid and gid
+# of the running process (and not the filesystem-user-ID which the kernel uses
+# when saving a core dump).
+#
+# See proc(5), setuid(2), capabilities(7).
+fs.suid_dumpable=2
+### apport sysctl contents
+cat: '/usr/lib/sysctl.d/*apport*.conf': No such file or directory
+cat: '/etc/sysctl.d/*apport*.conf': No such file or directory

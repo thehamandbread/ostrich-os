@@ -1,0 +1,70 @@
+### dpkg -l apport apport-core-dump-handler
+ii  apport                   2.34.1-0ubuntu0.1 all          automatically generate crash reports for debugging
+ii  apport-core-dump-handler 2.34.1-0ubuntu0.1 all          Kernel core dump handler for Apport
+### files of apport-core-dump-handler
+/.
+/etc
+/etc/init.d
+/etc/init.d/apport
+/usr
+/usr/lib
+/usr/lib/systemd
+/usr/lib/systemd/system
+/usr/lib/systemd/system/apport.service
+/usr/share
+### core_pattern grep
+### drop-in
+[Unit]
+OnSuccess=apport-coredump-hook@%i.service
+# This service is responsible for reading the coredump data from systemd journal
+# after a crash has occurred, and generating a crash file to /var/crash/.
+[Service]
+Type=oneshot
+ExecStart=/usr/share/apport/apport --from-systemd-coredump %i
+Nice=9
+OOMScoreAdjust=500
+IPAddressDeny=any
+LockPersonality=yes
+MemoryDenyWriteExecute=yes
+NoNewPrivileges=yes
+PrivateDevices=yes
+PrivateNetwork=yes
+PrivateTmp=yes
+ProtectControlGroups=yes
+ProtectHome=read-only
+ProtectHostname=yes
+ProtectKernelLogs=yes
+ProtectKernelModules=yes
+ProtectKernelTunables=yes
+ProtectSystem=strict
+ReadWritePaths=/var/crash /var/log
+RestrictAddressFamilies=AF_UNIX
+RestrictRealtime=yes
+RestrictSUIDSGID=yes
+SystemCallArchitectures=native
+SystemCallErrorNumber=EPERM
+SystemCallFilter=@system-service @file-system @setuid
+### apt-get install systemd-coredump (simulate): what happens to the handler?
+Inst systemd (259.9-0ubuntu0.1 Ubuntu:26.04/resolute-updates [amd64])
+Inst python3-zstandard (0.25.0-1build1 Ubuntu:26.04/resolute [amd64])
+Remv apport-core-dump-handler [2.34.1-0ubuntu0.1] [apport:amd64 ]
+Inst systemd-coredump (259.9-0ubuntu0.1 Ubuntu:26.04/resolute-updates [amd64])
+Inst libudev1 [259.5-0ubuntu3.4] (259.9-0ubuntu0.1 Ubuntu:26.04/resolute-updates [amd64])
+Inst libdbus-1-3 (1.16.2-2ubuntu4 Ubuntu:26.04/resolute [amd64])
+Inst dbus-bin (1.16.2-2ubuntu4 Ubuntu:26.04/resolute [amd64])
+Inst dbus-session-bus-common (1.16.2-2ubuntu4 Ubuntu:26.04/resolute [all])
+Inst libapparmor1 (5.0.2-0ubuntu1~26.04.1 Ubuntu:26.04/resolute-updates [amd64])
+Inst dbus-daemon (1.16.2-2ubuntu4 Ubuntu:26.04/resolute [amd64])
+Inst dbus-system-bus-common (1.16.2-2ubuntu4 Ubuntu:26.04/resolute [all])
+Inst dbus (1.16.2-2ubuntu4 Ubuntu:26.04/resolute [amd64])
+Inst libdevmapper1.02.1 (2:1.02.205-2ubuntu3 Ubuntu:26.04/resolute [amd64])
+Inst dmsetup (2:1.02.205-2ubuntu3 Ubuntu:26.04/resolute [amd64])
+Inst libjson-c5 (0.18+ds-3 Ubuntu:26.04/resolute [amd64])
+Inst libcryptsetup12 (2:2.8.4-1ubuntu4 Ubuntu:26.04/resolute [amd64])
+Inst libunistring5 (1.3-2build1 Ubuntu:26.04/resolute [amd64])
+Inst libidn2-0 (2.3.8-4build1 Ubuntu:26.04/resolute [amd64])
+Inst libkmod2 (34.2-2ubuntu2 Ubuntu:26.04/resolute [amd64])
+Inst linux-sysctl-defaults (4.15ubuntu5 Ubuntu:26.04/resolute [all])
+Inst systemd-cryptsetup (259.9-0ubuntu0.1 Ubuntu:26.04/resolute-updates [amd64])
+Inst systemd-resolved (259.9-0ubuntu0.1 Ubuntu:26.04/resolute-updates [amd64])
+Inst systemd-timesyncd (259.9-0ubuntu0.1 Ubuntu:26.04/resolute-updates [amd64])
