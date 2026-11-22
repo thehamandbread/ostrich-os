@@ -367,3 +367,12 @@ Their calls, which replace earlier ones:
 - Proposed: a browser/profile picker as a Rust GTK tool. Drawer sites are targets; a shared same-site function keeps drawer ↔ picker loop-free; the drawer passes an activation token.
 - Proposed: crash → agent diagnosis. Read-only, redacted local report, consent first; contribution only as a user-reviewed draft.
 - Proposed: the tour/Settings redesign goes through the council (newcomer-led), not a new skill. ostrich-design and the council already exist.
+
+## 2026-11-22 — Owner decisions on the plans
+
+- Hover delay: 500 ms (the code). Docs change in build step 2.
+- The rename ships alone as 0.6.0.
+- User-facing copy: American English, applied when step 8 moves copy into tools/welcome/data/copy.toml.
+- Keep the name Ostrich OS. No public ISO until Canonical's IP policy on modified images is checked; a USPTO class 9 search before announcing.
+- Council session approval is deferred to build step 8.
+- Agents: keep gemini as a data file; add a local-model agent (opencode with Ollama) so diagnosis works without a paid plan.

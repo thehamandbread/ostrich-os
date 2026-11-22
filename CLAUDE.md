@@ -45,6 +45,8 @@ tests/lint-js.sh                     # ESLint for extensions, in Docker
 modules/gnome/extensions/build.sh    # build extension zips into dist/
 tools/icons/export.sh                # remake the app icons from tools/icons/ (see its README)
 tests/vm/ext-test.sh <name>...       # install in the VM, check ACTIVE / no JS errors / 20 enable-disable cycles
+tests/appid-lint.sh                  # app/.desktop/D-Bus ids: no dash before the last part (CI runs it)
+lib/migrate.sh --dry-run             # the rename migration (not wired into install.sh yet)
 tests/look-check.sh [--vm SNAP]      # the look's lint (CI runs it) and, with --vm, the VM look tests: focus rings, widths, text scale, alert, a11y
 .claude/skills/ostrich-design/scripts/token-lint.sh   # sizes with tokens, fixed colours, :focus rules, dim-label (exceptions: token-lint: allow <why>)
 shfmt -d .

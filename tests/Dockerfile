@@ -3,7 +3,7 @@
 FROM ubuntu:26.04
 
 RUN apt-get update \
-	&& apt-get install -y --no-install-recommends bats gjs python3 unzip \
+	&& apt-get install -y --no-install-recommends bats gjs python3 unzip dconf-cli dconf-service dbus-daemon dbus-bin \
 	&& rm -rf /var/lib/apt/lists/*
 
 # The installer refuses to run as root, so test as a normal user.

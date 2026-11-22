@@ -68,6 +68,15 @@ GNOME stores per-app notification choices as relocatable children of `org.gnome.
 
 CONFLICT: how a child's name is derived from the app id (dots, case, `.desktop` suffix) and the exact key set were not verified in this session — RECOMMEND: read them from a VM first (`dconf dump /org/gnome/desktop/notifications/` after a drawer site has sent a notification), write the rule down in this file, then implement.
 
+### Notification settings: verified rule
+
+Verified 2026-11-22 in a throwaway lab VM (GNOME Shell 50.1); raw dumps in `docs/plans/evidence/notification-children-dconf.txt`. This replaces the unverified CONFLICT above.
+
+- **Child name** = the app id with `.desktop` removed and every `.` and `_` turned into `-`. `ubuntu_ostrich.drawer.chat.desktop` → child `ubuntu-ostrich-drawer-chat`, at `/org/gnome/desktop/notifications/application/ubuntu-ostrich-drawer-chat/`. The new id `ostrich_os.drawer.chat.desktop` → `ostrich-os-drawer-chat`. (Lower-casing was not exercised: our ids are lower case. The migration lower-cases anyway.) The dash and underscore spellings of one id share a child name; only `application-id` tells them apart, so match on that key, never on the name.
+- **Who creates it:** the Shell, on the first notification from an app whose `.desktop` file exists (`desktop-entry` hint); it writes `application-id` and appends the child to `application-children`. A notification from an id with no `.desktop` file creates nothing. So the new `.desktop` files must exist before the new children can appear.
+- **Keys:** dconf stores only non-default keys. After switching things off in Settings the child held `enable=false`; later `enable-sound-alerts=false`, `show-banners=false`, `show-in-lock-screen=false`. Full set (`gsettings list-keys`): `application-id`, `details-in-lock-screen`, `enable`, `enable-sound-alerts`, `force-expanded`, `show-banners`, `show-in-lock-screen`. Copying the child with `dconf dump`/`dconf load` and rewriting `application-id` carries all of them, set or not.
+- **Settings' own writes** go to the same child, with the master switch as `enable` and Show Banners as `show-banners`.
+
 Migration step: list `application-children`; for every child whose `application-id` matches an old id (`ubuntu_ostrich.drawer*.desktop`, `ubuntu-ostrich.drawer*.desktop`, `ostrich-ubuntu…`, `cleanest…`, and the Store/setup ids), compute the new id (`ostrich_os.drawer.<service>.desktop` etc.), create the new child with a copy of **every key**, append it to `application-children`, then reset the old child and remove it from the list. Skip if the new child already exists (user changed it after upgrade: keep theirs). Log each one. Also move the drawer's own per-site `muted` flag (in `drawer.toml`, which moves with the config dir; nothing to do).
 
 ## Drawer logins must survive: VM proof

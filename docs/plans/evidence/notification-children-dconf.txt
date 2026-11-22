@@ -1,0 +1,66 @@
+# Raw dconf dumps from a throwaway lab VM (GNOME Shell 50.1, Ubuntu 26.04), 2026-11-22.
+# Step 0 of plan 01. Site: ubuntu_ostrich.drawer.chat.desktop (Google Chat).
+
+## 1. Before: only update-manager has a child
+[/]
+application-children=['update-manager']
+show-banners=true
+
+[application/update-manager]
+application-id='update-manager.desktop'
+
+## 2. After: notify-send -h string:desktop-entry:ubuntu_ostrich.drawer.chat (Shell creates the child on first notification)
+[/]
+application-children=['update-manager', 'ubuntu-ostrich-drawer-chat']
+show-banners=true
+
+[application/ubuntu-ostrich-drawer-chat]
+application-id='ubuntu_ostrich.drawer.chat.desktop'
+
+[application/update-manager]
+application-id='update-manager.desktop'
+
+## 3. GNOME Settings > Notifications > Google Chat: master switch Notifications turned off
+[/]
+application-children=['update-manager', 'ubuntu-ostrich-drawer-chat']
+show-banners=true
+
+[application/ubuntu-ostrich-drawer-chat]
+application-id='ubuntu_ostrich.drawer.chat.desktop'
+enable=false
+
+[application/update-manager]
+application-id='update-manager.desktop'
+
+## 4. Notifications back on; Sound, Show Banners, lock-screen Show Banners turned off
+[/]
+application-children=['update-manager', 'ubuntu-ostrich-drawer-chat']
+show-banners=true
+
+[application/ubuntu-ostrich-drawer-chat]
+application-id='ubuntu_ostrich.drawer.chat.desktop'
+enable=true
+enable-sound-alerts=false
+show-banners=false
+show-in-lock-screen=false
+
+[application/update-manager]
+application-id='update-manager.desktop'
+
+## 5. Control: ids with no .desktop file (ostrich_os.drawer.chat, Ostrich_OS.Drawer.Zed) create NO child
+[/]
+application-children=['update-manager', 'ubuntu-ostrich-drawer-chat']
+show-banners=true
+
+[application/ubuntu-ostrich-drawer-chat]
+application-id='ubuntu_ostrich.drawer.chat.desktop'
+enable=true
+enable-sound-alerts=false
+show-banners=false
+show-in-lock-screen=false
+
+[application/update-manager]
+application-id='update-manager.desktop'
+
+## Schema keys: org.gnome.desktop.notifications.application
+application-id details-in-lock-screen enable enable-sound-alerts force-expanded show-banners show-in-lock-screen

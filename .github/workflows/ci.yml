@@ -23,6 +23,8 @@ jobs:
         run: shellcheck install.sh lib/*.sh modules/*/install.sh modules/hardware/*/install.sh modules/gnome/extensions/build.sh modules/gnome/extensions/*/*.sh tests/*.sh tests/vm/*.sh modules/tools/ostrich-icon-style tools/package.sh tools/icons/export.sh .claude/skills/ostrich-design/scripts/*.sh image/*.sh image/firstboot/*.sh .githooks/pre-commit
       - name: shfmt
         run: shfmt -d .
+      - name: app id dash rule (the portal accepts a dash only in the last part)
+        run: tests/appid-lint.sh "$PWD"
       - name: look rules (sizes, colours, focus, dim-label)
         run: .claude/skills/ostrich-design/scripts/token-lint.sh "$PWD"
 
