@@ -99,6 +99,8 @@ sleep 30 # past the start-up window in which a power-off can make GNOME switch e
 "$VM" start
 sleep 30
 run "$FOCUS '[]'"
+run "pkill -x ostrich-setup || true" # the first-login tour would be saved as a third app
+sleep 1
 
 step "save: Files and Text Editor on workspace 1"
 run "setsid -f gtk-launch $FILES </dev/null >/dev/null 2>&1; setsid -f gtk-launch $EDITOR </dev/null >/dev/null 2>&1"

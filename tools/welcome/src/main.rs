@@ -511,7 +511,7 @@ fn welcome_step() -> Vec<adw::PreferencesGroup> {
         ),
         (
             "Quick settings",
-            "The icons at the top right, for sound, Wi-Fi, Bluetooth, power mode and Do Not Disturb. Pushing the pointer into the top-right corner opens it too.",
+            "The icons at the top right, for sound, Wi-Fi, Bluetooth, power mode and Do Not Disturb: click them to open it.",
         ),
     ] {
         places.add(&info_row(title, about));

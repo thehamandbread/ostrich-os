@@ -136,10 +136,11 @@ sleep 1
 shot 3-menu
 if python3 -I - "$OUT/2-playing.png" "$OUT/3-menu.png" "$x" <<'EOF'; then ok "its menu opened under the pill (x $x)"; else bad "no menu under the pill (x $x)"; fi
 import sys
-from PIL import Image, ImageChops, ImageStat
+from PIL import Image, ImageChops
 x = int(sys.argv[3])
 a, b = (Image.open(f).convert("L").crop((max(0, x - 150), 40, x + 150, 200)) for f in sys.argv[1:3])
-sys.exit(0 if ImageStat.Stat(ImageChops.difference(a, b)).mean[0] > 8 else 1)
+# Its text, buttons and edge: a glass menu over a dark wallpaper changes the average too little.
+sys.exit(0 if sum(1 for p in ImageChops.difference(a, b).get_flattened_data() if p > 40) > 300 else 1)
 EOF
 "$VM" key esc
 
