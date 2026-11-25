@@ -367,7 +367,21 @@ print(radius, brightness if brightness not in ("", None) else "-")
 EOF
 }
 
+# A colour scheme's stylesheets replace the extensions' own: rewrite them from this version's
+# templates, or rules added since the scheme was applied never show (owner, 2026-11-25: notifications
+# in the clock menu stayed grey).
+refresh_scheme() {
+	local theme=${LIBEXEC_DIR:-$HOME/.local/libexec/ostrich-os}/ostrich-theme
+	[[ -x $theme ]] || return 0
+	if ((DRY_RUN)); then
+		"$theme" scheme refresh --dry-run || true
+	else
+		"$theme" scheme refresh || warn "colour scheme not refreshed; apply it again in Ostrich Settings"
+	fi
+}
+
 install_extensions
+refresh_scheme
 migrate_dash_to_dock
 migrate_vitals
 migrate_blur_my_shell

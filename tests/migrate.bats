@@ -599,7 +599,7 @@ cleanup_fixture() {
 	chmod +x "$BATS_TEST_TMPDIR/bin/systemctl"
 	run dbus-run-session -- bash -c "
 		LIB_DIR='$BATS_TEST_DIRNAME/../lib'
-		source \$LIB_DIR/logging.sh; source \$LIB_DIR/backup.sh; source \$LIB_DIR/pkg.sh; source \$LIB_DIR/helper.sh
+		source \"\$LIB_DIR/logging.sh\"; source \"\$LIB_DIR/backup.sh\"; source \"\$LIB_DIR/pkg.sh\"; source \"\$LIB_DIR/helper.sh\"
 		SUDO=env CLEANUP_DIR='$root/cleanup-old' CLEANUP_UNIT='$root/unit.service'
 		install_cleanup_unit '$BATS_TEST_DIRNAME/..' '$HOME/migrated-from'"
 	[ "$status" -eq 0 ]

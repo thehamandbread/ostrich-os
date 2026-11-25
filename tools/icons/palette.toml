@@ -24,6 +24,9 @@ light_glass_menu = "rgba(250, 250, 250, 0.62)"
 light_glass_banner = "rgba(250, 250, 250, 0.66)"
 light_glass_folder = "rgba(250, 250, 250, 0.4)"
 light_glass_border = "rgba(255, 255, 255, 0.55)"
+# The hairline round glass that sits on other glass (cards in menus): where one ends
+glass_edge = "rgba(255, 255, 255, 0.20)"
+light_glass_edge = "rgba(0, 0, 0, 0.14)"
 # Text on the glass, where the theme would dim it below 4.5:1 ("No Notifications")
 text = "#ffffff"
 light_text = "#1f2430"

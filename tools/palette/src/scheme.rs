@@ -151,6 +151,15 @@ pub fn all(config: &Path) -> Vec<Scheme> {
         })
         .collect();
     own.sort_by(|a, b| a.id.cmp(&b.id));
+    // Colours added to the stylesheets after a scheme of yours was made come from Classic.
+    let classic = parse(BUILT_IN[0].1);
+    for s in &mut own {
+        for k in colour_keys() {
+            if let Some(v) = classic.get(&k) {
+                s.values.entry(k).or_insert_with(|| v.clone());
+            }
+        }
+    }
     for s in own {
         list.retain(|b| b.id != s.id);
         list.push(s);
@@ -335,6 +344,26 @@ mod tests {
             ),
             "a { border-radius: 20px; }"
         );
+    }
+
+    #[test]
+    fn an_older_scheme_of_yours_gets_new_colours_from_classic() {
+        let dir = std::env::temp_dir().join(format!("ostrich-scheme-test-{}", std::process::id()));
+        let own = user_dir(&dir);
+        std::fs::create_dir_all(&own).unwrap();
+        // Classic without the edge colours, as a scheme made before they existed.
+        let old: String = BUILT_IN[0]
+            .1
+            .lines()
+            .filter(|l| !l.contains("glass_edge"))
+            .map(|l| format!("{l}\n"))
+            .collect();
+        std::fs::write(own.join("mine.toml"), old.replace("Classic", "Mine")).unwrap();
+        let s = all(&dir).into_iter().find(|s| s.id == "mine").unwrap();
+        std::fs::remove_dir_all(&dir).unwrap();
+        assert!(check(&s).0.is_empty(), "{:?}", check(&s).0);
+        assert_eq!(s.name(), "Mine");
+        assert_eq!(s.get("glass_edge"), built_in("classic").get("glass_edge"));
     }
 
     #[test]

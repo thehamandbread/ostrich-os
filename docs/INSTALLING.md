@@ -47,7 +47,6 @@ these steps add a second safety net and tell you what to check. From the readine
    - Battery: 15 minutes unplugged with `measure.sh`; close the lid and resume.
    - The drawer: open each site once; no "internal error" dialog should appear (0.1.5 fixed it).
    - Speakers (the A/B test), the touchscreen, a printer, Bluetooth audio.
-   - The top-right hot corner opens quick settings (the VM's pointer can't test it).
    - Boot and memory: reboot, wait 2 minutes at the desktop, and run the same two commands into
      `boot-after.txt` and `memory-after.txt` in `~/ostrich-pre`. Claude compares them.
 

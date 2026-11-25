@@ -12,11 +12,6 @@
 #     style and the power mode are read before and after; council 2026-11-09);
 #   - power saver: the monitor's readings fold away to one icon, and come back on Balanced;
 #   - the journal gate.
-#   - hot corner: pushing up into the top-right corner (relative motion, vm.sh nudge, since GNOME's
-#     pressure barriers ignore the VM's absolute tablet) opens quick settings, twice in a row; a second
-#     push while it is open closes it, as the top-left corner toggles the overview; and it does not
-#     open with quick-settings-corner off. A second monitor's placement is a unit test only
-#     (tests/js/corner-place.test.js): the VM has one screen.
 # Screenshots go to $VM_DIR/topbar-test.
 set -euo pipefail
 
@@ -167,39 +162,6 @@ sleep 4
 shot saver-2
 read -r r2 _ < <(stats "$OUT/saver-2.png" "$MONITOR_BOX")
 if ((r2 > 20)); then ok "readings back on Balanced (contrast $r2)"; else bad "readings not back on Balanced (contrast $r2)"; fi
-
-echo "== hot corner: pushing up into the top-right corner opens quick settings"
-CORNER_KEY=/org/gnome/shell/extensions/ostrich-os/tweaks/quick-settings-corner
-qs_open() { run "python3 - showing 'Dark Style'" <"$HERE/a11y-tree.py" >/dev/null 2>&1; } # a stock tile, on screen only while quick settings is open
-push_corner() {
-	"$VM" key esc
-	sleep 1
-	"$VM" move 1700 300
-	sleep 1
-	"$VM" move 1915 25
-	sleep 1
-	"$VM" nudge 0 -40 30
-	sleep 2
-}
-for try in 1 2; do
-	push_corner
-	if qs_open; then ok "push $try: quick settings opened"; else bad "push $try: quick settings did not open"; fi
-	shot "corner-$try"
-done
-"$VM" move 1700 300 # a second push while it is open closes it
-sleep 1
-"$VM" move 1915 25
-sleep 1
-"$VM" nudge 0 -40 30
-sleep 2
-if qs_open; then bad "a second push left quick settings open"; else ok "a second push closed quick settings"; fi
-run "dconf write $CORNER_KEY false"
-sleep 1
-push_corner
-if qs_open; then bad "with the corner switched off, quick settings still opened"; else ok "with the corner switched off, nothing opened"; fi
-run "dconf write $CORNER_KEY true"
-"$VM" key esc
-sleep 1
 
 echo "== journal"
 journal_gate

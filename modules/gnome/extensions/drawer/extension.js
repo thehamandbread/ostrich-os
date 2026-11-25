@@ -116,8 +116,11 @@ export default class DrawerExtension extends Extension {
         this._patches.replace(WorkspaceThumbnail.WorkspaceThumbnail.prototype, '_isOverviewWindow', orig => function (win) {
             return !isDrawerApp(win.get_meta_window?.()) && !ext._slot?.has(win.get_meta_window?.()) && orig.call(this, win);
         });
+        // A pinned app's window too: GNOME's minimize flew it across the screen to the bottom-left
+        // each time it was put away (owner, 2026-11-25).
         this._patches.replace(Main.wm, '_shouldAnimateActor', orig => function (actor, types) {
-            return isDrawer(actor?.meta_window) ? false : orig.call(this, actor, types);
+            const win = actor?.meta_window;
+            return isDrawer(win) || ext._slot?.has(win) ? false : orig.call(this, actor, types);
         });
 
         // A Wayland window's app id isn't known yet at window-created; check once it's shown.

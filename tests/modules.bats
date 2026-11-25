@@ -30,6 +30,8 @@ setup() {
 	# No speaker-tuning clips unless a test asks for them (nothing real is downloaded).
 	export CLIPS_TSV="$BATS_TEST_TMPDIR/no-clips.tsv"
 	: >"$CLIPS_TSV"
+	# The kernel console's sysctl file: in a folder that doesn't exist unless a test makes it.
+	export CONSOLE_SYSCTL="$BATS_TEST_TMPDIR/sysctl.d/60-ostrich-os-console.conf"
 }
 
 stub() {
@@ -61,6 +63,21 @@ stub() {
 	[ "$status" -eq 0 ]
 	[ ! -s "$CALLS" ]
 	[[ $output == *"[WOULD] apt install"* ]]
+}
+
+@test "core: quiets the kernel console once, and not again when it already is" {
+	printf 'curl\nca-certificates\ngit\njq\nunzip\nflatpak\n' >"$INSTALLED"
+	echo flathub >"$REMOTES"
+	mkdir -p "$FLATPAK_SYSTEM_DIR/appstream/flathub/$(uname -m)/active" "${CONSOLE_SYSCTL%/*}"
+	run "$ROOT/modules/core/install.sh"
+	[ "$status" -eq 0 ]
+	grep -q "sudo install -D -m 0644 .* $CONSOLE_SYSCTL" "$CALLS"
+	grep -q "sudo sysctl -q -p $CONSOLE_SYSCTL" "$CALLS"
+	printf '# Ostrich OS: only critical kernel messages on the text console (they stay in the journal).\nkernel.printk = 3 4 1 3\n' >"$CONSOLE_SYSCTL"
+	: >"$CALLS"
+	run "$ROOT/modules/core/install.sh"
+	[ "$status" -eq 0 ]
+	[ ! -s "$CALLS" ]
 }
 
 @test "core: rejects unknown options" {

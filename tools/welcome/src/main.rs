@@ -724,12 +724,6 @@ fn top_bar_step() -> Vec<adw::PreferencesGroup> {
             ));
             t.add(&switch_row(
                 &s,
-                "quick-settings-corner",
-                "Top-right corner opens quick settings",
-                "Push the pointer into the corner, like the top-left corner opens the overview",
-            ));
-            t.add(&switch_row(
-                &s,
                 "clock-menu-quiet",
                 "Do Not Disturb and Focus in the clock menu",
                 "Two switches under the date, also in quick settings (top-right)",

@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 // Tweaks: animation speed, hiding top-bar items, the accent following the wallpaper, the Touchscreen
-// quick-settings tile, Today in the clock menu (today.js), and the top-right hot corner that opens
-// quick settings (corner.js).
+// quick-settings tile, and Today in the clock menu (today.js).
 // Everything is restored on disable.
 
 import Gio from 'gi://Gio';
@@ -21,7 +20,6 @@ import {Signals} from './_lib/signals.js';
 import {NowPlayingPill} from './nowplaying.js';
 import {EventsCard, Today} from './today.js';
 import {folderTheme} from './folders.js';
-import {QuickSettingsCorner} from './corner.js';
 import {PowerRow} from './powerrow.js';
 import {Quiet} from './quiet.js';
 import {BluetoothDevices} from './btdevices.js';
@@ -124,8 +122,6 @@ export default class TweaksExtension extends Extension {
         this._events.enable();
         this._signals.connect(this._settings, 'changed::now-playing-pill', () => this._applyNowPlaying());
         this._applyNowPlaying();
-        this._signals.connect(this._settings, 'changed::quick-settings-corner', () => this._applyCorner());
-        this._applyCorner();
         this._signals.connect(this._settings, 'changed::quick-settings-style', () => this._applyStyle());
         this._applyStyle();
 
@@ -151,8 +147,6 @@ export default class TweaksExtension extends Extension {
             this._nowPlaying.destroy();
             this._nowPlaying = null;
         }
-        this._corner?.destroy();
-        this._corner = null;
         this._powerRow?.destroy();
         this._powerRow = null;
         this._bluetooth?.destroy();
@@ -218,16 +212,6 @@ export default class TweaksExtension extends Extension {
         } else if (!ostrich && this._bluetooth) {
             this._bluetooth.destroy();
             this._bluetooth = null;
-        }
-    }
-
-    _applyCorner() {
-        const on = this._settings.get_boolean('quick-settings-corner');
-        if (on && !this._corner) {
-            this._corner = new QuickSettingsCorner();
-        } else if (!on && this._corner) {
-            this._corner.destroy();
-            this._corner = null;
         }
     }
 

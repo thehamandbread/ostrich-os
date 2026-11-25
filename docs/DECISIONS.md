@@ -383,3 +383,12 @@ Their calls, which replace earlier ones:
 - Install order: stop our apps (graceful), migrate, install new .desktop files, migrate notification children, remove old launchers and autostart, enable new UUIDs. Cookies are never moved under a running drawer, and a cross-filesystem copy is checksummed before the old copy is deleted.
 - Supersedes "never SIGKILL / never stop a 0.5.0 drawer": apps get app.quit if they have it, else SIGTERM; data moves only when fuser shows no process (including WebKit's network process) holding a file under it. SQLite with its -wal/-shm moved together is consistent after a terminated process. SIGKILL is never used.
 - Old root files go at the next boot through the one-shot ostrich-os-cleanup-old.service, not "on a later run".
+
+## 2026-11-25 — Owner's fix round (photos from the Dell)
+
+- The top-right hot corner is removed (supersedes 2026-11-09): quick settings opens on a click only. The `quick-settings-corner` key and its wizard row are gone.
+- Glass: the theme's drop shadow is removed from glass surfaces (drawn outside the blur, it read as a smudge round a frosted border). Glass that sits on other glass (clock-menu notifications, the Clear button, quick-settings submenus, search results) gets a visible hairline, new scheme colours `glass_edge` / `light_glass_edge`; a scheme of the user's own without them takes Classic's.
+- A colour scheme's stylesheets are rewritten from the new templates on every install (`ostrich theme scheme refresh`): they replace the extensions' own, so a scheme applied before an update hid every newer rule (the owner's clock-menu notifications stayed grey).
+- A pinned drawer app's window skips GNOME's minimize animation (it flew across the screen when put away).
+- Waking from suspend: only critical kernel messages go to the text console (`kernel.printk = 3 4 1 3`, /etc/sysctl.d/60-ostrich-os-console.conf); the rest stay in the journal. On the Dell the kernel wakes in about 0.2 s every time; the wait is after the fingerprint is accepted (25–30 s before the desktop returns, every fingerprint unlock this week), which is not solved yet.
+- Moving off GNOME to a lighter desktop: parked, the owner's call later.

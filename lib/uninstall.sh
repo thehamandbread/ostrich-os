@@ -29,7 +29,7 @@ strip_theme_block() {
 ours_root() {
 	case $1 in
 	/usr/libexec/ostrich-os/* | /usr/share/polkit-1/actions/org.ostrich-os.* | \
-		/etc/modprobe.d/ostrich-os-* | /etc/systemd/system/ostrich-os-* | \
+		/etc/modprobe.d/ostrich-os-* | /etc/systemd/system/ostrich-os-* | /etc/sysctl.d/60-ostrich-os-* | \
 		/etc/udev/rules.d/90-ostrich-os* | \
 		/usr/libexec/ubuntu-ostrich/* | /usr/share/polkit-1/actions/org.ubuntu-ostrich.* | \
 		/etc/modprobe.d/ubuntu-ostrich-* | /etc/systemd/system/ubuntu-ostrich-* | \
@@ -166,6 +166,8 @@ EOF
 		while IFS= read -r path; do
 			[[ -n $path ]] && ours_root "$path" && run_cmd "$SUDO" rm -f -- "$path"
 		done <"$RESTORE_DIR/created-root.txt"
+		# The console's kernel log level back to the distro's (our sysctl.d file is gone).
+		command -v sysctl >/dev/null && run_cmd "$SUDO" sysctl -q --system >/dev/null || true
 		while IFS=$'\t' read -r path copy; do
 			[[ -n $path && -e $copy && ($copy == "$path.before-ostrich-os" || $copy == "$path.before-ubuntu-ostrich") ]] && ours_root "$path" &&
 				run_cmd "$SUDO" mv -f -- "$copy" "$path"

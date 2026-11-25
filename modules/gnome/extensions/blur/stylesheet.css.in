@@ -1,16 +1,19 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
-/* Glass over a blurred backdrop: a tint that keeps the theme's text readable and a thin light edge.
-   No box-shadow: St draws it under the whole surface, so through the glass it darkened what's
-   behind (measured: a fifth darker than the original's). Dark glass under the dark shell style;
+/* Glass over a blurred backdrop: a tint that keeps the theme's text readable and a thin edge.
+   No box-shadow, and the theme's is removed: St draws it outside the surface, where there is no blur,
+   so the glass looked like a frosted border with a smudge round it (owner, 2026-11-25), and under the
+   whole surface it darkened what's behind (measured: a fifth darker than the original's). Dark glass under the dark shell style;
    light glass (for dark text) under the light one, keyed off .ost-blur-light on the UI group.
    Shape and colours otherwise come from the theme. */
 .popup-menu-content.ost-blur-menu {
   background-color: {{glass_menu}};
-  border: 1px solid {{glass_border}};
+  border: 1px solid {{glass_edge}};
+  box-shadow: none;
 }
 .notification-banner.ost-blur-banner {
   background-color: {{glass_banner}};
-  border: 1px solid {{glass_border}};
+  border: 1px solid {{glass_edge}};
+  box-shadow: none;
 }
 .app-folder-dialog.ost-blur-folder { background-color: {{glass_folder}}; }
 /* The top bar: a light tint over the frost keeps the clock and icons readable over a bright window. */
@@ -23,11 +26,11 @@
 
 .ost-blur-light .popup-menu-content.ost-blur-menu {
   background-color: {{light_glass_menu}};
-  border: 1px solid {{light_glass_border}};
+  border: 1px solid {{light_glass_edge}};
 }
 .ost-blur-light .notification-banner.ost-blur-banner {
   background-color: {{light_glass_banner}};
-  border: 1px solid {{light_glass_border}};
+  border: 1px solid {{light_glass_edge}};
 }
 .ost-blur-light .app-folder-dialog.ost-blur-folder { background-color: {{light_glass_folder}}; }
 .ost-blur-light .ost-blur-menu .message-list-placeholder,
@@ -38,7 +41,7 @@
    hit. */
 .ost-blur-menu .message.media-message {
   background-color: {{glass_banner}};
-  border: 1px solid {{glass_border}};
+  border: 1px solid {{glass_edge}};
   border-radius: [[radius_card]];
 }
 /* The theme's 18 px either side of each control left the title about six letters ("A test …"); 32 px
@@ -46,36 +49,42 @@
 .ost-blur-menu .message-media-control { color: {{text}}; min-width: 32px; min-height: 32px; padding: 0 [[space_xs]]; border-radius: [[radius_item]]; }
 .ost-blur-light .ost-blur-menu .message.media-message {
   background-color: {{light_glass_banner}};
-  border: 1px solid {{light_glass_border}};
+  border: 1px solid {{light_glass_edge}};
 }
 .ost-blur-light .ost-blur-menu .message-media-control { color: {{light_text}}; }
 /* Cards the theme paints solid grey on top of the glass (owner, 2026-11-18: "stock Ubuntu grey"):
-   notifications and buttons in the clock menu, quick settings' submenus, overview search results.
-   Each already has blur behind it (the menu's backdrop or the overview's), so a tint is enough. */
+   notifications, the Clear button and the other buttons in the clock menu, quick settings' submenus,
+   overview search results. Each already has blur behind it (the menu's backdrop or the overview's),
+   so a tint is enough; the edge colour shows where one card ends on the glass (owner, 2026-11-25). */
 .ost-blur-menu .message,
+.ost-blur-menu .message-list-clear-button,
 .ost-blur-menu .events-button,
 .ost-blur-menu .world-clocks-button,
 .ost-blur-menu .weather-button,
 .ost-blur-menu-root .quick-toggle-menu,
 .ost-blur-overview-on .search-section-content {
   background-color: {{glass_banner}};
-  border: 1px solid {{glass_border}};
+  border: 1px solid {{glass_edge}};
+  box-shadow: none;
 }
 .ost-blur-light .ost-blur-menu .message,
+.ost-blur-light .ost-blur-menu .message-list-clear-button,
 .ost-blur-light .ost-blur-menu .events-button,
 .ost-blur-light .ost-blur-menu .world-clocks-button,
 .ost-blur-light .ost-blur-menu .weather-button,
 .ost-blur-light .ost-blur-menu-root .quick-toggle-menu,
 .ost-blur-light.ost-blur-overview-on .search-section-content {
   background-color: {{light_glass_banner}};
-  border: 1px solid {{light_glass_border}};
+  border: 1px solid {{light_glass_edge}};
 }
 /* Hover and focus still show, a step stronger (the rules above would otherwise flatten the theme's). */
 .ost-blur-menu .message:hover, .ost-blur-menu .message:focus,
+.ost-blur-menu .message-list-clear-button:hover, .ost-blur-menu .message-list-clear-button:focus,
 .ost-blur-menu .events-button:hover, .ost-blur-menu .events-button:focus,
 .ost-blur-menu .world-clocks-button:hover, .ost-blur-menu .world-clocks-button:focus,
 .ost-blur-menu .weather-button:hover, .ost-blur-menu .weather-button:focus { background-color: {{glass_folder}}; }
 .ost-blur-light .ost-blur-menu .message:hover, .ost-blur-light .ost-blur-menu .message:focus,
+.ost-blur-light .ost-blur-menu .message-list-clear-button:hover, .ost-blur-light .ost-blur-menu .message-list-clear-button:focus,
 .ost-blur-light .ost-blur-menu .events-button:hover, .ost-blur-light .ost-blur-menu .events-button:focus,
 .ost-blur-light .ost-blur-menu .world-clocks-button:hover, .ost-blur-light .ost-blur-menu .world-clocks-button:focus,
 .ost-blur-light .ost-blur-menu .weather-button:hover, .ost-blur-light .ost-blur-menu .weather-button:focus { background-color: {{light_glass_folder}}; }

@@ -29,10 +29,6 @@
       <default>true</default>
       <summary>Beside the clock: what's playing (title and play state; click for previous, play/pause, next); it pops out when something starts playing and goes back a few seconds after it stops</summary>
     </key>
-    <key name="quick-settings-corner" type="b">
-      <default>true</default>
-      <summary>Push the pointer into the top-right corner to open quick settings, like the top-left corner opens the overview</summary>
-    </key>
     <key name="clock-menu-quiet" type="b">
       <default>true</default>
       <summary>Clock menu: Do Not Disturb and Focus switches under the date (the quick-settings tiles stay either way)</summary>

@@ -15,6 +15,8 @@
 //!   ostrich theme scheme check ID|FILE            what's missing, and text under 4.5:1
 //!   ostrich theme scheme apply ID [--dry-run]     its extension colours (live), accent, icon theme
 //!                                                 and wallpaper
+//!   ostrich theme scheme refresh [--dry-run]      rewrite the current scheme's extension colours
+//!                                                 from this version's stylesheets (after an update)
 //!   ostrich theme scheme new ID [--from BASE]     your own, copied from BASE (default: the current
 //!                                                 one) into ~/.config/ostrich-os/schemes/
 //!   ostrich theme scheme delete ID                one of your own
@@ -352,6 +354,29 @@ fn restore_before(dry_run: bool) -> Result<(), String> {
     Ok(())
 }
 
+/// The extensions' scheme stylesheets. Each replaces its extension's own stylesheet, so after an
+/// update they must be rewritten from the new templates (`scheme refresh`), or new rules never show.
+fn write_scheme_css(s: &scheme::Scheme, dry_run: bool) -> Result<(), String> {
+    // The extensions watch these and reload them: the tmp-and-rename keeps them from reading half.
+    let dir = scheme_dir();
+    for (ext, template) in scheme::TEMPLATES {
+        let path = dir.join(format!("{ext}.css"));
+        if fs::read_to_string(&path).ok().as_deref() == Some(scheme::fill(template, s).as_str()) {
+            continue;
+        }
+        if dry_run {
+            println!("would write {}", path.display());
+            continue;
+        }
+        fs::create_dir_all(&dir).map_err(|e| format!("{}: {e}", dir.display()))?;
+        let tmp = dir.join(format!(".{ext}.css.new"));
+        fs::write(&tmp, scheme::fill(template, s))
+            .map_err(|e| format!("{}: {e}", tmp.display()))?;
+        fs::rename(&tmp, &path).map_err(|e| format!("{}: {e}", path.display()))?;
+    }
+    Ok(())
+}
+
 fn apply_scheme(s: &scheme::Scheme, dry_run: bool) -> Result<(), String> {
     let (errors, warnings) = scheme::check(s);
     if !errors.is_empty() {
@@ -372,23 +397,8 @@ fn apply_scheme(s: &scheme::Scheme, dry_run: bool) -> Result<(), String> {
     } else {
         restore_before(dry_run)?;
     }
-    // The extensions watch these and reload them: the tmp-and-rename keeps them from reading half.
+    write_scheme_css(s, dry_run)?;
     let dir = scheme_dir();
-    for (ext, template) in scheme::TEMPLATES {
-        let path = dir.join(format!("{ext}.css"));
-        if fs::read_to_string(&path).ok().as_deref() == Some(scheme::fill(template, s).as_str()) {
-            continue;
-        }
-        if dry_run {
-            println!("would write {}", path.display());
-            continue;
-        }
-        fs::create_dir_all(&dir).map_err(|e| format!("{}: {e}", dir.display()))?;
-        let tmp = dir.join(format!(".{ext}.css.new"));
-        fs::write(&tmp, scheme::fill(template, s))
-            .map_err(|e| format!("{}: {e}", tmp.display()))?;
-        fs::rename(&tmp, &path).map_err(|e| format!("{}: {e}", path.display()))?;
-    }
     // The wallpaper: drawn from the scheme's colours, or the pictures it names (if installed).
     let mut walls: Vec<(&str, PathBuf)> = Vec::new();
     if let Some((dark, light)) = scheme::wallpaper_svgs(s) {
@@ -522,6 +532,20 @@ fn scheme_main(args: &[String], dry_run: bool) -> ExitCode {
                 }
             }
             None => fail(format!("no scheme called {id}")),
+        },
+        // The current scheme's stylesheets again, from this build's templates (install.sh runs it).
+        (Some("refresh"), _) => match current_scheme().as_deref().and_then(find) {
+            // A scheme of your own missing a colour the new stylesheets use: left as it was.
+            Some(s) if !scheme::check(s).0.is_empty() => fail(format!(
+                "{} needs updating before it can be refreshed: {}",
+                s.name(),
+                scheme::check(s).0.join("; ")
+            )),
+            Some(s) => match write_scheme_css(s, dry_run) {
+                Ok(()) => ExitCode::SUCCESS,
+                Err(e) => fail(e),
+            },
+            None => ExitCode::SUCCESS, // no scheme applied: the extensions use their own stylesheets
         },
         (Some("apply"), Some(id)) => match find(id) {
             Some(s) => match apply_scheme(s, dry_run) {
