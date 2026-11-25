@@ -80,6 +80,18 @@ stub() {
 	[ ! -s "$CALLS" ]
 }
 
+@test "core: a failed apt install refreshes the package lists once and retries" {
+	printf 'curl\nca-certificates\ngit\njq\nunzip\n' >"$INSTALLED"
+	echo flathub >"$REMOTES"
+	mkdir -p "$FLATPAK_SYSTEM_DIR/appstream/flathub/$(uname -m)/active"
+	# The first install fails (a 404 from a stale list); the one after an update works.
+	stub sudo 'echo "sudo $*" >>"$CALLS"; [[ " $* " == *" install "* && ! -e $BATS_TEST_TMPDIR/updated ]] && exit 100; [[ " $* " == *" update "* ]] && touch "$BATS_TEST_TMPDIR/updated"; true'
+	run "$ROOT/modules/core/install.sh"
+	[ "$status" -eq 0 ]
+	[ "$(grep -c ' install -y ' "$CALLS")" -eq 2 ]
+	grep -q ' update -qq' "$CALLS"
+}
+
 @test "core: rejects unknown options" {
 	run "$ROOT/modules/core/install.sh" --bogus
 	[ "$status" -eq 1 ]

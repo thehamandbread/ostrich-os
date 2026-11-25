@@ -19,7 +19,12 @@ apt_install() {
 	done
 	((${#missing[@]} > 0)) || return 0
 	changed "apt install ${missing[*]}"
-	run_cmd "$SUDO" env DEBIAN_FRONTEND=noninteractive "${APT_GET[@]}" install -y --no-install-recommends "${missing[@]}"
+	local install=("$SUDO" env DEBIAN_FRONTEND=noninteractive "${APT_GET[@]}" install -y --no-install-recommends "${missing[@]}")
+	# A stale package list asks for a version the mirror has replaced (404): refresh it once, retry.
+	run_cmd "${install[@]}" && return 0
+	warn "apt install failed; refreshing the package lists and trying again"
+	run_cmd "$SUDO" "${APT_GET[@]}" update -qq
+	run_cmd "${install[@]}"
 }
 
 flatpak_remote_present() { flatpak remotes --columns=name 2>/dev/null | grep -qx "$1"; }
