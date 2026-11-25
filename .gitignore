@@ -53,3 +53,4 @@ graphify-out/
 # private shared notebook (CONTEXT.md is never committed)
 /CONTEXT.md
 /docs/INVENTORY.md
+!tests/fixtures/**/install.log

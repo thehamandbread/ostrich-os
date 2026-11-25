@@ -392,3 +392,10 @@ Their calls, which replace earlier ones:
 - A pinned drawer app's window skips GNOME's minimize animation (it flew across the screen when put away).
 - Waking from suspend: only critical kernel messages go to the text console (`kernel.printk = 3 4 1 3`, /etc/sysctl.d/60-ostrich-os-console.conf); the rest stay in the journal. On the Dell the kernel wakes in about 0.2 s every time; the wait is after the fingerprint is accepted (25–30 s before the desktop returns, every fingerprint unlock this week), which is not solved yet.
 - Moving off GNOME to a lighter desktop: parked, the owner's call later.
+
+## 2026-11-25 — Release and face unlock (owner)
+
+- 0.6.0 ships the rename together with the 2026-11-25 fix round (supersedes "the rename ships alone").
+- The GitHub repo is renamed to thehamandbread/ostrich-os (done 2026-11-25; the old raw install URL still answers 200).
+- Face unlock: to be planned as a module that turns on only when an infrared camera is found; plain webcams never get it (a photo can fool them). Built after the release.
+- Slow wake: the owner tests a udev rule that tells mutter to ignore an NVIDIA card with no outputs before it goes into the NVIDIA module.
