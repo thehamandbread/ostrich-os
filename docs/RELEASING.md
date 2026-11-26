@@ -37,7 +37,9 @@ Order matters. Do not skip ahead; the live-machine upgrade is the last step.
    wget -S --spider https://github.com/thehamandbread/ostrich-os/releases/download/v0.6.0/SHA256SUMS 2>&1 | grep -E 'HTTP/|Location'
    ```
 
-   Recorded: _(not run yet: needs the rename and the tag)_
+   Recorded 2026-11-26 (after tagging v0.6.0 on ca026f3): the old v0.5.0 raw URL `200 OK`; the new
+   v0.6.0 raw URL `200 OK`; `SHA256SUMS` `302 Found` to release-assets, then `200 OK`. GitHub's latest
+   release is v0.6.0.
 6. **If the old raw URL does not end in 200**, put the new one-liner
    (`wget -qO- https://raw.githubusercontent.com/thehamandbread/ostrich-os/main/install.sh | bash`)
    at the top of the README and on the 0.5.x release page.
